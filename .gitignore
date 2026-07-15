@@ -78,3 +78,8 @@ qywx.json
 
 # Claude Code
 .claude
+
+# unplugin-auto-import / unplugin-vue-components generated
+**/auto-import.d.ts
+**/components.d.ts
+**/.eslintrc-auto-import.json
