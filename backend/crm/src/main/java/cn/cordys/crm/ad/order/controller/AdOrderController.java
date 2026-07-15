@@ -1,0 +1,113 @@
+package cn.cordys.crm.ad.order.controller;
+
+import cn.cordys.context.OrganizationContext;
+import cn.cordys.crm.ad.order.dto.request.AdOrderApproveRequest;
+import cn.cordys.crm.ad.order.dto.request.AdOrderForceArchiveRequest;
+import cn.cordys.crm.ad.order.dto.request.AdOrderPageRequest;
+import cn.cordys.crm.ad.order.dto.request.AdOrderSaveRequest;
+import cn.cordys.crm.ad.order.dto.request.AdOrderVoidRequest;
+import cn.cordys.crm.ad.order.dto.response.AdOrderDetailResponse;
+import cn.cordys.crm.ad.order.dto.response.AdOrderFinancialPlan;
+import cn.cordys.crm.ad.order.dto.response.AdOrderListResponse;
+import cn.cordys.crm.ad.order.domain.AdOrder;
+import cn.cordys.crm.ad.order.service.AdOrderService;
+import cn.cordys.security.SessionUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.annotation.Resource;
+import org.springframework.web.bind.annotation.*;
+
+import cn.cordys.common.pager.PagerWithOption;
+
+/**
+ * 广告订单控制器（M2 订单核心闭环，V3.1 §13.2）。
+ *
+ * <p>所有写操作均在 {@link AdOrderService} 中标注 {@code @OperationLog}（写入 ad_operation_log）。
+ * 响应由框架 {@code ResultResponseBodyAdvice} 统一包裹（包路径 cn.cordys）。</p>
+ *
+ * <p>鉴权：本 M2 仅打通状态机与业务守卫，未接入 ad 专用权限常量（M6 收口），
+ * 由 {@link AdOrderService} 依据状态机 requiredRole 做角色级守卫。</p>
+ */
+@Tag(name = "广告订单")
+@RestController
+@RequestMapping("/api/ad/order")
+public class AdOrderController {
+
+    @Resource
+    private AdOrderService adOrderService;
+
+    private String userId() {
+        return SessionUtils.getUserId();
+    }
+
+    private String orgId() {
+        return OrganizationContext.getOrganizationId();
+    }
+
+    @PostMapping
+    @Operation(summary = "新建订单（草稿）")
+    public AdOrder create(@RequestBody AdOrderSaveRequest request) {
+        return adOrderService.create(request, userId(), orgId());
+    }
+
+    @PutMapping
+    @Operation(summary = "编辑草稿订单")
+    public AdOrder update(@RequestBody AdOrderSaveRequest request) {
+        return adOrderService.update(request, userId(), orgId());
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "订单详情（订单+附件+改单历史+操作记录+可见动作）")
+    public AdOrderDetailResponse detail(@PathVariable("id") String id) {
+        return adOrderService.detail(id, userId(), orgId());
+    }
+
+    @PostMapping("/page")
+    @Operation(summary = "订单分页（多筛选+关键字+主体隔离+缺合同标记）")
+    public PagerWithOption<List<AdOrderListResponse>> page(@RequestBody AdOrderPageRequest request) {
+        return adOrderService.page(request, userId(), orgId());
+    }
+
+    @PostMapping("/{id}/submit")
+    @Operation(summary = "提交（0→10；L-14 关闭时 0→20）")
+    public AdOrder submit(@PathVariable("id") String id) {
+        return adOrderService.submit(id, userId(), orgId());
+    }
+
+    @PostMapping("/{id}/approve")
+    @Operation(summary = "老板审核（通过 10→20 / 驳回 10→0）")
+    public AdOrder approve(@PathVariable("id") String id, @RequestBody AdOrderApproveRequest request) {
+        return adOrderService.approve(id, request, userId(), orgId());
+    }
+
+    @PostMapping("/{id}/financial-pre-action")
+    @Operation(summary = "财务前置动作（L-05 矩阵：推导 30/40/50 与财务步骤）")
+    public AdOrderFinancialPlan financialPreAction(@PathVariable("id") String id) {
+        return adOrderService.financialPreAction(id, userId(), orgId());
+    }
+
+    @PostMapping("/{id}/confirm-execute")
+    @Operation(summary = "确认执行（20/30/40→50）")
+    public AdOrder confirmExecute(@PathVariable("id") String id) {
+        return adOrderService.confirmExecute(id, userId(), orgId());
+    }
+
+    @PostMapping("/{id}/complete-execute")
+    @Operation(summary = "执行完成（50→70；需 ≥1 合同，L-26）")
+    public AdOrder completeExecute(@PathVariable("id") String id) {
+        return adOrderService.completeExecute(id, userId(), orgId());
+    }
+
+    @PostMapping("/{id}/void")
+    @Operation(summary = "作废（→100；保留附件 L-21，红冲标记 L-27）")
+    public AdOrder voidOrder(@PathVariable("id") String id, @RequestBody AdOrderVoidRequest request) {
+        return adOrderService.voidOrder(id, request, userId(), orgId());
+    }
+
+    @PostMapping("/{id}/force-archive")
+    @Operation(summary = "强制归档（80→90，老板，带坏账金额 L-13）")
+    public AdOrder forceArchive(@PathVariable("id") String id, @RequestBody AdOrderForceArchiveRequest request) {
+        return adOrderService.forceArchive(id, request, userId(), orgId());
+    }
+}

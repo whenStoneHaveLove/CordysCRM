@@ -2,6 +2,7 @@ package cn.cordys.crm.ad.order.domain;
 
 import cn.cordys.common.domain.BaseModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -72,12 +73,15 @@ public class AdOrder extends BaseModel {
     private BigDecimal mediaPayableAmount;
 
     @Schema(description = "投放起始日")
+    @Column(name = "delivary_start_date")
     private Date deliveryStartDate;
 
     @Schema(description = "投放结束日")
+    @Column(name = "delivary_end_date")
     private Date deliveryEndDate;
 
     @Schema(description = "投放量+单位")
+    @Column(name = "delivary_volume")
     private String deliveryVolume;
 
     @Schema(description = "备注")
