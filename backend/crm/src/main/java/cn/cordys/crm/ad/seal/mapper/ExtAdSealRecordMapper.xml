@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.ad.seal.mapper.ExtAdSealRecordMapper">
+
+    <!-- 用印记录分页列表（M5 T-42）
+         多筛选 + 关键字(合同编号/名称) + 主体隔离(IN business_entity_id) + 排序。
+         排序复用 cn.cordys.common.mapper.CommonMapper.sort 动态片段。 -->
+    <select id="pageList" resultType="cn.cordys.crm.ad.seal.dto.response.AdSealRecordListResponse">
+        SELECT
+            s.id                AS id,
+            s.contract_id       AS contractId,
+            c.contract_no       AS contractNo,
+            c.contract_name     AS contractName,
+            c.business_entity_id AS businessEntityId,
+            be.name             AS businessEntityName,
+            s.seal_type         AS sealType,
+            s.applied_copies    AS appliedCopies,
+            s.actual_copies     AS actualCopies,
+            s.applicant_id      AS applicantId,
+            s.apply_remark      AS applyRemark,
+            s.status            AS status,
+            s.approver_id       AS approverId,
+            s.approved_at       AS approvedAt,
+            s.approve_remark    AS approveRemark,
+            s.organization_id   AS organizationId,
+            s.create_time       AS createTime
+        FROM ad_seal_record s
+        LEFT JOIN ad_contract c ON c.id = s.contract_id AND c.deleted = 0
+        LEFT JOIN ad_business_entity be ON be.id = c.business_entity_id AND be.deleted = 0
+        WHERE s.organization_id = #{request.organizationId}
+          AND s.deleted = 0
+        <if test="request.contractId != null and request.contractId != ''">
+            AND s.contract_id = #{request.contractId}
+        </if>
+        <if test="request.sealType != null">
+            AND s.seal_type = #{request.sealType}
+        </if>
+        <if test="request.status != null">
+            AND s.status = #{request.status}
+        </if>
+        <if test="request.businessEntityId != null and request.businessEntityId != ''">
+            AND c.business_entity_id = #{request.businessEntityId}
+        </if>
+        <if test="request.keyword != null and request.keyword != ''">
+            AND (c.contract_no LIKE CONCAT('%', #{request.keyword}, '%')
+                 OR c.contract_name LIKE CONCAT('%', #{request.keyword}, '%'))
+        </if>
+        <if test="request.applyDateFrom != null">
+            AND s.create_time &gt;= #{request.applyDateFrom}
+        </if>
+        <if test="request.applyDateTo != null">
+            AND s.create_time &lt;= #{request.applyDateTo}
+        </if>
+        <if test="request.entityIds != null and request.entityIds.size() > 0">
+            AND c.business_entity_id IN
+            <foreach collection="request.entityIds" item="eid" open="(" separator="," close=")">
+                #{eid}
+            </foreach>
+        </if>
+        <include refid="cn.cordys.common.mapper.CommonMapper.sort">
+            <property name="sort" value="request.sort"/>
+            <property name="prefix" value="s"/>
+            <property name="defaultSort" value="s.create_time DESC"/>
+        </include>
+    </select>
+
+</mapper>

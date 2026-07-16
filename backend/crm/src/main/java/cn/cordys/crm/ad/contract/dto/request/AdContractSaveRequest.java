@@ -1,27 +1,30 @@
-package cn.cordys.crm.ad.contract.domain;
+package cn.cordys.crm.ad.contract.dto.request;
 
-import cn.cordys.common.domain.BaseModel;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.Table;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * 广告合同统一表（V3.1 §5.2.3，L-10）。
+ * 合同保存请求（M5，创建/编辑共用；POST /api/ad/contract 创建，PUT /api/ad/contract 编辑）。
+ *
+ * <p>创建时 {@code id} 留空，由服务生成；编辑时必须携带 {@code id}。
+ * 合同编号 {@code contractNo} 留空时由服务按规则自动生成（CN{yyyyMMdd}-{3位流水}）。</p>
  */
 @Data
-@Table(name = "ad_contract")
-public class AdContract extends BaseModel {
+public class AdContractSaveRequest {
 
-    @Schema(description = "合同编号")
+    @Schema(description = "合同id（编辑时必填，创建时留空）")
+    private String id;
+
+    @Schema(description = "合同编号（留空则由系统生成）")
     private String contractNo;
 
     @Schema(description = "合同名称")
     private String contractName;
 
-    @Schema(description = "业务主体")
+    @Schema(description = "业务主体id")
     private String businessEntityId;
 
     @Schema(description = "合同方向:10上游/20下游")
@@ -36,10 +39,10 @@ public class AdContract extends BaseModel {
     @Schema(description = "关联方类型:10客户/20上游代理/30下游媒体")
     private Integer relatedPartyType;
 
-    @Schema(description = "关联订单(单笔合同)")
+    @Schema(description = "关联订单id(单笔合同)")
     private String orderId;
 
-    @Schema(description = "关联变更单id(M5,可空)")
+    @Schema(description = "关联变更单id(可选)")
     private String changeOrderId;
 
     @Schema(description = "签约主体")
@@ -59,16 +62,4 @@ public class AdContract extends BaseModel {
 
     @Schema(description = "合同文件(单笔用印前可空,L-07)")
     private String fileUrl;
-
-    @Schema(description = "用印状态:0未申请/10审批中/20已用印/30已驳回")
-    private Integer sealStatus = 0;
-
-    @Schema(description = "状态:10生效/20失效/30已作废")
-    private Integer status = 10;
-
-    @Schema(description = "组织(租户)id")
-    private String organizationId;
-
-    @Schema(description = "是否删除:0-否/1-是")
-    private Integer deleted = 0;
 }

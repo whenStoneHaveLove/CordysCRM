@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.ad.contract.mapper.ExtAdContractMapper">
+
+    <!-- 合同分页列表（M5 T-40）
+         多筛选 + 关键字(合同编号/名称) + 主体隔离(IN business_entity_id) + 排序。
+         排序复用 cn.cordys.common.mapper.CommonMapper.sort 动态片段。 -->
+    <select id="pageList" resultType="cn.cordys.crm.ad.contract.dto.response.AdContractListResponse">
+        SELECT
+            c.id                AS id,
+            c.contract_no       AS contractNo,
+            c.contract_name     AS contractName,
+            c.business_entity_id AS businessEntityId,
+            be.name             AS businessEntityName,
+            c.contract_direction AS contractDirection,
+            c.contract_type     AS contractType,
+            c.related_party_id  AS relatedPartyId,
+            c.related_party_type AS relatedPartyType,
+            c.order_id          AS orderId,
+            c.signing_entity    AS signingEntity,
+            c.valid_from        AS validFrom,
+            c.valid_to          AS validTo,
+            c.amount            AS amount,
+            c.file_url          AS fileUrl,
+            c.seal_status       AS sealStatus,
+            c.status            AS status,
+            c.organization_id   AS organizationId,
+            c.create_time       AS createTime
+        FROM ad_contract c
+        LEFT JOIN ad_business_entity be ON be.id = c.business_entity_id AND be.deleted = 0
+        WHERE c.organization_id = #{request.organizationId}
+          AND c.deleted = 0
+        <if test="request.contractDirection != null">
+            AND c.contract_direction = #{request.contractDirection}
+        </if>
+        <if test="request.contractType != null">
+            AND c.contract_type = #{request.contractType}
+        </if>
+        <if test="request.relatedPartyType != null">
+            AND c.related_party_type = #{request.relatedPartyType}
+        </if>
+        <if test="request.status != null">
+            AND c.status = #{request.status}
+        </if>
+        <if test="request.sealStatus != null">
+            AND c.seal_status = #{request.sealStatus}
+        </if>
+        <if test="request.businessEntityId != null and request.businessEntityId != ''">
+            AND c.business_entity_id = #{request.businessEntityId}
+        </if>
+        <if test="request.orderId != null and request.orderId != ''">
+            AND c.order_id = #{request.orderId}
+        </if>
+        <if test="request.changeOrderId != null and request.changeOrderId != ''">
+            AND c.change_order_id = #{request.changeOrderId}
+        </if>
+        <if test="request.keyword != null and request.keyword != ''">
+            AND (c.contract_no LIKE CONCAT('%', #{request.keyword}, '%')
+                 OR c.contract_name LIKE CONCAT('%', #{request.keyword}, '%'))
+        </if>
+        <if test="request.validFromFrom != null">
+            AND c.valid_from &gt;= #{request.validFromFrom}
+        </if>
+        <if test="request.validFromTo != null">
+            AND c.valid_to &lt;= #{request.validFromTo}
+        </if>
+        <if test="request.entityIds != null and request.entityIds.size() > 0">
+            AND c.business_entity_id IN
+            <foreach collection="request.entityIds" item="eid" open="(" separator="," close=")">
+                #{eid}
+            </foreach>
+        </if>
+        <include refid="cn.cordys.common.mapper.CommonMapper.sort">
+            <property name="sort" value="request.sort"/>
+            <property name="prefix" value="c"/>
+            <property name="defaultSort" value="c.create_time DESC"/>
+        </include>
+    </select>
+
+    <!-- 某组织当天的合同数（合同号流水号） -->
+    <select id="countTodayContracts" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM ad_contract
+        WHERE organization_id = #{orgId}
+          AND deleted = 0
+          AND create_time &gt;= #{start}
+          AND create_time &lt;= #{end}
+    </select>
+
+</mapper>
