@@ -3,8 +3,15 @@
   "compilerOptions": {
     "baseUrl": "./",
     "moduleResolution": "node",
+    "types": ["vite/client"]
   },
   "include": [
-    "src/**/*"
+    "api/**/*.ts",
+    "enums/**/*.ts",
+    "hooks/**/*.ts",
+    "locale/**/*.ts",
+    "method/**/*.ts",
+    "models/**/*.ts",
+    "types/**/*.ts"
   ]
 }

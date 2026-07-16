@@ -1,4 +1,9 @@
 import createAxios from '@lib/shared/api/http';
+import useAdContractApi from '@lib/shared/api/modules/adContract';
+import useAdOrderApi from '@lib/shared/api/modules/adOrder';
+import useAdOrderChangeApi from '@lib/shared/api/modules/adOrderChange';
+import useAdPaymentApi from '@lib/shared/api/modules/adPayment';
+import useAdSealApi from '@lib/shared/api/modules/adSeal';
 import useAgentApi from '@lib/shared/api/modules/agent';
 import useClueApi from '@lib/shared/api/modules/clue';
 import useContractApi from '@lib/shared/api/modules/contract';
@@ -51,6 +56,11 @@ const contractApi = useContractApi(CDR);
 const orderApi = useOrderApi(CDR);
 const customFormApi = useCustomFormApi(CDR);
 const processApi = useProcessApi(CDR);
+const adOrderApi = useAdOrderApi(CDR);
+const adOrderChangeApi = useAdOrderChangeApi(CDR);
+const adPaymentApi = useAdPaymentApi(CDR);
+const adContractApi = useAdContractApi(CDR);
+const adSealApi = useAdSealApi(CDR);
 
 export const {
   addCustomForm,
@@ -853,3 +863,47 @@ export const {
   batchAgreeApproval,
   testApprovalWebHook,
 } = processApi;
+
+export const {
+  createAdOrder,
+  updateAdOrder,
+  getAdOrderDetail,
+  getAdOrderPage,
+  submitAdOrder,
+  approveAdOrder,
+  financialPreActionAdOrder,
+  confirmExecuteAdOrder,
+  completeExecuteAdOrder,
+  voidAdOrder,
+  forceArchiveAdOrder,
+} = adOrderApi;
+
+export const {
+  createAdOrderChange,
+  submitAdOrderChange,
+  approveAdOrderChange,
+  rejectAdOrderChange,
+  executeAdOrderChange,
+  getAdOrderChangePage,
+  getAdOrderChangeDetail,
+} = adOrderChangeApi;
+
+export const {
+  createAdPayment,
+  cancelAdPayment,
+  getAdPaymentPage,
+  getAdPaymentDetail,
+  confirmPrepayAdPayment,
+  payMediaPrepayAdPayment,
+  invoiceAdPayment,
+  receiveAdPayment,
+  payMediaPostpayAdPayment,
+  payMediaPostpayForceAdPayment,
+  clearRedInvoiceAdPayment,
+  getAdPaymentTodoPage,
+} = adPaymentApi;
+
+export const { createAdContract, updateAdContract, deleteAdContract, getAdContractDetail, getAdContractPage } =
+  adContractApi;
+
+export const { applyAdSeal, approveAdSeal, rejectAdSeal, uploadAdSeal, getAdSealDetail, getAdSealPage } = adSealApi;

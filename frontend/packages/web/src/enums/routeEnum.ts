@@ -92,6 +92,29 @@ export enum CustomFormRouteEnum {
   CUSTOM_FORM_INDEX = 'customFormIndex',
 }
 
+export enum AdvertisingRouteEnum {
+  ADVERTISING = 'advertising',
+  ADVERTISING_ORDER = 'advertisingOrder',
+  ADVERTISING_ORDER_CREATE = 'advertisingOrderCreate',
+  ADVERTISING_ORDER_EDIT = 'advertisingOrderEdit',
+  ADVERTISING_ORDER_DETAIL = 'advertisingOrderDetail',
+  ADVERTISING_CHANGE = 'advertisingChange',
+  ADVERTISING_CHANGE_CREATE = 'advertisingChangeCreate',
+  ADVERTISING_CHANGE_DETAIL = 'advertisingChangeDetail',
+  ADVERTISING_PAYMENT = 'advertisingPayment',
+  ADVERTISING_PAYMENT_CREATE = 'advertisingPaymentCreate',
+  ADVERTISING_PAYMENT_DETAIL = 'advertisingPaymentDetail',
+  ADVERTISING_PAYMENT_MEDIA = 'advertisingPaymentMedia',
+  ADVERTISING_CONTRACT = 'advertisingContract',
+  ADVERTISING_CONTRACT_CREATE = 'advertisingContractCreate',
+  ADVERTISING_CONTRACT_EDIT = 'advertisingContractEdit',
+  ADVERTISING_CONTRACT_DETAIL = 'advertisingContractDetail',
+  ADVERTISING_SEAL = 'advertisingSeal',
+  ADVERTISING_SEAL_APPLY = 'advertisingSealApply',
+  ADVERTISING_SEAL_APPROVE = 'advertisingSealApprove',
+  ADVERTISING_SEAL_DETAIL = 'advertisingSealDetail',
+}
+
 export const AppRouteEnum = {
   ...SystemRouteEnum,
   ...OpportunityRouteEnum,
@@ -106,4 +129,5 @@ export const AppRouteEnum = {
   ...OrderRouteEnum,
   ...TenderRouteEnum,
   ...CustomFormRouteEnum,
+  ...AdvertisingRouteEnum,
 };

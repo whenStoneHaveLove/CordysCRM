@@ -1,0 +1,13 @@
+// 广告收付款后端 REST 端点（AdPaymentController: /api/ad/payment）。
+export const AdPaymentCreateUrl = '/api/ad/payment/create';
+export const AdPaymentCancelUrl = '/api/ad/payment/cancel';
+export const AdPaymentPageUrl = '/api/ad/payment/page';
+export const AdPaymentDetailUrl = '/api/ad/payment/detail';
+export const AdPaymentConfirmPrepayUrl = '/api/ad/payment/confirm-prepay';
+export const AdPaymentPayMediaPrepayUrl = '/api/ad/payment/pay-media-prepay';
+export const AdPaymentInvoiceUrl = '/api/ad/payment/invoice';
+export const AdPaymentReceiveUrl = '/api/ad/payment/receive';
+export const AdPaymentPayMediaPostpayUrl = '/api/ad/payment/pay-media-postpay';
+export const AdPaymentPayMediaPostpayForceUrl = '/api/ad/payment/pay-media-postpay/force';
+export const AdPaymentRedInvoiceClearUrl = '/api/ad/payment/red-invoice/clear';
+export const AdPaymentTodoPageUrl = '/api/ad/payment/todo/page';

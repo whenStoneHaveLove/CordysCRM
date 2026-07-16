@@ -1,0 +1,12 @@
+// 广告订单后端 REST 端点（AdOrderController: /api/ad/order）。
+export const AdOrderCreateUrl = '/api/ad/order';
+export const AdOrderUpdateUrl = '/api/ad/order';
+export const AdOrderDetailUrl = '/api/ad/order';
+export const AdOrderPageUrl = '/api/ad/order/page';
+export const AdOrderSubmitUrl = '/api/ad/order';
+export const AdOrderApproveUrl = '/api/ad/order';
+export const AdOrderFinancialPreActionUrl = '/api/ad/order';
+export const AdOrderConfirmExecuteUrl = '/api/ad/order';
+export const AdOrderCompleteExecuteUrl = '/api/ad/order';
+export const AdOrderVoidUrl = '/api/ad/order';
+export const AdOrderForceArchiveUrl = '/api/ad/order';
