@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.ad.order.mapper.ExtAdOrderChangeMapper">
+
+    <!-- 改单分页列表（M3 T-20/T-21）
+         多筛选 + 关键字(变更原因/订单号) + 主体隔离(IN o.business_entity_id) + 排序。
+         主体隔离通过 LEFT JOIN ad_order 取 business_entity_id，复用 AdEntityPermissionProvider 的 entityIds 集合。
+         排序复用 cn.cordys.common.mapper.CommonMapper.sort 动态片段。 -->
+    <select id="pageList" resultType="cn.cordys.crm.ad.order.dto.response.AdOrderChangeListResponse">
+        SELECT
+            c.id              AS id,
+            c.order_id        AS orderId,
+            o.order_no        AS orderNo,
+            o.order_name      AS orderName,
+            c.change_fields   AS changeFields,
+            c.reason          AS reason,
+            c.status          AS status,
+            c.approver_id     AS approverId,
+            c.approved_at     AS approvedAt,
+            c.create_user     AS creatorId,
+            c.create_time     AS createTime
+        FROM ad_order_change c
+        LEFT JOIN ad_order o ON o.id = c.order_id AND o.deleted = 0
+        WHERE c.organization_id = #{request.organizationId}
+          AND c.deleted = 0
+        <if test="request.status != null">
+            AND c.status = #{request.status}
+        </if>
+        <if test="request.orderId != null and request.orderId != ''">
+            AND c.order_id = #{request.orderId}
+        </if>
+        <if test="request.keyword != null and request.keyword != ''">
+            AND (c.reason LIKE CONCAT('%', #{request.keyword}, '%')
+                 OR o.order_no LIKE CONCAT('%', #{request.keyword}, '%'))
+        </if>
+        <if test="request.entityIds != null and request.entityIds.size() > 0">
+            AND o.business_entity_id IN
+            <foreach collection="request.entityIds" item="eid" open="(" separator="," close=")">
+                #{eid}
+            </foreach>
+        </if>
+        <include refid="cn.cordys.common.mapper.CommonMapper.sort">
+            <property name="sort" value="request.sort"/>
+            <property name="prefix" value="c"/>
+            <property name="defaultSort" value="c.create_time DESC"/>
+        </include>
+    </select>
+
+</mapper>
