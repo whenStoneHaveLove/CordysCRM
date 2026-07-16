@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.ad.customer.mapper.ExtAdCustomerMapper">
+
+    <!-- 广告客户分页列表（M6）
+         多筛选 + 关键字(名称/联系人/电话) + 排序。 -->
+    <select id="pageList" resultType="cn.cordys.crm.ad.customer.dto.response.AdCustomerListResponse">
+        SELECT
+            c.id              AS id,
+            c.name            AS customerName,
+            c.contact_person  AS contactPerson,
+            c.contact_phone   AS contactPhone,
+            c.email           AS email,
+            c.address         AS address,
+            c.industry        AS industry,
+            c.customer_level  AS customerLevel,
+            c.status          AS status,
+            c.remark          AS remark,
+            c.organization_id AS organizationId,
+            c.create_time     AS createTime
+        FROM ad_customer c
+        WHERE c.organization_id = #{request.organizationId}
+          AND c.deleted = 0
+        <if test="request.customerLevel != null">
+            AND c.customer_level = #{request.customerLevel}
+        </if>
+        <if test="request.status != null">
+            AND c.status = #{request.status}
+        </if>
+        <if test="request.keyword != null and request.keyword != ''">
+            AND (c.name LIKE CONCAT('%', #{request.keyword}, '%')
+                 OR c.contact_person LIKE CONCAT('%', #{request.keyword}, '%')
+                 OR c.contact_phone LIKE CONCAT('%', #{request.keyword}, '%'))
+        </if>
+        <include refid="cn.cordys.common.mapper.CommonMapper.sort">
+            <property name="sort" value="request.sort"/>
+            <property name="prefix" value="c"/>
+            <property name="defaultSort" value="c.create_time DESC"/>
+        </include>
+    </select>
+
+</mapper>

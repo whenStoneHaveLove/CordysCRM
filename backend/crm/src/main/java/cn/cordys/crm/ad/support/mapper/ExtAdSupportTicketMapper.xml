@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.ad.support.mapper.ExtAdSupportTicketMapper">
+
+    <!-- 广告支持工单分页列表（M6）
+         多筛选 + 关键字(工单编号/标题) + 排序。 -->
+    <select id="pageList" resultType="cn.cordys.crm.ad.support.dto.response.AdSupportTicketListResponse">
+        SELECT
+            t.id               AS id,
+            t.ticket_no        AS ticketNo,
+            t.title            AS title,
+            t.ticket_type      AS ticketType,
+            t.priority         AS priority,
+            t.status           AS status,
+            t.related_order_id AS relatedOrderId,
+            t.assigned_to      AS assignedTo,
+            t.organization_id  AS organizationId,
+            t.create_time      AS createTime,
+            t.close_time       AS closeTime
+        FROM ad_support_ticket t
+        WHERE t.organization_id = #{request.organizationId}
+          AND t.deleted = 0
+        <if test="request.ticketType != null">
+            AND t.ticket_type = #{request.ticketType}
+        </if>
+        <if test="request.priority != null">
+            AND t.priority = #{request.priority}
+        </if>
+        <if test="request.status != null">
+            AND t.status = #{request.status}
+        </if>
+        <if test="request.keyword != null and request.keyword != ''">
+            AND (t.ticket_no LIKE CONCAT('%', #{request.keyword}, '%')
+                 OR t.title LIKE CONCAT('%', #{request.keyword}, '%'))
+        </if>
+        <include refid="cn.cordys.common.mapper.CommonMapper.sort">
+            <property name="sort" value="request.sort"/>
+            <property name="prefix" value="t"/>
+            <property name="defaultSort" value="t.create_time DESC"/>
+        </include>
+    </select>
+
+</mapper>

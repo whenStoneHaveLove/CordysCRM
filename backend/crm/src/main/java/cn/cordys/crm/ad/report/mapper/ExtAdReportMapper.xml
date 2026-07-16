@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.ad.report.mapper.ExtAdReportMapper">
+
+    <!-- 订单汇总：按状态统计数量和金额（M6） -->
+    <select id="orderSummary" resultType="java.util.HashMap">
+        SELECT
+            o.status                          AS status,
+            COUNT(1)                          AS orderCount,
+            IFNULL(SUM(o.total_amount), 0)    AS totalAmount
+        FROM ad_order o
+        WHERE o.organization_id = #{organizationId}
+          AND o.deleted = 0
+        GROUP BY o.status
+    </select>
+
+    <!-- 付款汇总：已付/未付/逾期金额（M6） -->
+    <select id="paymentSummary" resultType="java.util.HashMap">
+        SELECT
+            IFNULL(SUM(CASE WHEN p.status = 10 THEN p.amount ELSE 0 END), 0) AS paidAmount,
+            IFNULL(SUM(CASE WHEN p.status = 0 THEN p.amount ELSE 0 END), 0)  AS unpaidAmount,
+            IFNULL(SUM(CASE WHEN p.status = 20 THEN p.amount ELSE 0 END), 0) AS overdueAmount
+        FROM ad_payment_record p
+        WHERE p.organization_id = #{organizationId}
+          AND p.deleted = 0
+    </select>
+
+    <!-- 月度趋势：指定年份每月订单数+金额（M6） -->
+    <select id="monthlyTrend" resultType="java.util.HashMap">
+        SELECT
+            FROM_UNIXTIME(o.create_time / 1000, '%Y-%m') AS month,
+            COUNT(1)                                       AS orderCount,
+            IFNULL(SUM(o.total_amount), 0)                 AS totalAmount
+        FROM ad_order o
+        WHERE o.organization_id = #{organizationId}
+          AND o.deleted = 0
+          AND FROM_UNIXTIME(o.create_time / 1000, '%Y') = #{year}
+        GROUP BY FROM_UNIXTIME(o.create_time / 1000, '%Y-%m')
+        ORDER BY month ASC
+    </select>
+
+</mapper>
