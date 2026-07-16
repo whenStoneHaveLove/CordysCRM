@@ -1,6 +1,11 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-cd frontend/packages/lib-shared && npm run type:check && npm run lint-staged
-cd ../mobile && npm run type:check && npm run lint-staged
-cd ../web && npm run type:check && npm run lint-staged
+# Frontend type-check gate: only run when frontend *source* is actually staged.
+# Backend / docs / config-only changes skip this so repo-wide commits aren't
+# blocked by an unrelated (possibly mid-build) frontend tree.
+if git diff --cached --name-only -- frontend/ | grep -E '\.(ts|tsx|vue|js|jsx)$' | grep -q .; then
+  cd frontend/packages/lib-shared && npm run type:check && npm run lint-staged
+  cd ../mobile && npm run type:check && npm run lint-staged
+  cd ../web && npm run type:check && npm run lint-staged
+fi
