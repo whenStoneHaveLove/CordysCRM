@@ -571,3 +571,356 @@ export interface AdSealRecordDetailResponse {
 }
 
 export type AdSealRecordPageResult = CommonList<AdSealRecordListItem>;
+
+/* ----------------------------- 业务主体 ----------------------------- */
+
+export interface AdBusinessEntityPageParams {
+  current?: number;
+  pageSize?: number;
+  sort?: { name?: string; type?: string };
+  keyword?: string;
+  status?: number | null;
+  [key: string]: any;
+}
+
+export interface AdBusinessEntitySaveParams {
+  id?: string;
+  name?: string;
+  code?: string;
+  status?: number;
+  /** 跨主体隔离标记：0 否 / 1 是（is_cross_entity，PRD §3.2/§3.4）。 */
+  isCrossEntity?: number;
+  remark?: string;
+}
+
+export interface AdBusinessEntityInfo {
+  id: string;
+  name?: string;
+  code?: string;
+  status?: number;
+  statusLabel?: string;
+  isCrossEntity?: number;
+  remark?: string;
+  creatorId?: string;
+  createTime?: number;
+  updateTime?: number;
+  /** 关联用户数（读 AD_USER_BUSINESS_ENTITY:READ，后端待补）。详情/列表共用，列表接口未返回时为空。 */
+  userCount?: number;
+  /** 关联订单数。列表接口未返回时为空。 */
+  orderCount?: number;
+}
+
+export interface AdBusinessEntityDetail extends AdBusinessEntityInfo {
+  /** 关联用户数（读 AD_USER_BUSINESS_ENTITY:READ，后端待补）。 */
+  userCount?: number;
+  /** 关联订单数。 */
+  orderCount?: number;
+}
+
+export type AdBusinessEntityPageResult = CommonList<AdBusinessEntityInfo>;
+
+/* ----------------------------- 字典 ----------------------------- */
+
+export interface AdDictPageParams {
+  current?: number;
+  pageSize?: number;
+  sort?: { name?: string; type?: string };
+  keyword?: string;
+  dictCode?: string | null;
+  status?: number | null;
+  [key: string]: any;
+}
+
+export interface AdDictSaveParams {
+  id?: string;
+  /** 字典分组编码，如 industry / media_type / seal_type / receipt_method / payment_method（PRD §5.3）。 */
+  dictCode?: string;
+  /** 显示名称。 */
+  dictLabel?: string;
+  /** 字典值。 */
+  dictValue?: string;
+  sort?: number;
+  status?: number;
+  remark?: string;
+}
+
+export interface AdDictInfo {
+  id: string;
+  dictCode?: string;
+  dictLabel?: string;
+  dictValue?: string;
+  sort?: number;
+  status?: number;
+  statusLabel?: string;
+  remark?: string;
+  createTime?: number;
+}
+
+export type AdDictPageResult = CommonList<AdDictInfo>;
+
+/* ----------------------------- 系统开关 / 账期规则 ----------------------------- */
+
+export interface AdSettingInfo {
+  /** 审批开关：0 关 / 1 开（L-14，关闭时订单 0→20 直接通过）。 */
+  approvalSwitch?: number;
+  /** 默认账期天数。 */
+  defaultAccountPeriodDays?: number;
+  [key: string]: any;
+}
+
+/* ----------------------------- 审批中心 ----------------------------- */
+
+/** 审批类型（对应三 Tab：订单/改单/用印）。 */
+export type AdApprovalType = 'order' | 'change' | 'seal';
+
+export interface AdApprovalPageParams {
+  current?: number;
+  pageSize?: number;
+  sort?: { name?: string; type?: string };
+  keyword?: string;
+  /** 审批类型：order/change/seal（三 Tab 过滤）。 */
+  type?: string | null;
+  [key: string]: any;
+}
+
+export interface AdApprovalTodoItem {
+  id?: string;
+  /** 业务单据 ID（订单/改单/用印记录），用于审批动作与跳转详情。 */
+  businessId?: string;
+  /** 审批类型：order/change/seal。 */
+  type?: string;
+  typeLabel?: string;
+  applicantId?: string;
+  applicantName?: string;
+  /** 关联单号（订单号/改单号/合同号）。 */
+  refNo?: string;
+  businessEntityName?: string;
+  customerName?: string;
+  /** 金额。 */
+  amount?: number;
+  /** 摘要。 */
+  summary?: string;
+  /** 提交时间。 */
+  submitTime?: number | string | null;
+  createTime?: number | string | null;
+  status?: number;
+  [key: string]: any;
+}
+
+export type AdApprovalPageResult = CommonList<AdApprovalTodoItem>;
+
+/** 待审计数（按 type 聚合）。 */
+export interface AdApprovalPendingCountItem {
+  type?: string;
+  typeLabel?: string;
+  count?: number;
+}
+export type AdApprovalPendingCountResult = AdApprovalPendingCountItem[];
+
+/* ----------------------------- 工作台 ----------------------------- */
+
+export interface AdWorkbenchTodoItem {
+  /** 待办类型码（如 pendingSubmit / pendingApprove / financePrepay ...）。 */
+  todoType?: string;
+  todoLabel?: string;
+  count?: number;
+  refNo?: string;
+  amount?: number;
+  dueDate?: number | string | null;
+  /** 点击跳转的路由 name（可选）。 */
+  routeName?: string;
+  routeParams?: Record<string, any>;
+  [key: string]: any;
+}
+
+export interface AdWorkbenchTodoResult {
+  media?: AdWorkbenchTodoItem[];
+  boss?: AdWorkbenchTodoItem[];
+  finance?: AdWorkbenchTodoItem[];
+  [key: string]: any;
+}
+
+/* ----------------------------- 报表中心 ----------------------------- */
+
+/** 订单执行汇总（按状态统计数量/金额）。 */
+export interface AdReportOrderSummaryItem {
+  status?: number;
+  statusLabel?: string;
+  count?: number;
+  amount?: number;
+}
+export interface AdReportOrderSummary {
+  total?: number;
+  totalAmount?: number;
+  items?: AdReportOrderSummaryItem[];
+  [key: string]: any;
+}
+
+/** 应收应付汇总（已付/未付/逾期）。 */
+export interface AdReportPaymentSummary {
+  receivableAmount?: number;
+  mediaPayableAmount?: number;
+  paidAmount?: number;
+  unpaidAmount?: number;
+  overdueAmount?: number;
+  [key: string]: any;
+}
+
+/** 月度趋势。 */
+export interface AdReportMonthlyTrendItem {
+  month?: string;
+  orderCount?: number;
+  amount?: number;
+}
+export interface AdReportMonthlyTrendResult {
+  year?: number;
+  items?: AdReportMonthlyTrendItem[];
+  [key: string]: any;
+}
+
+/** 6 类报表（PRD §9.5，后端待补 B-6）通用返回结构。 */
+export interface AdReportItem {
+  code?: string;
+  label?: string;
+  total?: number;
+  totalAmount?: number;
+  items?: Array<Record<string, any>>;
+  [key: string]: any;
+}
+
+/* ----------------------------- 资源 ----------------------------- */
+
+export interface AdResourcePageParams {
+  current?: number;
+  pageSize?: number;
+  sort?: { name?: string; type?: string };
+  keyword?: string;
+  resourceType?: number | null;
+  status?: number | null;
+  businessEntityId?: string | null;
+  [key: string]: any;
+}
+
+export interface AdResourceSaveParams {
+  id?: string;
+  name?: string;
+  resourceType?: number;
+  mediaType?: string;
+  channel?: string;
+  rateCard?: number | null;
+  discountPolicy?: string;
+  creditCode?: string;
+  signingEntity?: string;
+  businessEntityId?: string;
+  position?: string;
+  dailyImpressions?: number | null;
+  unitPrice?: number | null;
+  remark?: string;
+}
+
+export interface AdResourceInfo {
+  id: string;
+  name?: string;
+  resourceType?: number;
+  resourceTypeLabel?: string;
+  mediaType?: string;
+  channel?: string;
+  rateCard?: number;
+  discountPolicy?: string;
+  creditCode?: string;
+  signingEntity?: string;
+  businessEntityId?: string;
+  businessEntityName?: string;
+  position?: string;
+  dailyImpressions?: number;
+  unitPrice?: number;
+  status?: number;
+  statusLabel?: string;
+  remark?: string;
+  createTime?: number;
+  updateTime?: number;
+}
+
+export interface AdResourceListItem {
+  id: string;
+  name?: string;
+  resourceType?: number;
+  resourceTypeLabel?: string;
+  mediaType?: string;
+  channel?: string;
+  businessEntityId?: string;
+  businessEntityName?: string;
+  rateCard?: number;
+  position?: string;
+  status?: number;
+  statusLabel?: string;
+}
+
+export type AdResourcePageResult = CommonList<AdResourceListItem>;
+
+/* ----------------------------- 客户库 ----------------------------- */
+
+export interface AdCustomerPageParams {
+  current?: number;
+  pageSize?: number;
+  sort?: { name?: string; type?: string };
+  keyword?: string;
+  industryCode?: string | null;
+  customerLevel?: number | null;
+  status?: number | null;
+  [key: string]: any;
+}
+
+export interface AdCustomerSaveParams {
+  id?: string;
+  /** 客户名称：全局唯一（按名称去重，无业务主体字段），PRD §8.4。 */
+  name?: string;
+  brand?: string;
+  industryCode?: string;
+  signingEntity?: string;
+  contactPerson?: string;
+  contactPhone?: string;
+  email?: string;
+  address?: string;
+  industry?: string;
+  customerLevel?: number;
+  status?: number;
+  remark?: string;
+}
+
+export interface AdCustomerInfo {
+  id: string;
+  name?: string;
+  brand?: string;
+  industryCode?: string;
+  signingEntity?: string;
+  contactPerson?: string;
+  contactPhone?: string;
+  email?: string;
+  address?: string;
+  industry?: string;
+  customerLevel?: number;
+  customerLevelLabel?: string;
+  status?: number;
+  statusLabel?: string;
+  orderCount?: number;
+  remark?: string;
+  createTime?: number;
+  updateTime?: number;
+}
+
+export interface AdCustomerListItem {
+  id: string;
+  name?: string;
+  brand?: string;
+  industry?: string;
+  industryCode?: string;
+  industryLabel?: string;
+  customerLevel?: number;
+  customerLevelLabel?: string;
+  status?: number;
+  statusLabel?: string;
+  signingEntity?: string;
+}
+
+export type AdCustomerPageResult = CommonList<AdCustomerListItem>;

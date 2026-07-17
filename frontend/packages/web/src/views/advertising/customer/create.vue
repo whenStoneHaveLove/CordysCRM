@@ -1,0 +1,196 @@
+<template>
+  <div class="h-full">
+    <CrmCard no-content-padding hide-footer>
+      <div class="flex h-full flex-col px-[16px] py-[16px]">
+        <n-space class="mb-[12px]" justify="space-between" align="center">
+          <div class="text-[16px] font-semibold">
+            {{ isEdit ? t('advertising.customer.form.title.edit') : t('advertising.customer.form.title.create') }}
+          </div>
+          <n-space>
+            <n-button @click="goBack">{{ t('advertising.customer.form.cancel') }}</n-button>
+            <n-button type="primary" :loading="saving" @click="handleSave">{{
+              t('advertising.customer.form.save')
+            }}</n-button>
+          </n-space>
+        </n-space>
+
+        <div class="flex-1 overflow-auto">
+          <n-form ref="formRef" :model="form" label-placement="left" :label-width="120">
+            <n-grid :cols="2" :x-gap="16" item-responsive>
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.name')" path="name">
+                <n-input v-model:value="form.name" placeholder="请输入客户名称（全局唯一）" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.brand')">
+                <n-input v-model:value="form.brand" placeholder="品牌" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.industryCode')">
+                <n-input v-model:value="form.industryCode" placeholder="行业类别(字典 industry)" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.industry')">
+                <n-input v-model:value="form.industry" placeholder="行业" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.signingEntity')">
+                <n-input v-model:value="form.signingEntity" placeholder="签约主体" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.contactPerson')">
+                <n-input v-model:value="form.contactPerson" placeholder="联系人" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.contactPhone')">
+                <n-input v-model:value="form.contactPhone" placeholder="联系电话" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.email')">
+                <n-input v-model:value="form.email" placeholder="邮箱" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.address')">
+                <n-input v-model:value="form.address" placeholder="地址" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.customerLevel')" path="customerLevel">
+                <n-select v-model:value="form.customerLevel" :options="levelOptions" placeholder="请选择" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.status')" path="status">
+                <n-select v-model:value="form.status" :options="statusOptions" placeholder="请选择" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="2" :label="t('advertising.customer.form.remark')">
+                <n-input v-model:value="form.remark" type="textarea" placeholder="备注" />
+              </n-form-item-gi>
+            </n-grid>
+          </n-form>
+        </div>
+      </div>
+    </CrmCard>
+  </div>
+</template>
+
+<script lang="ts" setup>
+  import { computed, onMounted, reactive, ref } from 'vue';
+  import { useRoute, useRouter } from 'vue-router';
+  import { NButton, NForm, NFormItemGi, NGrid, NInput, NSelect, useMessage } from 'naive-ui';
+
+  import { AdCustomerLevelOptions, AdCustomerStatusOptions } from '@lib/shared/enums/advertisingEnum';
+  import { useI18n } from '@lib/shared/hooks/useI18n';
+  import type { AdCustomerSaveParams } from '@lib/shared/models/advertising';
+
+  import CrmCard from '@/components/pure/crm-card/index.vue';
+
+  import { createAdCustomer, getAdCustomerDetail, updateAdCustomer } from '@/api/modules';
+
+  import { AdvertisingRouteEnum } from '@/enums/routeEnum';
+
+  const levelOptions = AdCustomerLevelOptions;
+  const statusOptions = AdCustomerStatusOptions;
+
+  /** 表单本地类型：等级/状态使用 number | null 以适配 Naive UI 控件 */
+  interface AdCustomerForm {
+    name?: string;
+    brand?: string;
+    industryCode?: string;
+    industry?: string;
+    signingEntity?: string;
+    contactPerson?: string;
+    contactPhone?: string;
+    email?: string;
+    address?: string;
+    customerLevel?: number | null;
+    status?: number | null;
+    remark?: string;
+  }
+
+  const { t } = useI18n();
+  const route = useRoute();
+  const router = useRouter();
+  const message = useMessage();
+
+  const id = (route.params.id as string) || '';
+  const isEdit = computed(() => !!id);
+  const saving = ref(false);
+
+  const form = reactive<AdCustomerForm>({
+    name: undefined,
+    brand: undefined,
+    industryCode: undefined,
+    industry: undefined,
+    signingEntity: undefined,
+    contactPerson: undefined,
+    contactPhone: undefined,
+    email: undefined,
+    address: undefined,
+    customerLevel: 20,
+    status: 0,
+    remark: undefined,
+  });
+
+  function goBack() {
+    router.push({ name: AdvertisingRouteEnum.ADVERTISING_CUSTOMER });
+  }
+
+  function buildPayload(): AdCustomerSaveParams {
+    return {
+      name: form.name,
+      brand: form.brand,
+      industryCode: form.industryCode,
+      industry: form.industry,
+      signingEntity: form.signingEntity,
+      contactPerson: form.contactPerson,
+      contactPhone: form.contactPhone,
+      email: form.email,
+      address: form.address,
+      customerLevel: form.customerLevel ?? undefined,
+      status: form.status ?? undefined,
+      remark: form.remark,
+    };
+  }
+
+  function validate(): boolean {
+    if (!form.name) {
+      message.warning(`${t('advertising.customer.form.name')} ${t('advertising.customer.form.required')}`);
+      return false;
+    }
+    return true;
+  }
+
+  async function handleSave() {
+    if (!validate()) return;
+    try {
+      saving.value = true;
+      const payload = buildPayload();
+      if (isEdit.value) {
+        payload.id = id;
+        await updateAdCustomer(payload);
+      } else {
+        await createAdCustomer(payload);
+      }
+      message.success(t('advertising.common.saveSuccess'));
+      router.push({ name: AdvertisingRouteEnum.ADVERTISING_CUSTOMER });
+    } catch (e) {
+      message.error((e as Error).message || '保存失败');
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  async function loadForEdit() {
+    try {
+      const res = await getAdCustomerDetail(id);
+      form.name = res.name;
+      form.brand = res.brand;
+      form.industryCode = res.industryCode;
+      form.industry = res.industry;
+      form.signingEntity = res.signingEntity;
+      form.contactPerson = res.contactPerson;
+      form.contactPhone = res.contactPhone;
+      form.email = res.email;
+      form.address = res.address;
+      form.customerLevel = res.customerLevel ?? 20;
+      form.status = res.status ?? 0;
+      form.remark = res.remark;
+    } catch (e) {
+      message.error((e as Error).message || '加载失败');
+    }
+  }
+
+  onMounted(() => {
+    if (isEdit.value) {
+      loadForEdit();
+    }
+  });
+</script>

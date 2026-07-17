@@ -6,6 +6,7 @@ import {
   AdOrderPageUrl,
   AdOrderSubmitUrl,
   AdOrderApproveUrl,
+  AdOrderRejectUrl,
   AdOrderFinancialPreActionUrl,
   AdOrderConfirmExecuteUrl,
   AdOrderCompleteExecuteUrl,
@@ -55,6 +56,11 @@ export default function useAdOrderApi(CDR: CordysAxios) {
     return CDR.post<AdOrderInfo>({ url: `${AdOrderApproveUrl}/${id}/approve`, data });
   }
 
+  // 老板驳回（10→0）
+  function rejectAdOrder(id: string, data: AdOrderApproveParams) {
+    return CDR.post<AdOrderInfo>({ url: `${AdOrderRejectUrl}/${id}/reject`, data });
+  }
+
   // 财务前置动作（推导 30/40/50 与财务步骤）
   function financialPreActionAdOrder(id: string) {
     return CDR.post<AdOrderFinancialPlan>({ url: `${AdOrderFinancialPreActionUrl}/${id}/financial-pre-action` });
@@ -87,6 +93,7 @@ export default function useAdOrderApi(CDR: CordysAxios) {
     getAdOrderPage,
     submitAdOrder,
     approveAdOrder,
+    rejectAdOrder,
     financialPreActionAdOrder,
     confirmExecuteAdOrder,
     completeExecuteAdOrder,

@@ -1,10 +1,18 @@
 import createAxios from '@lib/shared/api/http';
+import useAdBusinessEntityApi from '@lib/shared/api/modules/adBusinessEntity';
 import useAdContractApi from '@lib/shared/api/modules/adContract';
+import useAdCustomerApi from '@lib/shared/api/modules/adCustomer';
+import useAdDashboardApi from '@lib/shared/api/modules/adDashboard';
+import useAdDictApi from '@lib/shared/api/modules/adDict';
 import useAdOrderApi from '@lib/shared/api/modules/adOrder';
 import useAdOrderChangeApi from '@lib/shared/api/modules/adOrderChange';
 import useAdPaymentApi from '@lib/shared/api/modules/adPayment';
+import useAdReportApi from '@lib/shared/api/modules/adReport';
+import useAdResourceApi from '@lib/shared/api/modules/adResource';
 import useAdSealApi from '@lib/shared/api/modules/adSeal';
+import useAdSettingApi from '@lib/shared/api/modules/adSetting';
 import useAgentApi from '@lib/shared/api/modules/agent';
+import useAdApprovalApi from '@lib/shared/api/modules/approval';
 import useClueApi from '@lib/shared/api/modules/clue';
 import useContractApi from '@lib/shared/api/modules/contract';
 import useCustomerApi from '@lib/shared/api/modules/customer';
@@ -61,6 +69,14 @@ const adOrderChangeApi = useAdOrderChangeApi(CDR);
 const adPaymentApi = useAdPaymentApi(CDR);
 const adContractApi = useAdContractApi(CDR);
 const adSealApi = useAdSealApi(CDR);
+const adBusinessEntityApi = useAdBusinessEntityApi(CDR);
+const adDictApi = useAdDictApi(CDR);
+const adSettingApi = useAdSettingApi(CDR);
+const adApprovalApi = useAdApprovalApi(CDR);
+const adDashboardApi = useAdDashboardApi(CDR);
+const adReportApi = useAdReportApi(CDR);
+const adResourceApi = useAdResourceApi(CDR);
+const adCustomerApi = useAdCustomerApi(CDR);
 
 export const {
   addCustomForm,
@@ -871,6 +887,7 @@ export const {
   getAdOrderPage,
   submitAdOrder,
   approveAdOrder,
+  rejectAdOrder,
   financialPreActionAdOrder,
   confirmExecuteAdOrder,
   completeExecuteAdOrder,
@@ -907,3 +924,34 @@ export const { createAdContract, updateAdContract, deleteAdContract, getAdContra
   adContractApi;
 
 export const { applyAdSeal, approveAdSeal, rejectAdSeal, uploadAdSeal, getAdSealDetail, getAdSealPage } = adSealApi;
+
+export const {
+  createAdBusinessEntity,
+  updateAdBusinessEntity,
+  getAdBusinessEntityDetail,
+  getAdBusinessEntityPage,
+  deleteAdBusinessEntity,
+} = adBusinessEntityApi;
+
+export const { createAdDict, updateAdDict, getAdDictDetail, getAdDictPage, deleteAdDict } = adDictApi;
+
+export const { getAdSetting, saveAdSetting } = adSettingApi;
+
+export const {
+  getAdApprovalPendingPage,
+  getAdApprovalProcessedPage,
+  getAdApprovalInitiatedPage,
+  getAdApprovalCcPage,
+  getAdApprovalPendingCount,
+} = adApprovalApi;
+
+export const { getAdWorkbenchTodo } = adDashboardApi;
+
+export const { getAdReportOrderSummary, getAdReportPaymentSummary, getAdReportMonthlyTrend, getAdReportByCode } =
+  adReportApi;
+
+export const { createAdResource, updateAdResource, getAdResourceDetail, getAdResourcePage, deleteAdResource } =
+  adResourceApi;
+
+export const { createAdCustomer, updateAdCustomer, getAdCustomerDetail, getAdCustomerPage, deleteAdCustomer } =
+  adCustomerApi;

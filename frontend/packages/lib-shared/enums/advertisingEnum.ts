@@ -297,6 +297,48 @@ export function getAdSealTypeLabel(value?: number | null): string {
   return AdSealTypeLabel[value] ?? String(value);
 }
 
+/* ----------------------------- 业务主体 ----------------------------- */
+
+/** 业务主体状态（10 启用 / 20 停用，PRD §5.2.7）。 */
+export enum AdBusinessEntityStatusEnum {
+  ENABLED = 10,
+  DISABLED = 20,
+}
+export const AdBusinessEntityStatusLabel: Record<number, string> = {
+  [AdBusinessEntityStatusEnum.ENABLED]: '启用',
+  [AdBusinessEntityStatusEnum.DISABLED]: '停用',
+};
+export const AdBusinessEntityStatusOptions = Object.keys(AdBusinessEntityStatusLabel).map((k) => ({
+  label: AdBusinessEntityStatusLabel[Number(k)],
+  value: Number(k),
+}));
+
+/* ----------------------------- 字典 ----------------------------- */
+
+/** 字典状态（10 启用 / 20 停用）。 */
+export enum AdDictStatusEnum {
+  ENABLED = 10,
+  DISABLED = 20,
+}
+export const AdDictStatusLabel: Record<number, string> = {
+  [AdDictStatusEnum.ENABLED]: '启用',
+  [AdDictStatusEnum.DISABLED]: '停用',
+};
+export const AdDictStatusOptions = Object.keys(AdDictStatusLabel).map((k) => ({
+  label: AdDictStatusLabel[Number(k)],
+  value: Number(k),
+}));
+
+/** 状态中文标签获取函数。 */
+export function getAdBusinessEntityStatusLabel(status?: number | null): string {
+  if (status == null) return '-';
+  return AdBusinessEntityStatusLabel[status] ?? String(status);
+}
+export function getAdDictStatusLabel(status?: number | null): string {
+  if (status == null) return '-';
+  return AdDictStatusLabel[status] ?? String(status);
+}
+
 /** 改单可变更字段白名单（镜像 AdOrderChangeService.MUTABLE_FIELDS，camelCase）。 */
 export interface AdChangeFieldMeta {
   field: string;
@@ -333,3 +375,85 @@ export const AD_ORDER_CHANGE_FIELD_META: AdChangeFieldMeta[] = [
   { field: 'remark', label: '备注', type: 'text' },
   { field: 'extJson', label: '扩展字段', type: 'text' },
 ];
+
+/* ----------------------------- 资源（ResourceType / ResourceStatus） ----------------------------- */
+
+/** 资源类型（镜像 ResourceType，PRD §5.2.7 / §13.4）。 */
+export enum AdResourceTypeEnum {
+  UPSTREAM_AGENT = 10,
+  DOWNSTREAM_MEDIA = 20,
+}
+export const AdResourceTypeLabel: Record<number, string> = {
+  [AdResourceTypeEnum.UPSTREAM_AGENT]: '上游代理',
+  [AdResourceTypeEnum.DOWNSTREAM_MEDIA]: '下游媒体',
+};
+export const AdResourceTypeOptions = Object.keys(AdResourceTypeLabel).map((k) => ({
+  label: AdResourceTypeLabel[Number(k)],
+  value: Number(k),
+}));
+
+/** 资源状态（镜像 ResourceStatus）。 */
+export enum AdResourceStatusEnum {
+  NORMAL = 10,
+  DISABLED = 20,
+}
+export const AdResourceStatusLabel: Record<number, string> = {
+  [AdResourceStatusEnum.NORMAL]: '正常',
+  [AdResourceStatusEnum.DISABLED]: '停用',
+};
+export const AdResourceStatusOptions = Object.keys(AdResourceStatusLabel).map((k) => ({
+  label: AdResourceStatusLabel[Number(k)],
+  value: Number(k),
+}));
+
+/* ----------------------------- 客户（CustomerStatus / CustomerLevel） ----------------------------- */
+
+/** 客户状态（镜像 CustomerStatus，PRD §5.2.7 / §8.4）。 */
+export enum AdCustomerStatusEnum {
+  ACTIVE = 0,
+  INACTIVE = 10,
+  BLACKLIST = 20,
+}
+export const AdCustomerStatusLabel: Record<number, string> = {
+  [AdCustomerStatusEnum.ACTIVE]: '活跃',
+  [AdCustomerStatusEnum.INACTIVE]: '非活跃',
+  [AdCustomerStatusEnum.BLACKLIST]: '黑名单',
+};
+export const AdCustomerStatusOptions = Object.keys(AdCustomerStatusLabel).map((k) => ({
+  label: AdCustomerStatusLabel[Number(k)],
+  value: Number(k),
+}));
+
+/** 客户等级（镜像 CustomerLevel）。 */
+export enum AdCustomerLevelEnum {
+  VIP = 10,
+  NORMAL = 20,
+  POTENTIAL = 30,
+}
+export const AdCustomerLevelLabel: Record<number, string> = {
+  [AdCustomerLevelEnum.VIP]: 'VIP',
+  [AdCustomerLevelEnum.NORMAL]: '普通',
+  [AdCustomerLevelEnum.POTENTIAL]: '潜力',
+};
+export const AdCustomerLevelOptions = Object.keys(AdCustomerLevelLabel).map((k) => ({
+  label: AdCustomerLevelLabel[Number(k)],
+  value: Number(k),
+}));
+
+/** 状态中文标签获取函数（未知码回退为字符串）。 */
+export function getAdResourceTypeLabel(value?: number | null): string {
+  if (value == null) return '-';
+  return AdResourceTypeLabel[value] ?? String(value);
+}
+export function getAdResourceStatusLabel(value?: number | null): string {
+  if (value == null) return '-';
+  return AdResourceStatusLabel[value] ?? String(value);
+}
+export function getAdCustomerStatusLabel(value?: number | null): string {
+  if (value == null) return '-';
+  return AdCustomerStatusLabel[value] ?? String(value);
+}
+export function getAdCustomerLevelLabel(value?: number | null): string {
+  if (value == null) return '-';
+  return AdCustomerLevelLabel[value] ?? String(value);
+}

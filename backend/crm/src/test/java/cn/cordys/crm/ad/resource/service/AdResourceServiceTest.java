@@ -77,7 +77,7 @@ class AdResourceServiceTest {
     void validate_blankResourceName_throws() {
         AdResourceSaveRequest req = new AdResourceSaveRequest();
         req.setResourceName("  ");
-        req.setResourceType(ResourceType.ONLINE_MEDIA.getCode());
+        req.setResourceType(ResourceType.UPSTREAM_AGENT.getCode());
 
         GenericException ex = assertThrows(GenericException.class,
                 () -> invokePrivate("validate", new Class[]{AdResourceSaveRequest.class}, req));
@@ -88,7 +88,7 @@ class AdResourceServiceTest {
     void validate_nullResourceName_throws() {
         AdResourceSaveRequest req = new AdResourceSaveRequest();
         req.setResourceName(null);
-        req.setResourceType(ResourceType.ONLINE_MEDIA.getCode());
+        req.setResourceType(ResourceType.UPSTREAM_AGENT.getCode());
 
         GenericException ex = assertThrows(GenericException.class,
                 () -> invokePrivate("validate", new Class[]{AdResourceSaveRequest.class}, req));
@@ -121,7 +121,7 @@ class AdResourceServiceTest {
     void validate_validRequest_passes() throws Exception {
         AdResourceSaveRequest req = new AdResourceSaveRequest();
         req.setResourceName("测试资源");
-        req.setResourceType(ResourceType.TV.getCode());
+        req.setResourceType(ResourceType.DOWNSTREAM_MEDIA.getCode());
 
         // 不应抛出异常
         invokePrivate("validate", new Class[]{AdResourceSaveRequest.class}, req);
@@ -130,10 +130,10 @@ class AdResourceServiceTest {
     // ==================== create 公共方法 ====================
 
     @Test
-    void create_nullStatus_defaultsToAvailable() throws Exception {
+    void create_nullStatus_defaultsToNormal() throws Exception {
         AdResourceSaveRequest req = new AdResourceSaveRequest();
         req.setResourceName("新资源");
-        req.setResourceType(ResourceType.ONLINE_MEDIA.getCode());
+        req.setResourceType(ResourceType.UPSTREAM_AGENT.getCode());
         req.setStatus(null);  // 未设置状态
 
         try (MockedStatic<SessionUtils> sessionMock = mockMediaRole();
@@ -145,9 +145,9 @@ class AdResourceServiceTest {
 
             assertNotNull(result);
             assertEquals("新资源", result.getName());
-            assertEquals(ResourceType.ONLINE_MEDIA.getCode(), result.getResourceType());
-            assertEquals(ResourceStatus.AVAILABLE.getCode(), result.getStatus(),
-                    "未传状态时应默认为 AVAILABLE(0)");
+            assertEquals(ResourceType.UPSTREAM_AGENT.getCode(), result.getResourceType());
+            assertEquals(ResourceStatus.NORMAL.getCode(), result.getStatus(),
+                    "未传状态时应默认为 NORMAL(10)");
             assertEquals("user-1", result.getCreateUser());
             assertEquals("org-1", result.getOrganizationId());
             verify(resourceMapper, times(1)).insert(any(AdResource.class));
@@ -158,8 +158,8 @@ class AdResourceServiceTest {
     void create_explicitStatus_preserved() throws Exception {
         AdResourceSaveRequest req = new AdResourceSaveRequest();
         req.setResourceName("维护中的资源");
-        req.setResourceType(ResourceType.RADIO.getCode());
-        req.setStatus(ResourceStatus.MAINTENANCE.getCode());
+        req.setResourceType(ResourceType.DOWNSTREAM_MEDIA.getCode());
+        req.setStatus(ResourceStatus.DISABLED.getCode());
 
         try (MockedStatic<SessionUtils> sessionMock = mockMediaRole();
              MockedStatic<IDGenerator> idMock = mockStatic(IDGenerator.class)) {
@@ -168,8 +168,8 @@ class AdResourceServiceTest {
 
             AdResource result = service.create(req, "user-2", "org-2");
 
-            assertEquals(ResourceStatus.MAINTENANCE.getCode(), result.getStatus(),
-                    "显式传入 MAINTENANCE(20) 时应保留");
+            assertEquals(ResourceStatus.DISABLED.getCode(), result.getStatus(),
+                    "显式传入 DISABLED(20) 时应保留");
         }
     }
 

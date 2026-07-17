@@ -5,6 +5,7 @@ export const AdOrderDetailUrl = '/api/ad/order';
 export const AdOrderPageUrl = '/api/ad/order/page';
 export const AdOrderSubmitUrl = '/api/ad/order';
 export const AdOrderApproveUrl = '/api/ad/order';
+export const AdOrderRejectUrl = '/api/ad/order';
 export const AdOrderFinancialPreActionUrl = '/api/ad/order';
 export const AdOrderConfirmExecuteUrl = '/api/ad/order';
 export const AdOrderCompleteExecuteUrl = '/api/ad/order';
