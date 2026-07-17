@@ -22,6 +22,35 @@ CREATE TABLE IF NOT EXISTS ad_support_ticket
     PRIMARY KEY (id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '广告支持工单(M6)';
 
-CREATE INDEX IF NOT EXISTS idx_ad_st_org ON ad_support_ticket (organization_id);
-CREATE INDEX IF NOT EXISTS idx_ad_st_type ON ad_support_ticket (ticket_type);
-CREATE INDEX IF NOT EXISTS idx_ad_st_status ON ad_support_ticket (status);
+-- 索引以 INFORMATION_SCHEMA.STATISTICS 存在性判断，保证开发循环重跑安全（MySQL 不支持 CREATE INDEX IF NOT EXISTS）。
+SET @ad_db = DATABASE();
+
+-- idx_ad_st_org
+SET @ad_idx_exists = (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = @ad_db AND TABLE_NAME = 'ad_support_ticket' AND INDEX_NAME = 'idx_ad_st_org'
+);
+SET @ad_idx_sql = IF(@ad_idx_exists = 0,
+    'CREATE INDEX idx_ad_st_org ON ad_support_ticket (organization_id)',
+    'SELECT 1');
+PREPARE ad_stmt FROM @ad_idx_sql; EXECUTE ad_stmt; DEALLOCATE PREPARE ad_stmt;
+
+-- idx_ad_st_type
+SET @ad_idx_exists = (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = @ad_db AND TABLE_NAME = 'ad_support_ticket' AND INDEX_NAME = 'idx_ad_st_type'
+);
+SET @ad_idx_sql = IF(@ad_idx_exists = 0,
+    'CREATE INDEX idx_ad_st_type ON ad_support_ticket (ticket_type)',
+    'SELECT 1');
+PREPARE ad_stmt FROM @ad_idx_sql; EXECUTE ad_stmt; DEALLOCATE PREPARE ad_stmt;
+
+-- idx_ad_st_status
+SET @ad_idx_exists = (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = @ad_db AND TABLE_NAME = 'ad_support_ticket' AND INDEX_NAME = 'idx_ad_st_status'
+);
+SET @ad_idx_sql = IF(@ad_idx_exists = 0,
+    'CREATE INDEX idx_ad_st_status ON ad_support_ticket (status)',
+    'SELECT 1');
+PREPARE ad_stmt FROM @ad_idx_sql; EXECUTE ad_stmt; DEALLOCATE PREPARE ad_stmt;
