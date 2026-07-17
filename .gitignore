@@ -21,6 +21,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-error.log*
+*.log
 
 ############################
 # IDE / Editor
@@ -83,3 +84,11 @@ qywx.json
 **/auto-import.d.ts
 **/components.d.ts
 **/.eslintrc-auto-import.json
+
+############################
+# Local Tooling / QA Artifacts (ignored)
+############################
+# WorkBuddy 内部工作区（记忆/团队上下文，非项目代码）
+.workbuddy/
+# QA 构建产物目录
+dist_qa/
