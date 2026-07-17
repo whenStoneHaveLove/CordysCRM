@@ -1,6 +1,8 @@
 package cn.cordys.crm.ad.contract.controller;
 
+import cn.cordys.common.constants.PermissionConstants;
 import cn.cordys.common.pager.PagerWithOption;
+import cn.cordys.common.permission.CsPermission;
 import cn.cordys.context.OrganizationContext;
 import cn.cordys.crm.ad.contract.domain.AdContract;
 import cn.cordys.crm.ad.contract.dto.request.AdContractPageRequest;
@@ -27,9 +29,8 @@ import java.util.List;
  * 广告合同控制器（M5 T-40/T-41，V3.1 §13.2）。
  *
  * <p>所有写操作均在 {@link AdContractService} 中标注 {@code @OperationLog}（写入 ad_operation_log）。
- * 响应由框架 {@code ResultResponseBodyAdvice} 统一包裹（包路径 cn.cordys）。</p>
- *
- * <p>鉴权：由 {@link AdContractService} 依据角色做角色级守卫（同 M2/M3 风格），未接入 ad 专用权限常量（M6 收口）。</p>
+ * 响应由框架 {@code ResultResponseBodyAdvice} 统一包裹。
+ * 接口级权限由 {@link CsPermission} 依据 {@link PermissionConstants} 的 AD_CONTRACT_* 码校验（B-2）。</p>
  */
 @Tag(name = "广告合同")
 @RestController
@@ -48,30 +49,35 @@ public class AdContractController {
     }
 
     @PostMapping
+    @CsPermission(PermissionConstants.AD_CONTRACT_CREATE)
     @Operation(summary = "新建合同（默认生效，未申请用印）")
     public AdContract create(@RequestBody AdContractSaveRequest request) {
         return adContractService.create(request, userId(), orgId());
     }
 
     @PutMapping
+    @CsPermission(PermissionConstants.AD_CONTRACT_UPDATE)
     @Operation(summary = "编辑合同（维持编号/状态/用印状态等受控字段）")
     public AdContract update(@RequestBody AdContractSaveRequest request) {
         return adContractService.update(request, userId(), orgId());
     }
 
     @DeleteMapping("/{id}")
+    @CsPermission(PermissionConstants.AD_CONTRACT_DELETE)
     @Operation(summary = "逻辑删除合同")
     public void delete(@PathVariable("id") String id) {
         adContractService.delete(id, userId(), orgId());
     }
 
     @GetMapping("/{id}")
+    @CsPermission(PermissionConstants.AD_CONTRACT_READ)
     @Operation(summary = "合同详情（主信息+关联名称+状态标签+用印历史）")
     public AdContractDetailResponse detail(@PathVariable("id") String id) {
         return adContractService.detail(id, userId(), orgId());
     }
 
     @PostMapping("/page")
+    @CsPermission(PermissionConstants.AD_CONTRACT_READ)
     @Operation(summary = "合同分页（多筛选+关键字+主体隔离+排序）")
     public PagerWithOption<List<AdContractListResponse>> page(@RequestBody AdContractPageRequest request) {
         return adContractService.page(request, userId(), orgId());

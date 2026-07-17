@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.ad.dict.mapper.ExtAdDictMapper">
+
+    <!-- 字典项分页（V3.1 §4.3，B-4） -->
+    <select id="pageList" resultType="cn.cordys.crm.ad.dict.dto.response.AdDictListResponse">
+        SELECT
+            id,
+            dict_code      AS dictCode,
+            dict_value     AS dictValue,
+            dict_label     AS dictLabel,
+            parent_value   AS parentValue,
+            sort,
+            status,
+            organization_id AS organizationId,
+            create_time    AS createTime
+        FROM ad_dict
+        WHERE organization_id = #{organizationId}
+          AND deleted = 0
+        <if test="dictCode != null and dictCode != ''">
+            AND dict_code = #{dictCode}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (dict_label LIKE CONCAT('%', #{keyword}, '%')
+                 OR dict_value LIKE CONCAT('%', #{keyword}, '%')
+                 OR dict_code LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY sort ASC, create_time DESC
+    </select>
+
+</mapper>

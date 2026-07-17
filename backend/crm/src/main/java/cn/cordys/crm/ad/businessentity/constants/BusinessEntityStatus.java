@@ -1,23 +1,23 @@
-package cn.cordys.crm.ad.resource.constants;
+package cn.cordys.crm.ad.businessentity.constants;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 广告资源状态枚举（M6，V3.1 广告资源管理）。
+ * 业务主体状态枚举（V3.1 §5.2.7 / §13.4）。
  * <ul>
- *   <li>10 = NORMAL - 正常</li>
+ *   <li>10 = ENABLED - 启用</li>
  *   <li>20 = DISABLED - 停用</li>
  * </ul>
  */
-public enum ResourceStatus {
-    NORMAL(10, "正常"),
+public enum BusinessEntityStatus {
+    ENABLED(10, "启用"),
     DISABLED(20, "停用");
 
     private final int code;
     private final String label;
 
-    ResourceStatus(int code, String label) {
+    BusinessEntityStatus(int code, String label) {
         this.code = code;
         this.label = label;
     }
@@ -30,20 +30,20 @@ public enum ResourceStatus {
         return label;
     }
 
-    private static final Map<Integer, ResourceStatus> MAP = new HashMap<>();
+    private static final Map<Integer, BusinessEntityStatus> MAP = new HashMap<>();
 
     static {
-        for (ResourceStatus e : values()) {
+        for (BusinessEntityStatus e : values()) {
             MAP.put(e.getCode(), e);
         }
     }
 
-    public static ResourceStatus of(Integer code) {
+    public static BusinessEntityStatus of(Integer code) {
         return code == null ? null : MAP.get(code);
     }
 
     public static String labelOf(Integer code) {
-        ResourceStatus e = of(code);
+        BusinessEntityStatus e = of(code);
         return e == null ? (code == null ? null : String.valueOf(code)) : e.getLabel();
     }
 }

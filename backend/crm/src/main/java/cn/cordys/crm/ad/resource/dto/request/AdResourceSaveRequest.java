@@ -18,7 +18,7 @@ public class AdResourceSaveRequest {
     @Schema(description = "资源名称")
     private String resourceName;
 
-    @Schema(description = "资源类型:10线上媒体/20线下广告牌/30电视/40广播/50印刷")
+    @Schema(description = "资源类型:10上游代理/20下游媒体")
     private Integer resourceType;
 
     @Schema(description = "媒体渠道")
@@ -33,7 +33,7 @@ public class AdResourceSaveRequest {
     @Schema(description = "单价")
     private BigDecimal unitPrice;
 
-    @Schema(description = "状态:0可用/10已占用/20维护中")
+    @Schema(description = "状态:10正常/20停用")
     private Integer status;
 
     @Schema(description = "备注")

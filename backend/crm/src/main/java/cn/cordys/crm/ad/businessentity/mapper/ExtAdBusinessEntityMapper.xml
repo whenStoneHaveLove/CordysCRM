@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.ad.businessentity.mapper.ExtAdBusinessEntityMapper">
+
+    <!-- 业务主体分页（V3.1 §4.1，B-3） -->
+    <select id="pageList" resultType="cn.cordys.crm.ad.businessentity.dto.response.AdBusinessEntityListResponse">
+        SELECT
+            id,
+            name,
+            code,
+            status,
+            organization_id AS organizationId,
+            create_time    AS createTime
+        FROM ad_business_entity
+        WHERE organization_id = #{organizationId}
+          AND deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND (name LIKE CONCAT('%', #{keyword}, '%') OR code LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

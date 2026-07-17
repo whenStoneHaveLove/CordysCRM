@@ -29,4 +29,34 @@ public interface ExtAdReportMapper {
      */
     List<Map<String, Object>> monthlyTrend(@Param("organizationId") String organizationId,
                                            @Param("year") int year);
+
+    /**
+     * 工作台待办聚合计数（B-5）：单次查询返回所有角色所需计数。
+     */
+    Map<String, Object> workbenchCounts(@Param("organizationId") String organizationId);
+
+    /**
+     * 报表-应收应付：应收总额 vs 媒体应付总额（B-6）。
+     */
+    Map<String, BigDecimal> receivablePayable(@Param("organizationId") String organizationId);
+
+    /**
+     * 报表-回款追踪：已收款 vs 已开票（B-6）。
+     */
+    Map<String, BigDecimal> collection(@Param("organizationId") String organizationId);
+
+    /**
+     * 报表-媒体投放：已付媒体款（B-6）。
+     */
+    Map<String, BigDecimal> mediaInvestment(@Param("organizationId") String organizationId);
+
+    /**
+     * 报表-缺合同跟踪：缺合同的订单列表（B-6）。
+     */
+    List<Map<String, Object>> contractMissing(@Param("organizationId") String organizationId);
+
+    /**
+     * 报表-用印统计：按用印状态分布（B-6）。
+     */
+    List<Map<String, Object>> sealStatusSummary(@Param("organizationId") String organizationId);
 }

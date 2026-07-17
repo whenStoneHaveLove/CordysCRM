@@ -6,19 +6,13 @@ import java.util.Map;
 /**
  * 广告资源类型枚举（M6，V3.1 广告资源管理）。
  * <ul>
- *   <li>10 = ONLINE_MEDIA - 线上媒体</li>
- *   <li>20 = OFFLINE_BILLBOARD - 线下广告牌</li>
- *   <li>30 = TV - 电视</li>
- *   <li>40 = RADIO - 广播</li>
- *   <li>50 = PRINT - 印刷</li>
+ *   <li>10 = UPSTREAM_AGENT - 上游代理</li>
+ *   <li>20 = DOWNSTREAM_MEDIA - 下游媒体</li>
  * </ul>
  */
 public enum ResourceType {
-    ONLINE_MEDIA(10, "线上媒体"),
-    OFFLINE_BILLBOARD(20, "线下广告牌"),
-    TV(30, "电视"),
-    RADIO(40, "广播"),
-    PRINT(50, "印刷");
+    UPSTREAM_AGENT(10, "上游代理"),
+    DOWNSTREAM_MEDIA(20, "下游媒体");
 
     private final int code;
     private final String label;

@@ -1,4 +1,4 @@
-package cn.cordys.crm.ad.resource.dto.request;
+package cn.cordys.crm.ad.businessentity.dto.request;
 
 import cn.cordys.common.dto.BasePageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -7,10 +7,10 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * 广告资源分页请求（M6，POST /api/ad/resource/page）。
+ * 业务主体分页请求（V3.1 §4.1，POST /api/ad/business-entity/page）。
  */
 @Data
-public class AdResourcePageRequest extends BasePageRequest {
+public class AdBusinessEntityPageRequest extends BasePageRequest {
 
     @Schema(description = "组织(租户)id（后端填充）")
     private String organizationId;
@@ -18,12 +18,9 @@ public class AdResourcePageRequest extends BasePageRequest {
     @Schema(description = "主体隔离过滤集合；null表示跨主体全量")
     private List<String> entityIds;
 
-    @Schema(description = "关键字（资源名称/渠道）")
+    @Schema(description = "关键字（主体名称/代码）")
     private String keyword;
 
-    @Schema(description = "资源类型:10上游代理/20下游媒体")
-    private Integer resourceType;
-
-    @Schema(description = "状态:10正常/20停用")
+    @Schema(description = "状态:10启用/20停用")
     private Integer status;
 }

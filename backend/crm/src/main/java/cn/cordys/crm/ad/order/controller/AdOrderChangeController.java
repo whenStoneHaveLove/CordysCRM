@@ -1,6 +1,8 @@
 package cn.cordys.crm.ad.order.controller;
 
+import cn.cordys.common.constants.PermissionConstants;
 import cn.cordys.common.pager.PagerWithOption;
+import cn.cordys.common.permission.CsPermission;
 import cn.cordys.context.OrganizationContext;
 import cn.cordys.crm.ad.order.domain.AdOrderChange;
 import cn.cordys.crm.ad.order.dto.request.AdOrderChangeApproveRequest;
@@ -26,7 +28,8 @@ import java.util.List;
  * 广告改单控制器（M3 T-20/T-21，V3.1 §13.2）。
  *
  * <p>所有写操作均在 {@link AdOrderChangeService} 中标注 {@code @OperationLog}（写入 ad_operation_log）。
- * 响应由框架 {@code ResultResponseBodyAdvice} 统一包裹。端点统一位于 {@code /api/ad/order-change} 之下。</p>
+ * 响应由框架 {@code ResultResponseBodyAdvice} 统一包裹。端点统一位于 {@code /api/ad/order-change} 之下。
+ * 接口级权限由 {@link CsPermission} 依据 {@link PermissionConstants} 的 AD_ORDER_CHANGE_* 码校验（B-2）。</p>
  */
 @Tag(name = "广告改单")
 @RestController
@@ -45,18 +48,21 @@ public class AdOrderChangeController {
     }
 
     @PostMapping
+    @CsPermission(PermissionConstants.AD_ORDER_CHANGE_CREATE)
     @Operation(summary = "新建改单申请（草稿，禁改 order_type L-24）")
     public AdOrderChange create(@RequestBody AdOrderChangeSaveRequest request) {
         return adOrderChangeService.create(request, userId(), orgId());
     }
 
     @PostMapping("/{id}/submit")
+    @CsPermission(PermissionConstants.AD_ORDER_CHANGE_CREATE)
     @Operation(summary = "提交改单：锁定父单→变更审核中(60)；审批关时直达审批通过(L-14)")
     public AdOrderChange submit(@PathVariable("id") String id) {
         return adOrderChangeService.submit(id, userId(), orgId());
     }
 
     @PostMapping("/{id}/approve")
+    @CsPermission(PermissionConstants.AD_ORDER_CHANGE_APPROVE)
     @Operation(summary = "老板审批通过（改单→已审批，父单仍锁定）")
     public AdOrderChange approve(@PathVariable("id") String id,
                                  @RequestBody(required = false) AdOrderChangeApproveRequest request) {
@@ -64,6 +70,7 @@ public class AdOrderChangeController {
     }
 
     @PostMapping("/{id}/reject")
+    @CsPermission(PermissionConstants.AD_ORDER_CHANGE_REJECT)
     @Operation(summary = "老板驳回（改单→已驳回，父单恢复执行中50，保留数据 L-21）")
     public AdOrderChange reject(@PathVariable("id") String id,
                                 @RequestBody(required = false) AdOrderChangeApproveRequest request) {
@@ -71,18 +78,21 @@ public class AdOrderChangeController {
     }
 
     @PostMapping("/{id}/execute")
+    @CsPermission(PermissionConstants.AD_ORDER_CHANGE_CREATE)
     @Operation(summary = "执行改单：应用快照+金额重算+L-04资金侧，父单恢复执行中(50)")
     public AdOrderChange execute(@PathVariable("id") String id) {
         return adOrderChangeService.execute(id, userId(), orgId());
     }
 
     @PostMapping("/page")
+    @CsPermission(PermissionConstants.AD_ORDER_CHANGE_READ)
     @Operation(summary = "改单分页（筛选+关键字+主体隔离+排序）")
     public PagerWithOption<List<AdOrderChangeListResponse>> page(@RequestBody AdOrderChangePageRequest request) {
         return adOrderChangeService.page(request, userId(), orgId());
     }
 
     @GetMapping("/{id}")
+    @CsPermission(PermissionConstants.AD_ORDER_CHANGE_READ)
     @Operation(summary = "改单详情")
     public AdOrderChangeDetailResponse detail(@PathVariable("id") String id) {
         return adOrderChangeService.detail(id, userId(), orgId());

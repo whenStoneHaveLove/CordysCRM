@@ -131,6 +131,16 @@ public class AdCustomerService {
         return PageUtils.setPageInfoWithOption(page, list, null);
     }
 
+    /** 逻辑删除客户（B-7）。 */
+    @OperationLog(module = "CUSTOMER", action = "DELETE", targetId = "#id")
+    public void delete(String id, String userId, String orgId) {
+        AdCustomer existing = requireCustomer(id);
+        existing.setDeleted(1);
+        existing.setUpdateUser(userId);
+        existing.setUpdateTime(System.currentTimeMillis());
+        customerMapper.update(existing);
+    }
+
     // ===================== 私有辅助 =====================
 
     private AdCustomer requireCustomer(String id) {

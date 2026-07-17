@@ -66,7 +66,7 @@ public class AdResourceService {
         r.setPosition(request.getPosition());
         r.setDailyImpressions(request.getDailyImpressions());
         r.setUnitPrice(request.getUnitPrice());
-        r.setStatus(request.getStatus() != null ? request.getStatus() : ResourceStatus.AVAILABLE.getCode());
+        r.setStatus(request.getStatus() != null ? request.getStatus() : ResourceStatus.NORMAL.getCode());
         r.setRemark(request.getRemark());
         r.setBusinessEntityId(request.getBusinessEntityId());
         r.setOrganizationId(orgId);
@@ -140,6 +140,16 @@ public class AdResourceService {
         return PageUtils.setPageInfoWithOption(page, list, null);
     }
 
+    /** 逻辑删除资源（B-7）。 */
+    @OperationLog(module = "RESOURCE", action = "DELETE", targetId = "#id")
+    public void delete(String id, String userId, String orgId) {
+        AdResource existing = requireResource(id);
+        existing.setDeleted(1);
+        existing.setUpdateUser(userId);
+        existing.setUpdateTime(System.currentTimeMillis());
+        resourceMapper.update(existing);
+    }
+
     // ===================== 私有辅助 =====================
 
     private AdResource requireResource(String id) {
@@ -155,7 +165,7 @@ public class AdResourceService {
             throw new GenericException("资源名称不能为空");
         }
         if (ResourceType.of(request.getResourceType()) == null) {
-            throw new GenericException("资源类型不合法(10线上媒体/20线下广告牌/30电视/40广播/50印刷)");
+            throw new GenericException("资源类型不合法(10上游代理/20下游媒体)");
         }
     }
 

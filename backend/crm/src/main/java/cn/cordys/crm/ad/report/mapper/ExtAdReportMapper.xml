@@ -40,4 +40,98 @@
         ORDER BY month ASC
     </select>
 
+    <!-- 工作台待办聚合计数（B-5）：单次查询返回所有角色所需计数 -->
+    <select id="workbenchCounts" resultType="java.util.HashMap">
+        SELECT
+            (SELECT COUNT(1) FROM ad_order o
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0 AND o.status = 0)  AS draftCount,
+            (SELECT COUNT(1) FROM ad_order o
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0 AND o.status = 10) AS pendingApproveOrder,
+            (SELECT COUNT(1) FROM ad_order o
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0 AND o.status = 80) AS forceArchive,
+            (SELECT COUNT(1) FROM ad_order_change c
+             WHERE c.organization_id = #{organizationId} AND c.deleted = 0 AND c.status = 0)   AS changePending,
+            (SELECT COUNT(1) FROM ad_seal_record s
+             WHERE s.organization_id = #{organizationId} AND s.deleted = 0 AND s.status = 0)   AS sealPending,
+            (SELECT COUNT(1) FROM ad_order o
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+               AND o.status NOT IN (90, 100)
+               AND NOT EXISTS (SELECT 1 FROM ad_order_contract oc WHERE oc.order_id = o.id AND oc.deleted = 0)) AS missingContract,
+            (SELECT COUNT(1) FROM ad_order o
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+               AND o.receipt_method = 10 AND o.receipt_status = 0)                              AS prepayConfirm,
+            (SELECT COUNT(1) FROM ad_order o
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+               AND o.payment_method = 10 AND o.media_payment_status = 0)                        AS mediaPrepay,
+            (SELECT COUNT(1) FROM ad_order o
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+               AND o.invoice_status IN (0, 10))                                                 AS invoice,
+            (SELECT COUNT(1) FROM ad_order o
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+               AND o.receipt_status IN (0, 10))                                                 AS receive,
+            (SELECT COUNT(1) FROM ad_order o
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+               AND o.payment_method = 20 AND o.media_payment_status IN (0, 10))                 AS mediaPostpay,
+            (SELECT COUNT(1) FROM ad_order o
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+               AND o.needs_red_invoice = 1)                                                     AS redInvoice
+    </select>
+
+    <!-- 报表-应收应付：应收总额 vs 媒体应付总额（B-6） -->
+    <select id="receivablePayable" resultType="java.util.HashMap">
+        SELECT
+            IFNULL(SUM(o.receivable_amount), 0)    AS receivableAmount,
+            IFNULL(SUM(o.media_payable_amount), 0) AS mediaPayableAmount
+        FROM ad_order o
+        WHERE o.organization_id = #{organizationId}
+          AND o.deleted = 0
+    </select>
+
+    <!-- 报表-回款追踪：已收款 vs 已开票（B-6） -->
+    <select id="collection" resultType="java.util.HashMap">
+        SELECT
+            IFNULL(SUM(o.received_amount), 0) AS receivedAmount,
+            IFNULL(SUM(o.invoiced_amount), 0) AS invoicedAmount
+        FROM ad_order o
+        WHERE o.organization_id = #{organizationId}
+          AND o.deleted = 0
+    </select>
+
+    <!-- 报表-媒体投放：已付媒体款（B-6） -->
+    <select id="mediaInvestment" resultType="java.util.HashMap">
+        SELECT
+            IFNULL(SUM(o.media_paid_amount), 0) AS mediaPaidAmount
+        FROM ad_order o
+        WHERE o.organization_id = #{organizationId}
+          AND o.deleted = 0
+    </select>
+
+    <!-- 报表-缺合同跟踪：缺合同的订单列表（B-6） -->
+    <select id="contractMissing" resultType="java.util.HashMap">
+        SELECT
+            o.id,
+            o.order_no      AS orderNo,
+            o.order_name    AS orderName,
+            o.business_entity_id AS businessEntityId,
+            o.total_amount  AS totalAmount,
+            o.status
+        FROM ad_order o
+        WHERE o.organization_id = #{organizationId}
+          AND o.deleted = 0
+          AND o.status NOT IN (90, 100)
+          AND NOT EXISTS (SELECT 1 FROM ad_order_contract oc WHERE oc.order_id = o.id AND oc.deleted = 0)
+        ORDER BY o.create_time DESC
+    </select>
+
+    <!-- 报表-用印统计：按用印状态分布（B-6） -->
+    <select id="sealStatusSummary" resultType="java.util.HashMap">
+        SELECT
+            s.status       AS status,
+            COUNT(1)       AS count
+        FROM ad_seal_record s
+        WHERE s.organization_id = #{organizationId}
+          AND s.deleted = 0
+        GROUP BY s.status
+    </select>
+
 </mapper>

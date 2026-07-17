@@ -260,5 +260,111 @@ public class PermissionConstants {
     public static final String CUSTOM_FORM_READ = "CUSTOM_FORM:READ";
     public static final String CUSTOM_FORM_ADD = "CUSTOM_FORM:ADD";
     /*------ end: CUSTOM_FORM ------*/
+
+
+    /*====================================================================
+     * 广告下单系统 V3.1 权限码（AD_*）
+     * 命名规范：MODULE:ACTION；值须与播种 SQL（V3.0.0_2__ad_permissions.sql）
+     * 及前端 advertising.ts 的 meta.permissions 完全一致（§A.1 / §C.5 红线）。
+     * 权威码：AD_ORDER_CHANGE:* 与 AD_SEAL:*；
+     * 旧码 AD_ORDER:CHANGE / AD_CONTRACT:SEAL_* 已废弃（仅种子历史残留，不在此定义）。
+     *====================================================================*/
+
+    /*------ start: AD_ORDER（§3.3 / §6 / §9.1） ------*/
+    public static final String AD_ORDER_READ = "AD_ORDER:READ";
+    public static final String AD_ORDER_CREATE = "AD_ORDER:CREATE";
+    public static final String AD_ORDER_SUBMIT = "AD_ORDER:SUBMIT";
+    public static final String AD_ORDER_APPROVE = "AD_ORDER:APPROVE";
+    public static final String AD_ORDER_REJECT = "AD_ORDER:REJECT";
+    public static final String AD_ORDER_ARCHIVE = "AD_ORDER:ARCHIVE";
+    public static final String AD_ORDER_FORCE_ARCHIVE = "AD_ORDER:FORCE_ARCHIVE";
+    public static final String AD_ORDER_VOID = "AD_ORDER:VOID";
+    public static final String AD_ORDER_EXPORT = "AD_ORDER:EXPORT";
+    /*------ end: AD_ORDER ------*/
+
+    /*------ start: AD_ORDER_CHANGE（§3.3 / §6.2 / §9.1，替代旧 AD_ORDER:CHANGE） ------*/
+    public static final String AD_ORDER_CHANGE_READ = "AD_ORDER_CHANGE:READ";
+    public static final String AD_ORDER_CHANGE_CREATE = "AD_ORDER_CHANGE:CREATE";
+    public static final String AD_ORDER_CHANGE_APPROVE = "AD_ORDER_CHANGE:APPROVE";
+    public static final String AD_ORDER_CHANGE_REJECT = "AD_ORDER_CHANGE:REJECT";
+    /*------ end: AD_ORDER_CHANGE ------*/
+
+    /*------ start: AD_PAYMENT（§3.3 / §9.2） ------*/
+    public static final String AD_PAYMENT_READ = "AD_PAYMENT:READ";
+    public static final String AD_PAYMENT_CONFIRM_PREPAY = "AD_PAYMENT:CONFIRM_PREPAY";
+    public static final String AD_PAYMENT_PAY_MEDIA_PREPAY = "AD_PAYMENT:PAY_MEDIA_PREPAY";
+    public static final String AD_PAYMENT_INVOICE = "AD_PAYMENT:INVOICE";
+    public static final String AD_PAYMENT_RECEIVE = "AD_PAYMENT:RECEIVE";
+    public static final String AD_PAYMENT_PAY_MEDIA_POSTPAY = "AD_PAYMENT:PAY_MEDIA_POSTPAY";
+    public static final String AD_PAYMENT_RED_INVOICE_CLEAR = "AD_PAYMENT:RED_INVOICE_CLEAR";
+    /*------ end: AD_PAYMENT ------*/
+
+    /*------ start: AD_CONTRACT（§3.3 / §9.3） ------*/
+    public static final String AD_CONTRACT_READ = "AD_CONTRACT:READ";
+    public static final String AD_CONTRACT_CREATE = "AD_CONTRACT:CREATE";
+    public static final String AD_CONTRACT_UPDATE = "AD_CONTRACT:UPDATE";
+    public static final String AD_CONTRACT_DELETE = "AD_CONTRACT:DELETE";
+    /*------ end: AD_CONTRACT ------*/
+
+    /*------ start: AD_SEAL（§3.3 / §9.3，替代旧 AD_CONTRACT:SEAL_*） ------*/
+    public static final String AD_SEAL_READ = "AD_SEAL:READ";
+    public static final String AD_SEAL_APPLY = "AD_SEAL:APPLY";
+    public static final String AD_SEAL_APPROVE = "AD_SEAL:APPROVE";
+    public static final String AD_SEAL_REJECT = "AD_SEAL:REJECT";
+    public static final String AD_SEAL_UPLOAD = "AD_SEAL:UPLOAD";
+    /*------ end: AD_SEAL ------*/
+
+    /*------ start: AD_RESOURCE（§8.4 / §9.4） ------*/
+    public static final String AD_RESOURCE_READ = "AD_RESOURCE:READ";
+    public static final String AD_RESOURCE_CREATE = "AD_RESOURCE:CREATE";
+    public static final String AD_RESOURCE_UPDATE = "AD_RESOURCE:UPDATE";
+    public static final String AD_RESOURCE_DELETE = "AD_RESOURCE:DELETE";
+    /*------ end: AD_RESOURCE ------*/
+
+    /*------ start: AD_CUSTOMER（§8.4 / §9.4） ------*/
+    public static final String AD_CUSTOMER_READ = "AD_CUSTOMER:READ";
+    public static final String AD_CUSTOMER_CREATE = "AD_CUSTOMER:CREATE";
+    public static final String AD_CUSTOMER_UPDATE = "AD_CUSTOMER:UPDATE";
+    public static final String AD_CUSTOMER_DELETE = "AD_CUSTOMER:DELETE";
+    /*------ end: AD_CUSTOMER ------*/
+
+    /*------ start: AD_BUSINESS_ENTITY（§3.2 / §8.5 / §9.4） ------*/
+    public static final String AD_BUSINESS_ENTITY_READ = "AD_BUSINESS_ENTITY:READ";
+    public static final String AD_BUSINESS_ENTITY_CREATE = "AD_BUSINESS_ENTITY:CREATE";
+    public static final String AD_BUSINESS_ENTITY_UPDATE = "AD_BUSINESS_ENTITY:UPDATE";
+    public static final String AD_BUSINESS_ENTITY_DELETE = "AD_BUSINESS_ENTITY:DELETE";
+    /*------ end: AD_BUSINESS_ENTITY ------*/
+
+    /*------ start: AD_DICT（§4.3 / §8.5 / §9.4） ------*/
+    public static final String AD_DICT_READ = "AD_DICT:READ";
+    public static final String AD_DICT_CREATE = "AD_DICT:CREATE";
+    public static final String AD_DICT_UPDATE = "AD_DICT:UPDATE";
+    public static final String AD_DICT_DELETE = "AD_DICT:DELETE";
+    /*------ end: AD_DICT ------*/
+
+    /*------ start: AD_USER_BUSINESS_ENTITY（§3.2 / §9.4） ------*/
+    public static final String AD_USER_BUSINESS_ENTITY_READ = "AD_USER_BUSINESS_ENTITY:READ";
+    public static final String AD_USER_BUSINESS_ENTITY_CREATE = "AD_USER_BUSINESS_ENTITY:CREATE";
+    public static final String AD_USER_BUSINESS_ENTITY_UPDATE = "AD_USER_BUSINESS_ENTITY:UPDATE";
+    public static final String AD_USER_BUSINESS_ENTITY_DELETE = "AD_USER_BUSINESS_ENTITY:DELETE";
+    /*------ end: AD_USER_BUSINESS_ENTITY ------*/
+
+    /*------ start: AD_REPORT（§8.5 / §9.5） ------*/
+    public static final String AD_REPORT_READ = "AD_REPORT:READ";
+    /*------ end: AD_REPORT ------*/
+
+    /*------ start: AD_WORKBENCH（§8.5） ------*/
+    public static final String AD_WORKBENCH_READ = "AD_WORKBENCH:READ";
+    /*------ end: AD_WORKBENCH ------*/
+
+    /*------ start: AD_APPROVAL（§8.5） ------*/
+    public static final String AD_APPROVAL_READ = "AD_APPROVAL:READ";
+    public static final String AD_APPROVAL_APPROVE = "AD_APPROVAL:APPROVE";
+    /*------ end: AD_APPROVAL ------*/
+
+    /*------ start: AD_SYSTEM（§8.5） ------*/
+    public static final String AD_SYSTEM_READ = "AD_SYSTEM:READ";
+    public static final String AD_SYSTEM_CONFIG = "AD_SYSTEM:CONFIG";
+    /*------ end: AD_SYSTEM ------*/
 }
 
