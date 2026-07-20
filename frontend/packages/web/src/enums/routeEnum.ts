@@ -93,7 +93,14 @@ export enum CustomFormRouteEnum {
 }
 
 export enum AdvertisingRouteEnum {
-  ADVERTISING = 'advertising',
+  // 父模块（左侧导航分组）
+  ADVERTISING_ORDER_MANAGEMENT = 'advertisingOrderManagement',
+  ADVERTISING_CONTRACT_MANAGEMENT = 'advertisingContractManagement',
+  ADVERTISING_RESOURCE_MANAGEMENT = 'advertisingResourceManagement',
+  ADVERTISING_WORKBENCH_GROUP = 'advertisingWorkbenchGroup',
+  ADVERTISING_APPROVAL_GROUP = 'advertisingApprovalGroup',
+  ADVERTISING_REPORT_GROUP = 'advertisingReportGroup',
+  ADVERTISING_SYSTEM_GROUP = 'advertisingSystemGroup',
   ADVERTISING_ORDER = 'advertisingOrder',
   ADVERTISING_ORDER_CREATE = 'advertisingOrderCreate',
   ADVERTISING_ORDER_EDIT = 'advertisingOrderEdit',

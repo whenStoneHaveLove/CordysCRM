@@ -1,8 +1,12 @@
 export default {
-  'module.advertising': 'Advertising',
-  'module.advertising.order': 'Ad Order',
-  'module.advertising.change': 'Ad Change',
-  'module.advertising.payment': 'Ad Payment',
+  // Parent modules (added)
+  'module.advertising.orderManagement': 'Order Management',
+  'module.advertising.contractManagement': 'Contract Management',
+  'module.advertising.resourceManagement': 'Resource Management',
+  // Top tabs (prefix removed)
+  'module.advertising.order': 'Order',
+  'module.advertising.change': 'Change Order',
+  'module.advertising.payment': 'Payment',
   'module.advertising.payment.media': 'Media Payment',
 
   'advertising.order.search': 'Search order no / customer',
@@ -162,7 +166,7 @@ export default {
   'advertising.common.operateSuccess': 'Operation succeeded',
 
   // Resource
-  'module.advertising.resource': 'Ad Resource',
+  'module.advertising.resource': 'Up/Down Resources',
   'advertising.resource.search': 'Search resource name / credit code',
   'advertising.resource.filter.type': 'Resource type',
   'advertising.resource.filter.status': 'Status',
@@ -198,7 +202,7 @@ export default {
   'advertising.resource.form.remark': 'Remark',
 
   // Customer
-  'module.advertising.customer': 'Ad Customer',
+  'module.advertising.customer': 'Customer Info',
   'advertising.customer.search': 'Search customer name / brand',
   'advertising.customer.filter.industry': 'Industry',
   'advertising.customer.filter.level': 'Customer level',
@@ -230,7 +234,7 @@ export default {
   'advertising.customer.form.remark': 'Remark',
 
   // Advertising Contract
-  'module.advertising.contract': 'Advertising Contract',
+  'module.advertising.contract': 'Contract',
   'advertising.contract.search': 'Search contract no / customer',
   'advertising.contract.filter.direction': 'Direction',
   'advertising.contract.filter.type': 'Type',
@@ -265,7 +269,7 @@ export default {
   'advertising.contract.detail.tab.seal': 'Seal Records',
 
   // Seal Management
-  'module.advertising.seal': 'Seal Management',
+  'module.advertising.seal': 'Seal',
   'advertising.seal.search': 'Search contract no / customer',
   'advertising.seal.filter.sealType': 'Seal Type',
   'advertising.seal.filter.status': 'Status',

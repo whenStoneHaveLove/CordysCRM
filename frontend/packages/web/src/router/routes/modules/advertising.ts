@@ -3,30 +3,48 @@ import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 import { DEFAULT_LAYOUT } from '../base';
 import type { AppRouteRecordRaw } from '../types';
 
-const advertising: AppRouteRecordRaw = {
-  path: '/advertising',
-  name: AdvertisingRouteEnum.ADVERTISING,
-  redirect: '/advertising/order',
+/**
+ * 工作台（独立父模块，无子标签）
+ */
+const workbench: AppRouteRecordRaw = {
+  path: '/advertising/workbench',
+  name: AdvertisingRouteEnum.ADVERTISING_WORKBENCH_GROUP,
+  redirect: '/advertising/workbench',
   component: DEFAULT_LAYOUT,
   meta: {
-    locale: 'module.advertising',
-    permissions: [
-      'AD_ORDER:READ',
-      'AD_ORDER_CHANGE:READ',
-      'AD_PAYMENT:READ',
-      'AD_CONTRACT:READ',
-      'AD_SEAL:READ',
-      'AD_RESOURCE:READ',
-      'AD_CUSTOMER:READ',
-      'AD_WORKBENCH:READ',
-      'AD_APPROVAL:READ',
-      'AD_REPORT:READ',
-      'AD_BUSINESS_ENTITY:READ',
-      'AD_SYSTEM:READ',
-    ],
+    locale: 'module.advertising.workbench',
+    permissions: ['AD_WORKBENCH:READ'],
+    icon: 'iconicon_home',
+    hideChildrenInMenu: true,
+    collapsedLocale: 'module.advertising.workbench',
+  },
+  children: [
+    {
+      path: '',
+      name: AdvertisingRouteEnum.ADVERTISING_WORKBENCH,
+      component: () => import('@/views/advertising/workbench/index.vue'),
+      meta: {
+        locale: 'module.advertising.workbench',
+        permissions: ['AD_WORKBENCH:READ'],
+      },
+    },
+  ],
+};
+
+/**
+ * 订单管理（父模块）：下单 / 改单 / 收付款
+ */
+const orderManagement: AppRouteRecordRaw = {
+  path: '/advertising/order-management',
+  name: AdvertisingRouteEnum.ADVERTISING_ORDER_MANAGEMENT,
+  redirect: '/advertising/order-management/order',
+  component: DEFAULT_LAYOUT,
+  meta: {
+    locale: 'module.advertising.orderManagement',
+    permissions: ['AD_ORDER:READ', 'AD_ORDER_CHANGE:READ', 'AD_PAYMENT:READ'],
     icon: 'iconicon_order_form',
     hideChildrenInMenu: true,
-    collapsedLocale: 'module.advertising',
+    collapsedLocale: 'module.advertising.orderManagement',
   },
   children: [
     {
@@ -147,6 +165,25 @@ const advertising: AppRouteRecordRaw = {
         activeMenu: AdvertisingRouteEnum.ADVERTISING_PAYMENT,
       },
     },
+  ],
+};
+
+/**
+ * 合同管理（父模块）：合同 / 用印
+ */
+const contractManagement: AppRouteRecordRaw = {
+  path: '/advertising/contract-management',
+  name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_MANAGEMENT,
+  redirect: '/advertising/contract-management/contract',
+  component: DEFAULT_LAYOUT,
+  meta: {
+    locale: 'module.advertising.contractManagement',
+    permissions: ['AD_CONTRACT:READ', 'AD_SEAL:READ'],
+    icon: 'iconicon_contract',
+    hideChildrenInMenu: true,
+    collapsedLocale: 'module.advertising.contractManagement',
+  },
+  children: [
     {
       path: 'contract',
       name: AdvertisingRouteEnum.ADVERTISING_CONTRACT,
@@ -233,6 +270,25 @@ const advertising: AppRouteRecordRaw = {
         activeMenu: AdvertisingRouteEnum.ADVERTISING_SEAL,
       },
     },
+  ],
+};
+
+/**
+ * 资源管理（父模块）：上下游资源 / 客户信息 / 业务主体
+ */
+const resourceManagement: AppRouteRecordRaw = {
+  path: '/advertising/resource-management',
+  name: AdvertisingRouteEnum.ADVERTISING_RESOURCE_MANAGEMENT,
+  redirect: '/advertising/resource-management/resource',
+  component: DEFAULT_LAYOUT,
+  meta: {
+    locale: 'module.advertising.resourceManagement',
+    permissions: ['AD_RESOURCE:READ', 'AD_CUSTOMER:READ', 'AD_BUSINESS_ENTITY:READ'],
+    icon: 'iconicon_enterprise',
+    hideChildrenInMenu: true,
+    collapsedLocale: 'module.advertising.resourceManagement',
+  },
+  children: [
     {
       path: 'resource',
       name: AdvertisingRouteEnum.ADVERTISING_RESOURCE,
@@ -320,36 +376,6 @@ const advertising: AppRouteRecordRaw = {
       },
     },
     {
-      path: 'workbench',
-      name: AdvertisingRouteEnum.ADVERTISING_WORKBENCH,
-      component: () => import('@/views/advertising/workbench/index.vue'),
-      meta: {
-        locale: 'module.advertising.workbench',
-        isTopMenu: true,
-        permissions: ['AD_WORKBENCH:READ'],
-      },
-    },
-    {
-      path: 'approval',
-      name: AdvertisingRouteEnum.ADVERTISING_APPROVAL,
-      component: () => import('@/views/advertising/approval/index.vue'),
-      meta: {
-        locale: 'module.advertising.approval',
-        isTopMenu: true,
-        permissions: ['AD_APPROVAL:READ'],
-      },
-    },
-    {
-      path: 'report',
-      name: AdvertisingRouteEnum.ADVERTISING_REPORT,
-      component: () => import('@/views/advertising/report/index.vue'),
-      meta: {
-        locale: 'module.advertising.report',
-        isTopMenu: true,
-        permissions: ['AD_REPORT:READ'],
-      },
-    },
-    {
       path: 'business-entity',
       name: AdvertisingRouteEnum.ADVERTISING_BUSINESS_ENTITY,
       component: () => import('@/views/advertising/businessEntity/index.vue'),
@@ -392,18 +418,92 @@ const advertising: AppRouteRecordRaw = {
         activeMenu: AdvertisingRouteEnum.ADVERTISING_BUSINESS_ENTITY,
       },
     },
+  ],
+};
+
+/**
+ * 审批中心（独立父模块，无子标签）
+ */
+const approval: AppRouteRecordRaw = {
+  path: '/advertising/approval',
+  name: AdvertisingRouteEnum.ADVERTISING_APPROVAL_GROUP,
+  redirect: '/advertising/approval',
+  component: DEFAULT_LAYOUT,
+  meta: {
+    locale: 'module.advertising.approval',
+    permissions: ['AD_APPROVAL:READ'],
+    icon: 'iconicon_check',
+    hideChildrenInMenu: true,
+    collapsedLocale: 'module.advertising.approval',
+  },
+  children: [
     {
-      path: 'system',
+      path: '',
+      name: AdvertisingRouteEnum.ADVERTISING_APPROVAL,
+      component: () => import('@/views/advertising/approval/index.vue'),
+      meta: {
+        locale: 'module.advertising.approval',
+        permissions: ['AD_APPROVAL:READ'],
+      },
+    },
+  ],
+};
+
+/**
+ * 报表中心（独立父模块，无子标签）
+ */
+const report: AppRouteRecordRaw = {
+  path: '/advertising/report',
+  name: AdvertisingRouteEnum.ADVERTISING_REPORT_GROUP,
+  redirect: '/advertising/report',
+  component: DEFAULT_LAYOUT,
+  meta: {
+    locale: 'module.advertising.report',
+    permissions: ['AD_REPORT:READ'],
+    icon: 'iconicon_data',
+    hideChildrenInMenu: true,
+    collapsedLocale: 'module.advertising.report',
+  },
+  children: [
+    {
+      path: '',
+      name: AdvertisingRouteEnum.ADVERTISING_REPORT,
+      component: () => import('@/views/advertising/report/index.vue'),
+      meta: {
+        locale: 'module.advertising.report',
+        permissions: ['AD_REPORT:READ'],
+      },
+    },
+  ],
+};
+
+/**
+ * 系统配置（独立父模块，无子标签）
+ */
+const system: AppRouteRecordRaw = {
+  path: '/advertising/system',
+  name: AdvertisingRouteEnum.ADVERTISING_SYSTEM_GROUP,
+  redirect: '/advertising/system',
+  component: DEFAULT_LAYOUT,
+  meta: {
+    locale: 'module.advertising.system',
+    permissions: ['AD_SYSTEM:READ', 'AD_DICT:READ', 'AD_SYSTEM:CONFIG'],
+    icon: 'iconicon_set_up',
+    hideChildrenInMenu: true,
+    collapsedLocale: 'module.advertising.system',
+  },
+  children: [
+    {
+      path: '',
       name: AdvertisingRouteEnum.ADVERTISING_SYSTEM,
       component: () => import('@/views/advertising/system/index.vue'),
       meta: {
         locale: 'module.advertising.system',
-        isTopMenu: true,
         permissions: ['AD_SYSTEM:READ'],
       },
     },
     {
-      path: 'system/business-entity',
+      path: 'business-entity',
       name: AdvertisingRouteEnum.ADVERTISING_SYSTEM_BE,
       component: () => import('@/views/advertising/system/business-entity/index.vue'),
       meta: {
@@ -414,7 +514,7 @@ const advertising: AppRouteRecordRaw = {
       },
     },
     {
-      path: 'system/dict',
+      path: 'dict',
       name: AdvertisingRouteEnum.ADVERTISING_SYSTEM_DICT,
       component: () => import('@/views/advertising/system/dict/index.vue'),
       meta: {
@@ -425,7 +525,7 @@ const advertising: AppRouteRecordRaw = {
       },
     },
     {
-      path: 'system/settings',
+      path: 'settings',
       name: AdvertisingRouteEnum.ADVERTISING_SYSTEM_SETTINGS,
       component: () => import('@/views/advertising/system/settings.vue'),
       meta: {
@@ -437,5 +537,15 @@ const advertising: AppRouteRecordRaw = {
     },
   ],
 };
+
+const advertising: AppRouteRecordRaw[] = [
+  workbench,
+  orderManagement,
+  contractManagement,
+  resourceManagement,
+  approval,
+  report,
+  system,
+];
 
 export default advertising;

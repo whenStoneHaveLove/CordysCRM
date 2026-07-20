@@ -1,8 +1,12 @@
 export default {
-  'module.advertising': '广告管理',
-  'module.advertising.order': '广告订单',
-  'module.advertising.change': '广告改单',
-  'module.advertising.payment': '广告收付款',
+  // 左侧父模块（新增分组）
+  'module.advertising.orderManagement': '订单管理',
+  'module.advertising.contractManagement': '合同管理',
+  'module.advertising.resourceManagement': '资源管理',
+  // 顶部子标签（去掉"广告"前缀）
+  'module.advertising.order': '下单',
+  'module.advertising.change': '改单',
+  'module.advertising.payment': '收付款',
   'module.advertising.payment.media': '媒体付款',
 
   // 订单列表
@@ -168,7 +172,7 @@ export default {
   'advertising.common.operateSuccess': '操作成功',
 
   // 资源
-  'module.advertising.resource': '广告资源',
+  'module.advertising.resource': '上下游资源',
   'advertising.resource.search': '搜索资源名称/信用代码',
   'advertising.resource.filter.type': '资源类型',
   'advertising.resource.filter.status': '状态',
@@ -204,7 +208,7 @@ export default {
   'advertising.resource.form.remark': '备注',
 
   // 客户
-  'module.advertising.customer': '广告客户',
+  'module.advertising.customer': '客户信息',
   'advertising.customer.search': '搜索客户名称/品牌',
   'advertising.customer.filter.industry': '行业',
   'advertising.customer.filter.level': '客户等级',
@@ -236,7 +240,7 @@ export default {
   'advertising.customer.form.remark': '备注',
 
   // 广告合同
-  'module.advertising.contract': '广告合同',
+  'module.advertising.contract': '合同',
   'advertising.contract.search': '搜索合同号/客户',
   'advertising.contract.filter.direction': '合同方向',
   'advertising.contract.filter.type': '合同类型',
@@ -271,7 +275,7 @@ export default {
   'advertising.contract.detail.tab.seal': '用印记录',
 
   // 广告印章
-  'module.advertising.seal': '广告印章',
+  'module.advertising.seal': '用印',
   'advertising.seal.search': '搜索合同号/客户',
   'advertising.seal.filter.sealType': '用印类型',
   'advertising.seal.filter.status': '状态',

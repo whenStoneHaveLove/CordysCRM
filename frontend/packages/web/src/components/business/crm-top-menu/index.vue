@@ -14,20 +14,17 @@
   import { ref } from 'vue';
   import { RouteRecordName, RouteRecordRaw, useRouter } from 'vue-router';
   import { MenuGroupOption, MenuOption, NMenu } from 'naive-ui';
-  import { cloneDeep, debounce } from 'lodash-es';
+  import { debounce } from 'lodash-es';
 
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import { listenerRouteChange } from '@lib/shared/method/route-listener';
 
   import usePermission from '@/hooks/usePermission';
-  import appClientMenus from '@/router/app-menus';
   import useAppStore from '@/store/modules/app';
   import { hasAnyPermission } from '@/utils/permission';
 
   const { t } = useI18n();
   const permission = usePermission();
-
-  const copyRouters = cloneDeep(appClientMenus) as RouteRecordRaw[];
 
   const appStore = useAppStore();
 
@@ -93,33 +90,15 @@
 
   /**
    * 监听路由变化，存储打开的顶部菜单
+   * 通过路由匹配链（matched）定位包含 isTopMenu 子节点的父级路由，
+   * 兼容多个并列父模块（如广告拆分为订单/合同/资源等独立父模块）的场景。
    */
   listenerRouteChange((newRoute) => {
-    const { name } = newRoute;
-    for (let i = 0; i < copyRouters.length; i++) {
-      const firstRoute = copyRouters[i];
-      // 权限校验通过
-      if (permission.accessRouter(firstRoute)) {
-        if (name && firstRoute?.name && (name as string).includes(firstRoute.name as string)) {
-          let currentParent = firstRoute?.children?.some((item) => item.meta?.isTopMenu)
-            ? (firstRoute as RouteRecordRaw)
-            : undefined;
-
-          if (!currentParent) {
-            // 二级菜单非顶部菜单，则判断三级菜单是否有顶部菜单
-            currentParent = firstRoute?.children?.find(
-              (item) => name && item?.name && (name as string).includes(item.name as string)
-            );
-          }
-          const filterMenuTopRouter = currentParent?.children?.filter((item: any) => item.meta?.isTopMenu) || [];
-          appStore.setTopMenus(filterMenuTopRouter);
-          setCurrentTopMenu(name as string);
-          return;
-        }
-      }
-    }
-    appStore.setTopMenus([]);
-    setCurrentTopMenu('');
+    const { name, matched } = newRoute;
+    const currentParent = matched?.find((r) => r.children?.some((c) => c.meta?.isTopMenu));
+    const filterMenuTopRouter = currentParent?.children?.filter((item) => item.meta?.isTopMenu) || [];
+    appStore.setTopMenus(filterMenuTopRouter);
+    setCurrentTopMenu(name as string);
   }, true);
 </script>
 
