@@ -3,6 +3,7 @@ package cn.cordys.crm.integration.dataease.service;
 import cn.cordys.common.constants.RoleDataScope;
 import cn.cordys.common.dto.BaseTreeNode;
 import cn.cordys.common.dto.OptionDTO;
+import cn.cordys.common.exception.GenericException;
 import cn.cordys.common.service.DataScopeService;
 import cn.cordys.crm.integration.common.request.DeThirdConfigRequest;
 import cn.cordys.crm.integration.dataease.DataEaseClient;
@@ -71,6 +72,14 @@ public class DataEaseSyncService {
         DeThirdConfigRequest thirdConfig;
         try {
             thirdConfig = dataEaseService.getDeConfig(orgId);
+        } catch (GenericException e) {
+            // DataEase 为可选集成组件：组织未配置时属预期情况，降级为 WARN 并跳过，避免污染错误日志
+            if (e.getMessage() != null && e.getMessage().contains("未找到")) {
+                log.warn("组织[{}]未配置 DataEase，跳过同步", orgId);
+            } else {
+                log.error("获取DataEase配置失败，组织ID: {}", orgId, e);
+            }
+            return;
         } catch (Exception e) {
             log.error("获取DataEase配置失败，组织ID: {}", orgId, e);
             return;
