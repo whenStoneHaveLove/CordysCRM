@@ -73,15 +73,15 @@ public class AdOrder extends BaseModel {
     private BigDecimal mediaPayableAmount;
 
     @Schema(description = "投放起始日")
-    @Column(name = "delivary_start_date")
+    @Column(name = "delivery_start_date")
     private Date deliveryStartDate;
 
     @Schema(description = "投放结束日")
-    @Column(name = "delivary_end_date")
+    @Column(name = "delivery_end_date")
     private Date deliveryEndDate;
 
     @Schema(description = "投放量+单位")
-    @Column(name = "delivary_volume")
+    @Column(name = "delivery_volume")
     private String deliveryVolume;
 
     @Schema(description = "备注")

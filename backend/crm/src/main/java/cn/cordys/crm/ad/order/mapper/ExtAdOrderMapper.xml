@@ -23,8 +23,8 @@
             o.rebate_amount AS rebateAmount,
             o.receipt_method AS receiptMethod,
             o.payment_method AS paymentMethod,
-            o.delivary_start_date AS deliveryStartDate,
-            o.delivary_end_date AS deliveryEndDate,
+            o.delivery_start_date AS deliveryStartDate,
+            o.delivery_end_date AS deliveryEndDate,
             o.creator_id AS creatorId,
             o.create_time AS createTime,
             CASE WHEN COUNT(oc.id) = 0 THEN 1 ELSE 0 END AS missingContract
@@ -63,10 +63,10 @@
             </foreach>
         </if>
         <if test="request.deliveryStartFrom != null">
-            AND o.delivary_start_date &gt;= #{request.deliveryStartFrom}
+            AND o.delivery_start_date &gt;= #{request.deliveryStartFrom}
         </if>
         <if test="request.deliveryStartTo != null">
-            AND o.delivary_start_date &lt;= #{request.deliveryStartTo}
+            AND o.delivery_start_date &lt;= #{request.deliveryStartTo}
         </if>
         GROUP BY o.id
         <include refid="cn.cordys.common.mapper.CommonMapper.sort">
@@ -93,8 +93,8 @@
             `id`, `order_no`, `order_name`, `business_entity_id`, `customer_id`, `industry_code`,
             `signing_entity`, `order_type`, `upstream_agent_id`, `agent_order_no`, `creator_id`,
             `status`, `total_amount`, `rebate_mode`, `rebate_value`, `no_rebate_amount`,
-            `rebate_amount`, `receivable_amount`, `media_payable_amount`, `delivary_start_date`,
-            `delivary_end_date`, `delivary_volume`, `remark`, `receipt_method`, `receipt_prepay_mode`,
+            `rebate_amount`, `receivable_amount`, `media_payable_amount`, `delivery_start_date`,
+            `delivery_end_date`, `delivery_volume`, `remark`, `receipt_method`, `receipt_prepay_mode`,
             `receipt_prepay_ratio`, `receipt_prepay_amount`, `receipt_prepay_deadline`,
             `receipt_account_period_days`, `payment_method`, `payment_prepay_mode`, `payment_prepay_ratio`,
             `payment_prepay_amount`, `payment_prepay_deadline`, `payment_postpay_trigger`,
@@ -107,7 +107,7 @@
         FROM ad_order
         WHERE status = 50
           AND deleted = 0
-          AND `delivary_end_date` &lt; #{now}
+          AND `delivery_end_date` &lt; #{now}
     </select>
 
 </mapper>

@@ -33,6 +33,9 @@ public class AdPaymentRecord extends BaseModel {
     @Schema(description = "金额")
     private BigDecimal amount;
 
+    @Schema(description = "付款状态:0未付/10已付/20逾期(V3.1 报表付款汇总 M6)")
+    private Integer status = 0;
+
     @Schema(description = "发生日期")
     private Date occurDate;
 

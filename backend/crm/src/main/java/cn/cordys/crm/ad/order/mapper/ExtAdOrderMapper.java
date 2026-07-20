@@ -39,7 +39,7 @@ public interface ExtAdOrderMapper extends BaseMapper<AdOrder> {
 
     /**
      * 查询已逾期的执行中订单（L-08 自动流转 50→80）。
-     * 条件：status=50(EXECUTING) 且 delivary_end_date < now。
+     * 条件：status=50(EXECUTING) 且 delivery_end_date < now。
      */
     List<AdOrder> selectOverdue(@Param("now") Date now);
 }
