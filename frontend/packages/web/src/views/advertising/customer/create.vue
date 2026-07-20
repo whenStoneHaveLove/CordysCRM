@@ -24,10 +24,12 @@
                 <n-input v-model:value="form.brand" placeholder="品牌" />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.customer.form.industryCode')">
-                <n-input v-model:value="form.industryCode" placeholder="行业类别(字典 industry)" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.customer.form.industry')">
-                <n-input v-model:value="form.industry" placeholder="行业" />
+                <n-select
+                  v-model:value="form.industryCode"
+                  :options="industryOptions"
+                  filterable
+                  placeholder="请选择行业类别"
+                />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.customer.form.signingEntity')">
                 <n-input v-model:value="form.signingEntity" placeholder="签约主体" />
@@ -72,19 +74,22 @@
 
   import CrmCard from '@/components/pure/crm-card/index.vue';
 
-  import { createAdCustomer, getAdCustomerDetail, updateAdCustomer } from '@/api/modules';
+  import { createAdCustomer, getAdCustomerDetail, getAdDictPage, updateAdCustomer } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
   const levelOptions = AdCustomerLevelOptions;
   const statusOptions = AdCustomerStatusOptions;
 
+  type SelectItem = { label: string; value: string };
+
+  const industryOptions = ref<SelectItem[]>([]);
+
   /** 表单本地类型：等级/状态使用 number | null 以适配 Naive UI 控件 */
   interface AdCustomerForm {
     name?: string;
     brand?: string;
     industryCode?: string;
-    industry?: string;
     signingEntity?: string;
     contactPerson?: string;
     contactPhone?: string;
@@ -108,7 +113,6 @@
     name: undefined,
     brand: undefined,
     industryCode: undefined,
-    industry: undefined,
     signingEntity: undefined,
     contactPerson: undefined,
     contactPhone: undefined,
@@ -123,12 +127,25 @@
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_CUSTOMER });
   }
 
+  /** 拉取行业类别(字典 industry)下拉选项 */
+  async function loadIndustryOptions() {
+    try {
+      const res = await getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' });
+      industryOptions.value = (res.list || []).map((it) => ({
+        label: it.dictLabel || it.dictValue || it.id,
+        value: it.dictValue || it.id,
+      }));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
+  }
+
   function buildPayload(): AdCustomerSaveParams {
     return {
       name: form.name,
       brand: form.brand,
       industryCode: form.industryCode,
-      industry: form.industry,
       signingEntity: form.signingEntity,
       contactPerson: form.contactPerson,
       contactPhone: form.contactPhone,
@@ -174,7 +191,6 @@
       form.name = res.name;
       form.brand = res.brand;
       form.industryCode = res.industryCode;
-      form.industry = res.industry;
       form.signingEntity = res.signingEntity;
       form.contactPerson = res.contactPerson;
       form.contactPhone = res.contactPhone;
@@ -188,7 +204,8 @@
     }
   }
 
-  onMounted(() => {
+  onMounted(async () => {
+    await loadIndustryOptions();
     if (isEdit.value) {
       loadForEdit();
     }

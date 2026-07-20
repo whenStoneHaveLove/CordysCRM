@@ -28,7 +28,12 @@
                 :label="t('advertising.contract.form.businessEntityId')"
                 path="businessEntityId"
               >
-                <n-input v-model:value="form.businessEntityId" placeholder="业务主体ID（必填）" />
+                <n-select
+                  v-model:value="form.businessEntityId"
+                  :options="businessEntityOptions"
+                  filterable
+                  placeholder="请选择业务主体"
+                />
               </n-form-item-gi>
               <n-form-item-gi
                 :span="1"
@@ -40,17 +45,35 @@
               <n-form-item-gi :span="1" :label="t('advertising.contract.form.contractType')" path="contractType">
                 <n-select v-model:value="form.contractType" :options="typeOptions" placeholder="请选择" />
               </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.contract.form.amount')" path="amount">
-                <n-input-number v-model:value="form.amount" :min="0" style="width: 100%" />
+              <n-form-item-gi
+                :span="1"
+                :label="t('advertising.contract.form.relatedPartyType')"
+                path="relatedPartyType"
+              >
+                <n-select
+                  v-model:value="form.relatedPartyType"
+                  :options="relatedPartyTypeOptions"
+                  placeholder="请选择关联方类型"
+                />
               </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.contract.form.relatedPartyId')">
-                <n-input v-model:value="form.relatedPartyId" placeholder="关联方ID" />
+              <n-form-item-gi :span="1" :label="t('advertising.contract.form.relatedPartyId')" path="relatedPartyId">
+                <n-select
+                  v-model:value="form.relatedPartyId"
+                  :options="relatedPartyOptions"
+                  filterable
+                  placeholder="请先选择关联方类型"
+                />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.contract.form.orderId')">
-                <n-input v-model:value="form.orderId" placeholder="关联订单ID" />
+                <n-select
+                  v-model:value="form.orderId"
+                  :options="orderOptions"
+                  filterable
+                  placeholder="请选择关联订单"
+                />
               </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.contract.form.changeOrderId')">
-                <n-input v-model:value="form.changeOrderId" placeholder="关联变更单ID" />
+              <n-form-item-gi :span="1" :label="t('advertising.contract.form.amount')" path="amount">
+                <n-input-number v-model:value="form.amount" :min="0" style="width: 100%" />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.contract.form.signingEntity')">
                 <n-input v-model:value="form.signingEntity" placeholder="签约主体" />
@@ -76,22 +99,43 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, onMounted, reactive, ref } from 'vue';
+  import { computed, onMounted, reactive, ref, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import { NButton, NDatePicker, NForm, NFormItemGi, NGrid, NInput, NInputNumber, NSelect, useMessage } from 'naive-ui';
 
-  import { AdContractDirectionOptions, AdContractTypeOptions } from '@lib/shared/enums/advertisingEnum';
+  import {
+    AdContractDirectionOptions,
+    AdContractTypeOptions,
+    AdRelatedPartyTypeOptions,
+  } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type { AdContractSaveParams } from '@lib/shared/models/advertising';
 
   import CrmCard from '@/components/pure/crm-card/index.vue';
 
-  import { createAdContract, getAdContractDetail, updateAdContract } from '@/api/modules';
+  import {
+    createAdContract,
+    getAdBusinessEntityPage,
+    getAdContractDetail,
+    getAdCustomerPage,
+    getAdOrderPage,
+    getAdResourcePage,
+    updateAdContract,
+  } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
   const directionOptions = AdContractDirectionOptions;
   const typeOptions = AdContractTypeOptions;
+  const relatedPartyTypeOptions = AdRelatedPartyTypeOptions;
+
+  type SelectItem = { label: string; value: string };
+
+  const businessEntityOptions = ref<SelectItem[]>([]);
+  const relatedPartyOptions = ref<SelectItem[]>([]);
+  const orderOptions = ref<SelectItem[]>([]);
+  /** 编辑回填期间抑制 watch，避免程序化设置 relatedPartyType 时清空已回填的 relatedPartyId */
+  const suppressWatch = ref(false);
 
   /** 表单本地类型 */
   interface AdContractForm {
@@ -100,9 +144,9 @@
     businessEntityId?: string;
     contractDirection?: number | null;
     contractType?: number | null;
+    relatedPartyType?: number | null;
     relatedPartyId?: string;
     orderId?: string;
-    changeOrderId?: string;
     signingEntity?: string;
     validFrom?: number | null;
     validTo?: number | null;
@@ -126,9 +170,9 @@
     businessEntityId: undefined,
     contractDirection: null,
     contractType: null,
+    relatedPartyType: null,
     relatedPartyId: undefined,
     orderId: undefined,
-    changeOrderId: undefined,
     signingEntity: undefined,
     validFrom: null,
     validTo: null,
@@ -141,6 +185,61 @@
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_CONTRACT });
   }
 
+  /** 业务主体 / 关联订单 选项（不依赖关联方类型，可预加载） */
+  async function loadCommonOptions() {
+    try {
+      const [beRes, orderRes] = await Promise.all([
+        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
+        getAdOrderPage({ current: 1, pageSize: 200 }),
+      ]);
+      businessEntityOptions.value = (beRes.list || []).map((it) => ({
+        label: it.name || it.id,
+        value: it.id,
+      }));
+      orderOptions.value = (orderRes.list || []).map((it) => ({
+        label: [it.orderNo, it.orderName].filter(Boolean).join(' ') || it.id,
+        value: it.id,
+      }));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
+  }
+
+  /** 关联方选项：依据 relatedPartyType 决定数据源
+   *  10 客户 → 客户表；20 上游代理 / 30 下游媒体 → 资源表(resourceType 对应) */
+  async function loadRelatedPartyOptions(type?: number | null) {
+    if (type === 10) {
+      try {
+        const res = await getAdCustomerPage({ current: 1, pageSize: 200 });
+        relatedPartyOptions.value = (res.list || []).map((it) => ({
+          label: it.name || it.id,
+          value: it.id,
+        }));
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e);
+      }
+    } else if (type === 20 || type === 30) {
+      try {
+        const res = await getAdResourcePage({
+          current: 1,
+          pageSize: 200,
+          resourceType: type === 20 ? 10 : 20,
+        });
+        relatedPartyOptions.value = (res.list || []).map((it) => ({
+          label: it.name || it.id,
+          value: it.id,
+        }));
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e);
+      }
+    } else {
+      relatedPartyOptions.value = [];
+    }
+  }
+
   function buildPayload(): AdContractSaveParams {
     return {
       contractNo: form.contractNo,
@@ -148,9 +247,9 @@
       businessEntityId: form.businessEntityId,
       contractDirection: form.contractDirection ?? undefined,
       contractType: form.contractType ?? undefined,
+      relatedPartyType: form.relatedPartyType ?? undefined,
       relatedPartyId: form.relatedPartyId,
       orderId: form.orderId,
-      changeOrderId: form.changeOrderId,
       signingEntity: form.signingEntity,
       validFrom: form.validFrom ?? undefined,
       validTo: form.validTo ?? undefined,
@@ -175,6 +274,19 @@
     }
     if (form.contractType === null || form.contractType === undefined) {
       message.warning(`${t('advertising.contract.form.contractType')} ${t('advertising.order.form.required')}`);
+      return false;
+    }
+    if (form.relatedPartyType === null || form.relatedPartyType === undefined) {
+      message.warning(`${t('advertising.contract.form.relatedPartyType')} ${t('advertising.order.form.required')}`);
+      return false;
+    }
+    if (!form.relatedPartyId) {
+      message.warning(`${t('advertising.contract.form.relatedPartyId')} ${t('advertising.order.form.required')}`);
+      return false;
+    }
+    // 单笔合同(contractType=20) 关联订单必填
+    if (form.contractType === 20 && !form.orderId) {
+      message.warning(`${t('advertising.contract.form.orderId')} ${t('advertising.order.form.required')}`);
       return false;
     }
     return true;
@@ -219,9 +331,9 @@
       form.businessEntityId = o.businessEntityId;
       form.contractDirection = o.contractDirection ?? null;
       form.contractType = o.contractType ?? null;
+      form.relatedPartyType = o.relatedPartyType ?? null;
       form.relatedPartyId = o.relatedPartyId;
       form.orderId = o.orderId;
-      form.changeOrderId = o.changeOrderId;
       form.signingEntity = o.signingEntity;
       form.validFrom = toDateValue(o.validFrom);
       form.validTo = toDateValue(o.validTo);
@@ -234,9 +346,27 @@
     }
   }
 
-  onMounted(() => {
+  // 关联方类型变化 → 清空已选关联方并重新拉取对应数据源
+  watch(
+    () => form.relatedPartyType,
+    (val) => {
+      if (suppressWatch.value) return;
+      form.relatedPartyId = undefined;
+      loadRelatedPartyOptions(val);
+    }
+  );
+
+  onMounted(async () => {
+    await loadCommonOptions();
     if (isEdit.value) {
-      loadForEdit();
+      suppressWatch.value = true;
+      await loadForEdit();
+      suppressWatch.value = false;
+      // 编辑回填后，依据(已回填的)关联方类型加载对应选项
+      loadRelatedPartyOptions(form.relatedPartyType);
+    } else {
+      // 新建：类型未选，选项置空
+      loadRelatedPartyOptions(form.relatedPartyType);
     }
   });
 </script>

@@ -264,6 +264,7 @@ export default {
   'advertising.contract.form.contractDirection': '合同方向',
   'advertising.contract.form.contractType': '合同类型',
   'advertising.contract.form.amount': '金额',
+  'advertising.contract.form.relatedPartyType': '关联方类型',
   'advertising.contract.form.relatedPartyId': '相对方',
   'advertising.contract.form.orderId': '关联订单',
   'advertising.contract.form.changeOrderId': '关联改单',

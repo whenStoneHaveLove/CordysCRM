@@ -225,6 +225,22 @@ export const AdContractTypeOptions = Object.keys(AdContractTypeLabel).map((k) =>
   value: Number(k),
 }));
 
+/** 合同关联方类型（镜像 RelatedPartyType，ad_contract.related_party_type NOT NULL，决定 related_party_id 取数来源）。 */
+export enum AdRelatedPartyTypeEnum {
+  CUSTOMER = 10,
+  UPSTREAM_AGENT = 20,
+  DOWNSTREAM_MEDIA = 30,
+}
+export const AdRelatedPartyTypeLabel: Record<number, string> = {
+  [AdRelatedPartyTypeEnum.CUSTOMER]: '客户',
+  [AdRelatedPartyTypeEnum.UPSTREAM_AGENT]: '上游代理',
+  [AdRelatedPartyTypeEnum.DOWNSTREAM_MEDIA]: '下游媒体',
+};
+export const AdRelatedPartyTypeOptions = Object.keys(AdRelatedPartyTypeLabel).map((k) => ({
+  label: AdRelatedPartyTypeLabel[Number(k)],
+  value: Number(k),
+}));
+
 /** 合同用印状态（镜像 SealStatus）。 */
 export enum AdSealStatusEnum {
   NOT_APPLIED = 0,
@@ -283,6 +299,10 @@ export function getAdContractDirectionLabel(value?: number | null): string {
 export function getAdContractTypeLabel(value?: number | null): string {
   if (value == null) return '-';
   return AdContractTypeLabel[value] ?? String(value);
+}
+export function getAdRelatedPartyTypeLabel(value?: number | null): string {
+  if (value == null) return '-';
+  return AdRelatedPartyTypeLabel[value] ?? String(value);
 }
 export function getAdSealStatusLabel(value?: number | null): string {
   if (value == null) return '-';

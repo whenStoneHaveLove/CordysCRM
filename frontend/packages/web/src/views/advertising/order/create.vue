@@ -21,13 +21,28 @@
                 <n-input v-model:value="form.orderName" placeholder="请输入订单名称" />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.businessEntityId')" path="businessEntityId">
-                <n-input v-model:value="form.businessEntityId" placeholder="业务主体ID（必填）" />
+                <n-select
+                  v-model:value="form.businessEntityId"
+                  :options="businessEntityOptions"
+                  filterable
+                  placeholder="请选择业务主体"
+                />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.customerId')" path="customerId">
-                <n-input v-model:value="form.customerId" placeholder="客户ID（必填）" />
+                <n-select
+                  v-model:value="form.customerId"
+                  :options="customerOptions"
+                  filterable
+                  placeholder="请选择客户"
+                />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.industryCode')">
-                <n-input v-model:value="form.industryCode" placeholder="行业类别(字典)" />
+                <n-select
+                  v-model:value="form.industryCode"
+                  :options="industryOptions"
+                  filterable
+                  placeholder="请选择行业类别"
+                />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.signingEntity')">
                 <n-input v-model:value="form.signingEntity" placeholder="签约主体" />
@@ -36,7 +51,12 @@
                 <n-select v-model:value="form.orderType" :options="orderTypeOptions" placeholder="请选择" />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.upstreamAgentId')">
-                <n-input v-model:value="form.upstreamAgentId" placeholder="上游代理" />
+                <n-select
+                  v-model:value="form.upstreamAgentId"
+                  :options="upstreamAgentOptions"
+                  filterable
+                  placeholder="请选择上游代理"
+                />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.agentOrderNo')">
                 <n-input v-model:value="form.agentOrderNo" placeholder="代理订单号" />
@@ -137,7 +157,15 @@
 
   import CrmCard from '@/components/pure/crm-card/index.vue';
 
-  import { createAdOrder, getAdOrderDetail, updateAdOrder } from '@/api/modules';
+  import {
+    createAdOrder,
+    getAdBusinessEntityPage,
+    getAdCustomerPage,
+    getAdDictPage,
+    getAdOrderDetail,
+    getAdResourcePage,
+    updateAdOrder,
+  } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
@@ -147,6 +175,13 @@
   const rebateModeOptions = AdModeOptions;
   const prepayModeOptions = AdModeOptions;
   const postpayTriggerOptions = AdPostpayTriggerOptions;
+
+  type SelectItem = { label: string; value: string };
+
+  const businessEntityOptions = ref<SelectItem[]>([]);
+  const customerOptions = ref<SelectItem[]>([]);
+  const upstreamAgentOptions = ref<SelectItem[]>([]);
+  const industryOptions = ref<SelectItem[]>([]);
 
   /** 表单本地类型：数值/日期使用 number | null 以适配 Naive UI 控件 */
   interface AdOrderForm {
@@ -224,6 +259,37 @@
 
   function goBack() {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_ORDER });
+  }
+
+  /** 拉取所有外键/字典下拉选项（onMounted 预加载） */
+  async function loadSelectOptions() {
+    try {
+      const [beRes, cuRes, reRes, dictRes] = await Promise.all([
+        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
+        getAdCustomerPage({ current: 1, pageSize: 200 }),
+        getAdResourcePage({ current: 1, pageSize: 200, resourceType: 10 }),
+        getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' }),
+      ]);
+      businessEntityOptions.value = (beRes.list || []).map((it) => ({
+        label: it.name || it.id,
+        value: it.id,
+      }));
+      customerOptions.value = (cuRes.list || []).map((it) => ({
+        label: it.name || it.id,
+        value: it.id,
+      }));
+      upstreamAgentOptions.value = (reRes.list || []).map((it) => ({
+        label: it.name || it.id,
+        value: it.id,
+      }));
+      industryOptions.value = (dictRes.list || []).map((it) => ({
+        label: it.dictLabel || it.dictValue || it.id,
+        value: it.dictValue || it.id,
+      }));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
   }
 
   function buildPayload(): AdOrderSaveParams {
@@ -357,7 +423,8 @@
     }
   }
 
-  onMounted(() => {
+  onMounted(async () => {
+    await loadSelectOptions();
     if (isEdit.value) {
       loadForEdit();
     }

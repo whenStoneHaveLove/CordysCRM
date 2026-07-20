@@ -258,6 +258,7 @@ export default {
   'advertising.contract.form.contractDirection': 'Direction',
   'advertising.contract.form.contractType': 'Type',
   'advertising.contract.form.amount': 'Amount',
+  'advertising.contract.form.relatedPartyType': 'Related Party Type',
   'advertising.contract.form.relatedPartyId': 'Related Party',
   'advertising.contract.form.orderId': 'Related Order',
   'advertising.contract.form.changeOrderId': 'Related Change Order',

@@ -24,13 +24,23 @@
                 <n-select v-model:value="form.resourceType" :options="typeOptions" placeholder="请选择" />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.resource.form.mediaType')">
-                <n-input v-model:value="form.mediaType" placeholder="媒体类型(字典 media_type)" />
+                <n-select
+                  v-model:value="form.mediaType"
+                  :options="mediaTypeOptions"
+                  filterable
+                  placeholder="请选择媒体类型"
+                />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.resource.form.channel')">
                 <n-input v-model:value="form.channel" placeholder="渠道" />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.resource.form.businessEntityId')">
-                <n-input v-model:value="form.businessEntityId" placeholder="归属业务主体ID" />
+                <n-select
+                  v-model:value="form.businessEntityId"
+                  :options="businessEntityOptions"
+                  filterable
+                  placeholder="请选择归属业务主体"
+                />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.resource.form.signingEntity')">
                 <n-input v-model:value="form.signingEntity" placeholder="签约主体" />
@@ -75,11 +85,22 @@
 
   import CrmCard from '@/components/pure/crm-card/index.vue';
 
-  import { createAdResource, getAdResourceDetail, updateAdResource } from '@/api/modules';
+  import {
+    createAdResource,
+    getAdBusinessEntityPage,
+    getAdDictPage,
+    getAdResourceDetail,
+    updateAdResource,
+  } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
   const typeOptions = AdResourceTypeOptions;
+
+  type SelectItem = { label: string; value: string };
+
+  const businessEntityOptions = ref<SelectItem[]>([]);
+  const mediaTypeOptions = ref<SelectItem[]>([]);
 
   /** 表单本地类型：数值使用 number | null 以适配 Naive UI 控件 */
   interface AdResourceForm {
@@ -125,6 +146,27 @@
 
   function goBack() {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_RESOURCE });
+  }
+
+  /** 拉取归属业务主体 / 媒体类型(字典)下拉选项 */
+  async function loadSelectOptions() {
+    try {
+      const [beRes, dictRes] = await Promise.all([
+        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
+        getAdDictPage({ current: 1, pageSize: 200, dictCode: 'media_type' }),
+      ]);
+      businessEntityOptions.value = (beRes.list || []).map((it) => ({
+        label: it.name || it.id,
+        value: it.id,
+      }));
+      mediaTypeOptions.value = (dictRes.list || []).map((it) => ({
+        label: it.dictLabel || it.dictValue || it.id,
+        value: it.dictValue || it.id,
+      }));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
   }
 
   function buildPayload(): AdResourceSaveParams {
@@ -198,7 +240,8 @@
     }
   }
 
-  onMounted(() => {
+  onMounted(async () => {
+    await loadSelectOptions();
     if (isEdit.value) {
       loadForEdit();
     }
