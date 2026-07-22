@@ -275,7 +275,7 @@
         value: it.id,
       }));
       customerOptions.value = (cuRes.list || []).map((it) => ({
-        label: it.name || it.id,
+        label: it.customerName || it.id,
         value: it.id,
       }));
       upstreamAgentOptions.value = (reRes.list || []).map((it) => ({

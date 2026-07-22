@@ -874,7 +874,7 @@ export interface AdCustomerPageParams {
 export interface AdCustomerSaveParams {
   id?: string;
   /** 客户名称：全局唯一（按名称去重，无业务主体字段），PRD §8.4。 */
-  name?: string;
+  customerName?: string;
   brand?: string;
   industryCode?: string;
   signingEntity?: string;
@@ -889,7 +889,35 @@ export interface AdCustomerSaveParams {
 }
 
 export interface AdCustomerInfo {
-  id: string;
+  /** 客户主信息（后端 AdCustomerDetailResponse.customer 为嵌套对象，实体字段名为 name） */
+  customer: {
+    id: string;
+    /** 客户名称：后端实体字段为 name（非列表/保存用的 customerName） */
+    name?: string;
+    brand?: string;
+    industryCode?: string;
+    signingEntity?: string;
+    contactPerson?: string;
+    contactPhone?: string;
+    email?: string;
+    address?: string;
+    industry?: string;
+    customerLevel?: number;
+    status?: number;
+    remark?: string;
+  };
+  /** 客户等级标签 */
+  customerLevelLabel?: string;
+  /** 状态标签 */
+  statusLabel?: string;
+  /** 关联订单数（后端详情接口当前未返回，前端兜底为 0） */
+  orderCount?: number;
+}
+
+/** 广告客户实体（后端新建/编辑返回 AdCustomer 实体，字段为 name 的扁平结构）。 */
+export interface AdCustomerEntity {
+  id?: string;
+  /** 客户名称：后端实体字段为 name（非列表/保存用的 customerName） */
   name?: string;
   brand?: string;
   industryCode?: string;
@@ -900,18 +928,13 @@ export interface AdCustomerInfo {
   address?: string;
   industry?: string;
   customerLevel?: number;
-  customerLevelLabel?: string;
   status?: number;
-  statusLabel?: string;
-  orderCount?: number;
   remark?: string;
-  createTime?: number;
-  updateTime?: number;
 }
 
 export interface AdCustomerListItem {
   id: string;
-  name?: string;
+  customerName?: string;
   brand?: string;
   industry?: string;
   industryCode?: string;

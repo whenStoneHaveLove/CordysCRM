@@ -147,7 +147,7 @@
   }
 
   const columns: DataTableColumn<AdCustomerListItem>[] = [
-    { key: 'name', title: t('advertising.customer.column.name'), minWidth: 160, ellipsis: { tooltip: true } },
+    { key: 'customerName', title: t('advertising.customer.column.name'), minWidth: 160, ellipsis: { tooltip: true } },
     {
       key: 'brand',
       title: t('advertising.customer.column.brand'),

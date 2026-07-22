@@ -213,7 +213,7 @@
       try {
         const res = await getAdCustomerPage({ current: 1, pageSize: 200 });
         relatedPartyOptions.value = (res.list || []).map((it) => ({
-          label: it.name || it.id,
+          label: it.customerName || it.id,
           value: it.id,
         }));
       } catch (e) {

@@ -10,17 +10,18 @@ import type {
   AdCustomerPageParams,
   AdCustomerPageResult,
   AdCustomerInfo,
+  AdCustomerEntity,
 } from '@lib/shared/models/advertising';
 
 export default function useAdCustomerApi(CDR: CordysAxios) {
   // 新建客户（名称全局唯一，后端校验；下单自动同步）
   function createAdCustomer(data: AdCustomerSaveParams) {
-    return CDR.post<AdCustomerInfo>({ url: AdCustomerCreateUrl, data });
+    return CDR.post<AdCustomerEntity>({ url: AdCustomerCreateUrl, data });
   }
 
   // 编辑客户
   function updateAdCustomer(data: AdCustomerSaveParams) {
-    return CDR.put<AdCustomerInfo>({ url: AdCustomerUpdateUrl, data });
+    return CDR.put<AdCustomerEntity>({ url: AdCustomerUpdateUrl, data });
   }
 
   // 客户详情

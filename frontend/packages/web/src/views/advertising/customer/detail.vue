@@ -4,9 +4,11 @@
       <n-card v-if="detail" :bordered="false">
         <template #header>
           <n-space align="center">
-            <span>{{ detail.name || '-' }}</span>
-            <n-tag :type="statusTagType(detail.status)">{{ getAdCustomerStatusLabel(detail.status) }}</n-tag>
-            <n-tag>{{ getAdCustomerLevelLabel(detail.customerLevel) }}</n-tag>
+            <span>{{ detail.customer?.name || '-' }}</span>
+            <n-tag :type="statusTagType(detail.customer?.status)">{{
+              getAdCustomerStatusLabel(detail.customer?.status)
+            }}</n-tag>
+            <n-tag>{{ getAdCustomerLevelLabel(detail.customer?.customerLevel) }}</n-tag>
           </n-space>
         </template>
         <template #header-extra>
@@ -18,17 +20,17 @@
 
         <n-divider title-placement="left">{{ t('advertising.customer.column.name') }}</n-divider>
         <n-descriptions label-placement="left" :column="3" bordered size="small">
-          <n-descriptions-item label="客户名称">{{ detail.name || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="品牌">{{ detail.brand || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="行业类别">{{ detail.industryCode || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="行业">{{ detail.industry || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="签约主体">{{ detail.signingEntity || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="联系人">{{ detail.contactPerson || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="联系电话">{{ detail.contactPhone || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="邮箱">{{ detail.email || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="地址">{{ detail.address || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="客户名称">{{ detail.customer?.name || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="品牌">{{ detail.customer?.brand || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="行业类别">{{ detail.customer?.industryCode || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="行业">{{ detail.customer?.industry || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="签约主体">{{ detail.customer?.signingEntity || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="联系人">{{ detail.customer?.contactPerson || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="联系电话">{{ detail.customer?.contactPhone || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="邮箱">{{ detail.customer?.email || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="地址">{{ detail.customer?.address || '-' }}</n-descriptions-item>
           <n-descriptions-item label="关联订单数">{{ detail.orderCount ?? 0 }}</n-descriptions-item>
-          <n-descriptions-item label="备注">{{ detail.remark || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="备注">{{ detail.customer?.remark || '-' }}</n-descriptions-item>
         </n-descriptions>
       </n-card>
     </n-spin>

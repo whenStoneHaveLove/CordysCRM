@@ -17,8 +17,8 @@
         <div class="flex-1 overflow-auto">
           <n-form ref="formRef" :model="form" label-placement="left" :label-width="120">
             <n-grid :cols="2" :x-gap="16" item-responsive>
-              <n-form-item-gi :span="1" :label="t('advertising.customer.form.name')" path="name">
-                <n-input v-model:value="form.name" placeholder="请输入客户名称（全局唯一）" />
+              <n-form-item-gi :span="1" :label="t('advertising.customer.form.name')" path="customerName">
+                <n-input v-model:value="form.customerName" placeholder="请输入客户名称（全局唯一）" />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.customer.form.brand')">
                 <n-input v-model:value="form.brand" placeholder="品牌" />
@@ -87,7 +87,7 @@
 
   /** 表单本地类型：等级/状态使用 number | null 以适配 Naive UI 控件 */
   interface AdCustomerForm {
-    name?: string;
+    customerName?: string;
     brand?: string;
     industryCode?: string;
     signingEntity?: string;
@@ -110,7 +110,7 @@
   const saving = ref(false);
 
   const form = reactive<AdCustomerForm>({
-    name: undefined,
+    customerName: undefined,
     brand: undefined,
     industryCode: undefined,
     signingEntity: undefined,
@@ -143,7 +143,7 @@
 
   function buildPayload(): AdCustomerSaveParams {
     return {
-      name: form.name,
+      customerName: form.customerName,
       brand: form.brand,
       industryCode: form.industryCode,
       signingEntity: form.signingEntity,
@@ -158,7 +158,7 @@
   }
 
   function validate(): boolean {
-    if (!form.name) {
+    if (!form.customerName) {
       message.warning(`${t('advertising.customer.form.name')} ${t('advertising.customer.form.required')}`);
       return false;
     }
@@ -188,17 +188,17 @@
   async function loadForEdit() {
     try {
       const res = await getAdCustomerDetail(id);
-      form.name = res.name;
-      form.brand = res.brand;
-      form.industryCode = res.industryCode;
-      form.signingEntity = res.signingEntity;
-      form.contactPerson = res.contactPerson;
-      form.contactPhone = res.contactPhone;
-      form.email = res.email;
-      form.address = res.address;
-      form.customerLevel = res.customerLevel ?? 20;
-      form.status = res.status ?? 0;
-      form.remark = res.remark;
+      form.customerName = res.customer?.name;
+      form.brand = res.customer?.brand;
+      form.industryCode = res.customer?.industryCode;
+      form.signingEntity = res.customer?.signingEntity;
+      form.contactPerson = res.customer?.contactPerson;
+      form.contactPhone = res.customer?.contactPhone;
+      form.email = res.customer?.email;
+      form.address = res.customer?.address;
+      form.customerLevel = res.customer?.customerLevel ?? 20;
+      form.status = res.customer?.status ?? 0;
+      form.remark = res.customer?.remark;
     } catch (e) {
       message.error((e as Error).message || '加载失败');
     }
