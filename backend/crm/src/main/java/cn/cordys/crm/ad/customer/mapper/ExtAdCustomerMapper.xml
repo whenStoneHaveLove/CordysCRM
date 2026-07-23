@@ -14,6 +14,9 @@
             c.email           AS email,
             c.address         AS address,
             c.industry        AS industry,
+            c.brand           AS brand,
+            c.industry_code   AS industryCode,
+            c.signing_entity  AS signingEntity,
             c.customer_level  AS customerLevel,
             c.status          AS status,
             c.remark          AS remark,
@@ -36,7 +39,7 @@
         <include refid="cn.cordys.common.mapper.CommonMapper.sort">
             <property name="sort" value="request.sort"/>
             <property name="prefix" value="c"/>
-            <property name="defaultSort" value="c.create_time DESC"/>
+            <property name="defaultSort" value="create_time DESC"/>
         </include>
     </select>
 

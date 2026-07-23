@@ -143,11 +143,11 @@
   async function loadForEdit() {
     try {
       const res = await getAdBusinessEntityDetail(id);
-      form.name = res.name;
-      form.code = res.code;
-      form.status = res.status ?? 10;
-      form.isCrossEntity = res.isCrossEntity ?? 0;
-      form.remark = res.remark;
+      form.name = res.entity?.name;
+      form.code = res.entity?.code;
+      form.status = res.entity?.status ?? 10;
+      form.isCrossEntity = res.entity?.isCrossEntity ?? 0;
+      form.remark = res.entity?.remark;
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);

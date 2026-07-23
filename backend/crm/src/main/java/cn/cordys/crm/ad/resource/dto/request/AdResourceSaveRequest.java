@@ -21,8 +21,23 @@ public class AdResourceSaveRequest {
     @Schema(description = "资源类型:10上游代理/20下游媒体")
     private Integer resourceType;
 
-    @Schema(description = "媒体渠道")
-    private String mediaChannel;
+    @Schema(description = "媒体类型")
+    private String mediaType;
+
+    @Schema(description = "渠道")
+    private String channel;
+
+    @Schema(description = "刊例价")
+    private String rateCard;
+
+    @Schema(description = "折扣政策")
+    private String discountPolicy;
+
+    @Schema(description = "信用代码")
+    private String creditCode;
+
+    @Schema(description = "签约主体")
+    private String signingEntity;
 
     @Schema(description = "广告位")
     private String position;

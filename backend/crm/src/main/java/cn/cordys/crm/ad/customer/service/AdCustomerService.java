@@ -14,7 +14,10 @@ import cn.cordys.crm.ad.customer.dto.request.AdCustomerSaveRequest;
 import cn.cordys.crm.ad.customer.dto.response.AdCustomerDetailResponse;
 import cn.cordys.crm.ad.customer.dto.response.AdCustomerListResponse;
 import cn.cordys.crm.ad.customer.mapper.ExtAdCustomerMapper;
+import cn.cordys.crm.ad.order.domain.AdOrder;
+import cn.cordys.crm.ad.order.mapper.ExtAdOrderMapper;
 import cn.cordys.mybatis.BaseMapper;
+import cn.cordys.mybatis.lambda.LambdaQueryWrapper;
 import cn.cordys.security.SessionUser;
 import cn.cordys.common.dto.RoleDataScopeDTO;
 import com.github.pagehelper.Page;
@@ -44,6 +47,8 @@ public class AdCustomerService {
     @Resource
     private ExtAdCustomerMapper extAdCustomerMapper;
     @Resource
+    private ExtAdOrderMapper extAdOrderMapper;
+    @Resource
     private AdEntityPermissionProvider entityPermissionProvider;
 
     private static final String ROLE_MEDIA = "ROLE_MEDIA";
@@ -62,6 +67,9 @@ public class AdCustomerService {
         c.setEmail(request.getEmail());
         c.setAddress(request.getAddress());
         c.setIndustry(request.getIndustry());
+        c.setBrand(request.getBrand());
+        c.setIndustryCode(request.getIndustryCode());
+        c.setSigningEntity(request.getSigningEntity());
         c.setCustomerLevel(request.getCustomerLevel());
         c.setStatus(request.getStatus() != null ? request.getStatus() : CustomerStatus.ACTIVE.getCode());
         c.setRemark(request.getRemark());
@@ -94,6 +102,9 @@ public class AdCustomerService {
         existing.setEmail(request.getEmail());
         existing.setAddress(request.getAddress());
         existing.setIndustry(request.getIndustry());
+        existing.setBrand(request.getBrand());
+        existing.setIndustryCode(request.getIndustryCode());
+        existing.setSigningEntity(request.getSigningEntity());
         existing.setCustomerLevel(request.getCustomerLevel());
         if (request.getStatus() != null) {
             existing.setStatus(request.getStatus());
@@ -116,6 +127,13 @@ public class AdCustomerService {
         resp.setCustomer(c);
         resp.setCustomerLevelLabel(CustomerLevel.labelOf(c.getCustomerLevel()));
         resp.setStatusLabel(CustomerStatus.labelOf(c.getStatus()));
+        // 关联订单数：按 customerId 统计同租户、未删除的订单
+        LambdaQueryWrapper<AdOrder> orderWrapper = new LambdaQueryWrapper<>();
+        orderWrapper.eq(AdOrder::getCustomerId, id)
+                .eq(AdOrder::getOrganizationId, orgId)
+                .eq(AdOrder::getDeleted, 0);
+        long orderCount = extAdOrderMapper.selectListByLambda(orderWrapper).size();
+        resp.setOrderCount(orderCount);
         return resp;
     }
 

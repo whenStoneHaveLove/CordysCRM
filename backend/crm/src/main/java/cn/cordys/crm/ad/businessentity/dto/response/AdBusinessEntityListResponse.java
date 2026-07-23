@@ -24,6 +24,18 @@ public class AdBusinessEntityListResponse {
     @Schema(description = "状态标签")
     private String statusLabel;
 
+    @Schema(description = "是否跨主体:0-否/1-是")
+    private Integer isCrossEntity;
+
+    @Schema(description = "备注")
+    private String remark;
+
+    @Schema(description = "关联用户数")
+    private Integer userCount;
+
+    @Schema(description = "关联订单数")
+    private Integer orderCount;
+
     @Schema(description = "组织(租户)id")
     private String organizationId;
 

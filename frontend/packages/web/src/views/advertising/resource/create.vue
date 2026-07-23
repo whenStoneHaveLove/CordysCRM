@@ -17,8 +17,8 @@
         <div class="flex-1 overflow-auto">
           <n-form ref="formRef" :model="form" label-placement="left" :label-width="120">
             <n-grid :cols="2" :x-gap="16" item-responsive>
-              <n-form-item-gi :span="1" :label="t('advertising.resource.form.name')" path="name">
-                <n-input v-model:value="form.name" placeholder="请输入资源名称" />
+              <n-form-item-gi :span="1" :label="t('advertising.resource.form.name')" path="resourceName">
+                <n-input v-model:value="form.resourceName" placeholder="请输入资源名称" />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.resource.form.type')" path="resourceType">
                 <n-select v-model:value="form.resourceType" :options="typeOptions" placeholder="请选择" />
@@ -95,6 +95,8 @@
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  import { toNumberOrNull } from '../utils';
+
   const typeOptions = AdResourceTypeOptions;
 
   type SelectItem = { label: string; value: string };
@@ -104,7 +106,7 @@
 
   /** 表单本地类型：数值使用 number | null 以适配 Naive UI 控件 */
   interface AdResourceForm {
-    name?: string;
+    resourceName?: string;
     resourceType?: number | null;
     mediaType?: string;
     channel?: string;
@@ -129,7 +131,7 @@
   const saving = ref(false);
 
   const form = reactive<AdResourceForm>({
-    name: undefined,
+    resourceName: undefined,
     resourceType: null,
     mediaType: undefined,
     channel: undefined,
@@ -171,7 +173,7 @@
 
   function buildPayload(): AdResourceSaveParams {
     return {
-      name: form.name,
+      resourceName: form.resourceName,
       resourceType: form.resourceType ?? undefined,
       mediaType: form.mediaType,
       channel: form.channel,
@@ -188,7 +190,7 @@
   }
 
   function validate(): boolean {
-    if (!form.name) {
+    if (!form.resourceName) {
       message.warning(`${t('advertising.resource.form.name')} ${t('advertising.resource.form.required')}`);
       return false;
     }
@@ -222,19 +224,19 @@
   async function loadForEdit() {
     try {
       const res = await getAdResourceDetail(id);
-      form.name = res.name;
-      form.resourceType = res.resourceType ?? null;
-      form.mediaType = res.mediaType;
-      form.channel = res.channel;
-      form.rateCard = res.rateCard ?? null;
-      form.discountPolicy = res.discountPolicy;
-      form.creditCode = res.creditCode;
-      form.signingEntity = res.signingEntity;
-      form.businessEntityId = res.businessEntityId;
-      form.position = res.position;
-      form.dailyImpressions = res.dailyImpressions ?? null;
-      form.unitPrice = res.unitPrice ?? null;
-      form.remark = res.remark;
+      form.resourceName = res.resource?.resourceName;
+      form.resourceType = res.resource?.resourceType ?? null;
+      form.mediaType = res.resource?.mediaType;
+      form.channel = res.resource?.channel;
+      form.rateCard = toNumberOrNull(res.resource?.rateCard);
+      form.discountPolicy = res.resource?.discountPolicy;
+      form.creditCode = res.resource?.creditCode;
+      form.signingEntity = res.resource?.signingEntity;
+      form.businessEntityId = res.resource?.businessEntityId;
+      form.position = res.resource?.position;
+      form.dailyImpressions = res.resource?.dailyImpressions ?? null;
+      form.unitPrice = res.resource?.unitPrice ?? null;
+      form.remark = res.resource?.remark;
     } catch (e) {
       message.error((e as Error).message || '加载失败');
     }

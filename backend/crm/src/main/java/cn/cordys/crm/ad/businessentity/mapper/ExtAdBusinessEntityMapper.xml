@@ -10,8 +10,17 @@
             name,
             code,
             status,
+            is_cross_entity AS isCrossEntity,
+            remark          AS remark,
             organization_id AS organizationId,
-            create_time    AS createTime
+            create_time     AS createTime,
+            (SELECT COUNT(1)
+             FROM ad_user_business_entity ub
+             WHERE ub.business_entity_id = ad_business_entity.id
+               AND ub.deleted = 0) AS userCount,
+            (SELECT COUNT(1)
+             FROM ad_order o
+             WHERE o.business_entity_id = ad_business_entity.id) AS orderCount
         FROM ad_business_entity
         WHERE organization_id = #{organizationId}
           AND deleted = 0

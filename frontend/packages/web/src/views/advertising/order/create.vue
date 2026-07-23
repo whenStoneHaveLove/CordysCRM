@@ -279,7 +279,7 @@
         value: it.id,
       }));
       upstreamAgentOptions.value = (reRes.list || []).map((it) => ({
-        label: it.name || it.id,
+        label: it.resourceName || it.id,
         value: it.id,
       }));
       industryOptions.value = (dictRes.list || []).map((it) => ({

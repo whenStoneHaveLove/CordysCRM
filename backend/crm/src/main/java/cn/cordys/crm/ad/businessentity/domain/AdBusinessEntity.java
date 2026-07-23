@@ -2,6 +2,7 @@ package cn.cordys.crm.ad.businessentity.domain;
 
 import cn.cordys.common.domain.BaseModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -26,4 +27,12 @@ public class AdBusinessEntity extends BaseModel {
 
     @Schema(description = "是否删除:0-否/1-是")
     private Integer deleted = 0;
+
+    @Schema(description = "是否跨主体:0-否/1-是")
+    @Column(name = "is_cross_entity")
+    private Integer isCrossEntity = 0;
+
+    @Schema(description = "备注")
+    @Column(name = "remark")
+    private String remark;
 }

@@ -30,7 +30,7 @@ public class AdResource extends BaseModel {
     @Schema(description = "媒体类型(字典)")
     private String mediaType;
 
-    /** M1~M5: 渠道（M6中视为mediaChannel） */
+    /** M1~M5: 渠道（前端字段名为 channel） */
     @Schema(description = "渠道")
     private String channel;
 

@@ -593,31 +593,48 @@ export interface AdBusinessEntitySaveParams {
   remark?: string;
 }
 
-export interface AdBusinessEntityInfo {
+/** 业务主体列表项（扁平，对应后端分页列表返回；列表接口未返回 userCount/orderCount 时为空）。 */
+export interface AdBusinessEntityListItem {
   id: string;
   name?: string;
   code?: string;
   status?: number;
   statusLabel?: string;
+  /** 跨主体隔离标记：0 否 / 1 是（is_cross_entity，PRD §3.2/§3.4）。 */
   isCrossEntity?: number;
   remark?: string;
-  creatorId?: string;
-  createTime?: number;
-  updateTime?: number;
-  /** 关联用户数（读 AD_USER_BUSINESS_ENTITY:READ，后端待补）。详情/列表共用，列表接口未返回时为空。 */
+  /** 关联用户数（读 AD_USER_BUSINESS_ENTITY:READ，后端待补）。列表接口未返回时为空。 */
   userCount?: number;
   /** 关联订单数。列表接口未返回时为空。 */
   orderCount?: number;
+  createTime?: number;
+  updateTime?: number;
 }
 
-export interface AdBusinessEntityDetail extends AdBusinessEntityInfo {
-  /** 关联用户数（读 AD_USER_BUSINESS_ENTITY:READ，后端待补）。 */
+/** 业务主体详情（嵌套 entity，对应后端 AdBusinessEntityDetailResponse）。 */
+export interface AdBusinessEntityInfo {
+  /** 主体主信息（后端 entity 为嵌套对象）。 */
+  entity: {
+    id?: string;
+    name?: string;
+    code?: string;
+    status?: number;
+    isCrossEntity?: number;
+    remark?: string;
+  };
+  /** 状态标签（顶层）。 */
+  statusLabel?: string;
+  /** 关联用户数。 */
   userCount?: number;
   /** 关联订单数。 */
   orderCount?: number;
+  createTime?: number;
+  updateTime?: number;
 }
 
-export type AdBusinessEntityPageResult = CommonList<AdBusinessEntityInfo>;
+export interface AdBusinessEntityDetail extends AdBusinessEntityInfo {}
+
+export type AdBusinessEntityPageResult = CommonList<AdBusinessEntityListItem>;
 
 /* ----------------------------- 字典 ----------------------------- */
 
@@ -803,7 +820,7 @@ export interface AdResourcePageParams {
 
 export interface AdResourceSaveParams {
   id?: string;
-  name?: string;
+  resourceName?: string;
   resourceType?: number;
   mediaType?: string;
   channel?: string;
@@ -819,31 +836,35 @@ export interface AdResourceSaveParams {
 }
 
 export interface AdResourceInfo {
-  id: string;
-  name?: string;
-  resourceType?: number;
+  /** 资源主信息（后端 AdResourceDetailResponse.resource 为嵌套对象）。 */
+  resource: {
+    id?: string;
+    resourceName?: string;
+    resourceType?: number;
+    mediaType?: string;
+    channel?: string;
+    rateCard?: number | null;
+    discountPolicy?: string;
+    creditCode?: string;
+    signingEntity?: string;
+    businessEntityId?: string;
+    position?: string;
+    dailyImpressions?: number | null;
+    unitPrice?: number | null;
+    status?: number;
+    remark?: string;
+  };
+  /** 资源类型标签（顶层）。 */
   resourceTypeLabel?: string;
-  mediaType?: string;
-  channel?: string;
-  rateCard?: number;
-  discountPolicy?: string;
-  creditCode?: string;
-  signingEntity?: string;
-  businessEntityId?: string;
-  businessEntityName?: string;
-  position?: string;
-  dailyImpressions?: number;
-  unitPrice?: number;
-  status?: number;
+  /** 状态标签（顶层）。 */
   statusLabel?: string;
-  remark?: string;
-  createTime?: number;
-  updateTime?: number;
+  /** 归属业务主体名称（顶层）。 */
+  businessEntityName?: string;
 }
 
 export interface AdResourceListItem {
   id: string;
-  name?: string;
+  resourceName?: string;
   resourceType?: number;
   resourceTypeLabel?: string;
   mediaType?: string;

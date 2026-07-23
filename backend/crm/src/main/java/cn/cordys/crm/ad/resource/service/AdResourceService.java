@@ -62,7 +62,12 @@ public class AdResourceService {
         r.setId(IDGenerator.nextStr());
         r.setName(request.getResourceName());
         r.setResourceType(request.getResourceType());
-        r.setChannel(request.getMediaChannel());
+        r.setMediaType(request.getMediaType());
+        r.setChannel(request.getChannel());
+        r.setRateCard(request.getRateCard());
+        r.setDiscountPolicy(request.getDiscountPolicy());
+        r.setCreditCode(request.getCreditCode());
+        r.setSigningEntity(request.getSigningEntity());
         r.setPosition(request.getPosition());
         r.setDailyImpressions(request.getDailyImpressions());
         r.setUnitPrice(request.getUnitPrice());
@@ -94,7 +99,12 @@ public class AdResourceService {
 
         existing.setName(request.getResourceName());
         existing.setResourceType(request.getResourceType());
-        existing.setChannel(request.getMediaChannel());
+        existing.setMediaType(request.getMediaType());
+        existing.setChannel(request.getChannel());
+        existing.setRateCard(request.getRateCard());
+        existing.setDiscountPolicy(request.getDiscountPolicy());
+        existing.setCreditCode(request.getCreditCode());
+        existing.setSigningEntity(request.getSigningEntity());
         existing.setPosition(request.getPosition());
         existing.setDailyImpressions(request.getDailyImpressions());
         existing.setUnitPrice(request.getUnitPrice());

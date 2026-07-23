@@ -131,7 +131,7 @@
   }
 
   const columns: DataTableColumn<AdResourceListItem>[] = [
-    { key: 'name', title: t('advertising.resource.column.name'), minWidth: 160, ellipsis: { tooltip: true } },
+    { key: 'resourceName', title: t('advertising.resource.column.name'), minWidth: 160, ellipsis: { tooltip: true } },
     {
       key: 'resourceType',
       title: t('advertising.resource.column.type'),

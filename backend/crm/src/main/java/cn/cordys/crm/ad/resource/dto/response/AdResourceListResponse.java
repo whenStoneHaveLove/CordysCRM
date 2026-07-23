@@ -23,8 +23,14 @@ public class AdResourceListResponse {
     @Schema(description = "资源类型标签")
     private String resourceTypeLabel;
 
-    @Schema(description = "媒体渠道")
-    private String mediaChannel;
+    @Schema(description = "媒体类型")
+    private String mediaType;
+
+    @Schema(description = "渠道")
+    private String channel;
+
+    @Schema(description = "刊例价")
+    private String rateCard;
 
     @Schema(description = "广告位")
     private String position;

@@ -21,4 +21,10 @@ public class AdBusinessEntitySaveRequest {
 
     @Schema(description = "状态:10启用/20停用")
     private Integer status;
+
+    @Schema(description = "是否跨主体:0-否/1-是")
+    private Integer isCrossEntity;
+
+    @Schema(description = "备注")
+    private String remark;
 }

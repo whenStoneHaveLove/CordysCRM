@@ -4,7 +4,7 @@
       <div class="flex h-full flex-col px-[16px] py-[16px]">
         <n-space class="mb-[12px]" justify="space-between" align="center">
           <div class="text-[16px] font-semibold">
-            {{ t('advertising.businessEntity.detail') }} · {{ detail.name || id }}
+            {{ t('advertising.businessEntity.detail') }} · {{ detail.entity?.name || id }}
           </div>
           <n-space>
             <n-button @click="goBack">{{ t('advertising.businessEntity.form.cancel') }}</n-button>
@@ -15,18 +15,18 @@
         <div class="flex-1 overflow-auto">
           <n-descriptions bordered :column="2" label-placement="left">
             <n-descriptions-item :label="t('advertising.businessEntity.form.name')">{{
-              detail.name || '-'
+              detail.entity?.name || '-'
             }}</n-descriptions-item>
             <n-descriptions-item :label="t('advertising.businessEntity.form.code')">{{
-              detail.code || '-'
+              detail.entity?.code || '-'
             }}</n-descriptions-item>
             <n-descriptions-item :label="t('advertising.businessEntity.form.status')">
-              <n-tag :type="detail.status === 10 ? 'success' : 'default'">{{
-                getAdBusinessEntityStatusLabel(detail.status)
+              <n-tag :type="detail.entity?.status === 10 ? 'success' : 'default'">{{
+                getAdBusinessEntityStatusLabel(detail.entity?.status)
               }}</n-tag>
             </n-descriptions-item>
             <n-descriptions-item :label="t('advertising.businessEntity.form.isCrossEntity')">
-              {{ detail.isCrossEntity === 1 ? t('advertising.common.yes') : t('advertising.common.no') }}
+              {{ detail.entity?.isCrossEntity === 1 ? t('advertising.common.yes') : t('advertising.common.no') }}
             </n-descriptions-item>
             <n-descriptions-item :label="t('advertising.businessEntity.column.userCount')">{{
               detail.userCount ?? '-'
@@ -35,7 +35,7 @@
               detail.orderCount ?? '-'
             }}</n-descriptions-item>
             <n-descriptions-item :label="t('advertising.businessEntity.column.remark')">{{
-              detail.remark || '-'
+              detail.entity?.remark || '-'
             }}</n-descriptions-item>
             <n-descriptions-item :label="t('advertising.businessEntity.column.createTime')">{{
               fmtDateTime(detail.createTime)
@@ -72,12 +72,15 @@
   const id = (route.params.id as string) || '';
 
   const detail = reactive<AdBusinessEntityDetail>({
-    id,
-    name: undefined,
-    code: undefined,
-    status: undefined,
-    isCrossEntity: undefined,
-    remark: undefined,
+    entity: {
+      id,
+      name: undefined,
+      code: undefined,
+      status: undefined,
+      isCrossEntity: undefined,
+      remark: undefined,
+    },
+    statusLabel: undefined,
     userCount: undefined,
     orderCount: undefined,
     createTime: undefined,

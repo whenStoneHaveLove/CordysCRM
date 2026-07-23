@@ -30,6 +30,15 @@ public class AdCustomerListResponse {
     @Schema(description = "行业")
     private String industry;
 
+    @Schema(description = "品牌(M1~M5)")
+    private String brand;
+
+    @Schema(description = "行业类别(字典, M1~M5)")
+    private String industryCode;
+
+    @Schema(description = "签约主体(M1~M5)")
+    private String signingEntity;
+
     @Schema(description = "客户等级:10VIP/20普通/30潜力")
     private Integer customerLevel;
 

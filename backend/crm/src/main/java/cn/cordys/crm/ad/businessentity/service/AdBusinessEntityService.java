@@ -65,6 +65,8 @@ public class AdBusinessEntityService {
         entity.setName(request.getName());
         entity.setCode(request.getCode());
         entity.setStatus(request.getStatus() != null ? request.getStatus() : BusinessEntityStatus.ENABLED.getCode());
+        entity.setIsCrossEntity(request.getIsCrossEntity() != null ? request.getIsCrossEntity() : 0);
+        entity.setRemark(request.getRemark());
         entity.setOrganizationId(orgId);
         entity.setCreateUser(userId);
         entity.setUpdateUser(userId);
@@ -86,6 +88,10 @@ public class AdBusinessEntityService {
         if (request.getStatus() != null) {
             existing.setStatus(request.getStatus());
         }
+        if (request.getIsCrossEntity() != null) {
+            existing.setIsCrossEntity(request.getIsCrossEntity());
+        }
+        existing.setRemark(request.getRemark());
         existing.setOrganizationId(orgId);
         existing.setUpdateUser(userId);
         existing.setUpdateTime(System.currentTimeMillis());

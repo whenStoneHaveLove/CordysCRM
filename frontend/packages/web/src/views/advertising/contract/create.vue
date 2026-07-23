@@ -228,7 +228,7 @@
           resourceType: type === 20 ? 10 : 20,
         });
         relatedPartyOptions.value = (res.list || []).map((it) => ({
-          label: it.name || it.id,
+          label: it.resourceName || it.id,
           value: it.id,
         }));
       } catch (e) {

@@ -42,7 +42,7 @@
 
   import { AdBusinessEntityStatusOptions, getAdBusinessEntityStatusLabel } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
-  import type { AdBusinessEntityInfo, AdBusinessEntityPageParams } from '@lib/shared/models/advertising';
+  import type { AdBusinessEntityListItem, AdBusinessEntityPageParams } from '@lib/shared/models/advertising';
 
   import { deleteAdBusinessEntity, getAdBusinessEntityPage } from '@/api/modules';
 
@@ -58,7 +58,7 @@
   const statusOptions = AdBusinessEntityStatusOptions;
 
   const loading = ref(false);
-  const list = ref<AdBusinessEntityInfo[]>([]);
+  const list = ref<AdBusinessEntityListItem[]>([]);
   const searchForm = reactive({
     keyword: '',
     status: null as number | null,
@@ -106,13 +106,13 @@
     return status === 10 ? 'success' : 'default';
   }
 
-  function openDetail(row: AdBusinessEntityInfo) {
+  function openDetail(row: AdBusinessEntityListItem) {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_BUSINESS_ENTITY_DETAIL, params: { id: row.id } });
   }
-  function openEdit(row: AdBusinessEntityInfo) {
+  function openEdit(row: AdBusinessEntityListItem) {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_BUSINESS_ENTITY_EDIT, params: { id: row.id } });
   }
-  async function handleDisable(row: AdBusinessEntityInfo) {
+  async function handleDisable(row: AdBusinessEntityListItem) {
     try {
       await deleteAdBusinessEntity(row.id);
       message.success(t('advertising.common.operateSuccess'));
@@ -122,7 +122,7 @@
     }
   }
 
-  const columns: DataTableColumn<AdBusinessEntityInfo>[] = [
+  const columns: DataTableColumn<AdBusinessEntityListItem>[] = [
     { key: 'name', title: t('advertising.businessEntity.column.name'), minWidth: 140, ellipsis: { tooltip: true } },
     { key: 'code', title: t('advertising.businessEntity.column.code'), width: 120, ellipsis: { tooltip: true } },
     {

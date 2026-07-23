@@ -18,4 +18,7 @@ public class AdCustomerDetailResponse {
 
     @Schema(description = "状态标签")
     private String statusLabel;
+
+    @Schema(description = "关联订单数(按 customerId 统计同租户未删除订单)")
+    private Long orderCount;
 }

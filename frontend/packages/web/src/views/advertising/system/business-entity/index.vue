@@ -84,7 +84,7 @@
 
   import { AdBusinessEntityStatusOptions, getAdBusinessEntityStatusLabel } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
-  import type { AdBusinessEntityInfo, AdBusinessEntitySaveParams } from '@lib/shared/models/advertising';
+  import type { AdBusinessEntityListItem, AdBusinessEntitySaveParams } from '@lib/shared/models/advertising';
 
   import { createAdBusinessEntity, getAdBusinessEntityPage, updateAdBusinessEntity } from '@/api/modules';
 
@@ -97,7 +97,7 @@
   const statusOptions = AdBusinessEntityStatusOptions;
 
   const loading = ref(false);
-  const list = ref<AdBusinessEntityInfo[]>([]);
+  const list = ref<AdBusinessEntityListItem[]>([]);
   const searchForm = reactive({ keyword: '', status: null as number | null });
 
   /* eslint-disable no-use-before-define */
@@ -178,7 +178,7 @@
     resetForm();
     showModal.value = true;
   }
-  function openEdit(row: AdBusinessEntityInfo) {
+  function openEdit(row: AdBusinessEntityListItem) {
     editId.value = row.id;
     form.name = row.name;
     form.code = row.code;
@@ -227,7 +227,7 @@
     }
   }
 
-  const columns: DataTableColumn<AdBusinessEntityInfo>[] = [
+  const columns: DataTableColumn<AdBusinessEntityListItem>[] = [
     {
       key: 'name',
       title: t('advertising.system.businessEntity.column.name'),
