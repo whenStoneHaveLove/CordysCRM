@@ -1223,7 +1223,7 @@
     // if (isHasConfigPermission.value && licenseStore.hasLicense()) {
     //   initIntegration();
     // }
-    initIntegration();
+    // initIntegration();
   });
 
   onMounted(() => {
