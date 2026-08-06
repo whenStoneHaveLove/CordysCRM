@@ -4,13 +4,15 @@ import useAdContractApi from '@lib/shared/api/modules/adContract';
 import useAdCustomerApi from '@lib/shared/api/modules/adCustomer';
 import useAdDashboardApi from '@lib/shared/api/modules/adDashboard';
 import useAdDictApi from '@lib/shared/api/modules/adDict';
+import useAdDownstreamMediaApi from '@lib/shared/api/modules/adDownstreamMedia';
 import useAdOrderApi from '@lib/shared/api/modules/adOrder';
+import useAdOrderAttachmentApi from '@lib/shared/api/modules/adOrderAttachment';
 import useAdOrderChangeApi from '@lib/shared/api/modules/adOrderChange';
 import useAdPaymentApi from '@lib/shared/api/modules/adPayment';
 import useAdReportApi from '@lib/shared/api/modules/adReport';
-import useAdResourceApi from '@lib/shared/api/modules/adResource';
 import useAdSealApi from '@lib/shared/api/modules/adSeal';
 import useAdSettingApi from '@lib/shared/api/modules/adSetting';
+import useAdUpstreamAgentApi from '@lib/shared/api/modules/adUpstreamAgent';
 import useAgentApi from '@lib/shared/api/modules/agent';
 import useAdApprovalApi from '@lib/shared/api/modules/approval';
 import useClueApi from '@lib/shared/api/modules/clue';
@@ -75,8 +77,10 @@ const adSettingApi = useAdSettingApi(CDR);
 const adApprovalApi = useAdApprovalApi(CDR);
 const adDashboardApi = useAdDashboardApi(CDR);
 const adReportApi = useAdReportApi(CDR);
-const adResourceApi = useAdResourceApi(CDR);
 const adCustomerApi = useAdCustomerApi(CDR);
+const adUpstreamAgentApi = useAdUpstreamAgentApi(CDR);
+const adDownstreamMediaApi = useAdDownstreamMediaApi(CDR);
+const adOrderAttachmentApi = useAdOrderAttachmentApi(CDR);
 
 export const {
   addCustomForm,
@@ -950,8 +954,25 @@ export const { getAdWorkbenchTodo } = adDashboardApi;
 export const { getAdReportOrderSummary, getAdReportPaymentSummary, getAdReportMonthlyTrend, getAdReportByCode } =
   adReportApi;
 
-export const { createAdResource, updateAdResource, getAdResourceDetail, getAdResourcePage, deleteAdResource } =
-  adResourceApi;
+export const {
+  createAdUpstreamAgent,
+  updateAdUpstreamAgent,
+  getAdUpstreamAgentDetail,
+  getAdUpstreamAgentPage,
+  deleteAdUpstreamAgent,
+} = adUpstreamAgentApi;
+
+export const {
+  createAdDownstreamMedia,
+  updateAdDownstreamMedia,
+  getAdDownstreamMediaDetail,
+  getAdDownstreamMediaPage,
+  deleteAdDownstreamMedia,
+} = adDownstreamMediaApi;
 
 export const { createAdCustomer, updateAdCustomer, getAdCustomerDetail, getAdCustomerPage, deleteAdCustomer } =
   adCustomerApi;
+
+export const { uploadAdOrderAttachment, getAdOrderAttachments, deleteAdOrderAttachment } = adOrderAttachmentApi;
+
+

@@ -44,6 +44,9 @@ public class AdSealRecordListResponse {
     @Schema(description = "申请人")
     private String applicantId;
 
+    @Schema(description = "申请人姓名")
+    private String applicantName;
+
     @Schema(description = "申请备注")
     private String applyRemark;
 
@@ -55,6 +58,9 @@ public class AdSealRecordListResponse {
 
     @Schema(description = "审批人")
     private String approverId;
+
+    @Schema(description = "审批人姓名")
+    private String approverName;
 
     @Schema(description = "审批时间")
     private Date approvedAt;

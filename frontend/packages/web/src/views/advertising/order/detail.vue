@@ -39,10 +39,11 @@
         <n-descriptions label-placement="left" :column="3" bordered size="small">
           <n-descriptions-item label="订单编号">{{ detail.order.orderNo || '-' }}</n-descriptions-item>
           <n-descriptions-item label="订单名称">{{ detail.order.orderName || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="业务主体">{{ detail.order.businessEntityId || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="客户ID">{{ detail.order.customerId || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="业务主体">{{ getEntityName('entity', detail.order.businessEntityId) || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="客户名称">{{ getEntityName('customer', detail.order.customerId) || '-' }}</n-descriptions-item>
           <n-descriptions-item label="行业类别">{{ detail.order.industryCode || '-' }}</n-descriptions-item>
           <n-descriptions-item label="签约主体">{{ detail.order.signingEntity || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="下游媒体">{{ downstreamMediaNames || '-' }}</n-descriptions-item>
           <n-descriptions-item label="订单类型">{{ getAdOrderTypeLabel(detail.order.orderType) }}</n-descriptions-item>
           <n-descriptions-item label="收款方式">{{
             getAdReceiptMethodLabel(detail.order.receiptMethod)
@@ -54,7 +55,7 @@
           <n-descriptions-item label="投放结束">{{ fmtDate(detail.order.deliveryEndDate) }}</n-descriptions-item>
           <n-descriptions-item label="投放量">{{ detail.order.deliveryVolume || '-' }}</n-descriptions-item>
           <n-descriptions-item label="币种">{{ detail.order.currency || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="下单人">{{ detail.order.creatorId || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="下单人">{{ getUserName(detail.order.creatorId) }}</n-descriptions-item>
         </n-descriptions>
 
         <n-divider title-placement="left">{{ t('advertising.order.detail.tab.base') }} - 金额</n-divider>
@@ -80,13 +81,45 @@
         </n-descriptions>
 
         <n-divider title-placement="left">{{ t('advertising.order.detail.tab.attachment') }}</n-divider>
+
+        <!-- 上传区域 -->
+        <n-space v-if="detail.order.status === 0" justify="start" style="margin-bottom: 12px">
+          <n-upload
+            :custom-request="(opts: any) => handleUpload(10, opts)"
+            :show-file-list="false"
+            accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
+          >
+            <n-button type="primary" size="small" :loading="uploading">上传盖章排期（必需）</n-button>
+          </n-upload>
+          <n-upload
+            :custom-request="(opts: any) => handleUpload(20, opts)"
+            :show-file-list="false"
+            accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
+          >
+            <n-button type="primary" size="small" :loading="uploading">上传邮件截图（必需）</n-button>
+          </n-upload>
+          <n-upload
+            :custom-request="(opts: any) => handleUpload(40, opts)"
+            :show-file-list="false"
+            accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
+          >
+            <n-button size="small" :loading="uploading">补充协议（选填）</n-button>
+          </n-upload>
+        </n-space>
+
         <n-empty
           v-if="!detail.attachments || detail.attachments.length === 0"
-          :description="t('advertising.order.detail.attachment.empty')"
+          :description="'请上传盖章排期和邮件截图'"
         />
         <n-space v-else vertical>
-          <div v-for="att in detail.attachments" :key="att.id">
-            <a :href="att.fileUrl" target="_blank" rel="noopener">{{ att.fileName || att.fileUrl }}</a>
+          <div v-for="att in detail.attachments" :key="att.id" class="flex items-center gap-2">
+            <span class="max-w-[300px] truncate text-[var(--text-n2)]" :title="att.fileName || att.fileUrl">
+              {{ att.fileName || att.fileUrl }}
+            </span>
+            <n-tag size="small">{{ attTypeLabel(att.type) }}</n-tag>
+            <n-button size="tiny" type="primary" ghost @click.prevent="handlePreviewAtt(att.fileUrl!)"> 预览 </n-button>
+            <n-button size="tiny" type="primary" ghost @click.prevent="handleDownloadAtt(att)"> 下载 </n-button>
+            <n-button text size="tiny" type="error" @click="handleDeleteAttachment(att.id)">删除</n-button>
           </div>
         </n-space>
 
@@ -121,10 +154,13 @@
           <n-timeline-item
             v-for="log in detail.logs"
             :key="log.id"
-            :content="`${log.operatorId || ''} ${log.beforeValue || ''} -> ${log.afterValue || ''}`"
             :time="fmtDateTime(log.createTime)"
           >
-            <template #header>{{ log.action }}</template>
+            <template #header>
+              <span class="log-header">{{ getLogActionLabel(log.action) }}</span>
+              <span class="log-operator">操作人：{{ getUserName(log.operatorId) }}</span>
+            </template>
+            <div class="log-content">{{ formatLogChange(log) }}</div>
           </n-timeline-item>
         </n-timeline>
       </n-card>
@@ -134,20 +170,22 @@
       v-model:show="actionModal.show"
       :title="actionModalTitle"
       preset="card"
-      positive-text="确定"
-      negative-text="取消"
       style="width: 480px"
-      @positive-click="handleActionConfirm"
-      @negative-click="closeModal"
     >
       <n-space vertical>
-        <n-input
-          v-if="actionModal.type !== 'forceArchive'"
-          v-model:value="actionModal.remark"
-          type="textarea"
-          :rows="3"
-          :placeholder="t('advertising.common.remark')"
-        />
+        <div v-if="actionModal.type !== 'forceArchive'">
+          <div class="action-modal-label">
+            备注
+            <span v-if="actionModal.type === 'reject'" class="required-mark">*</span>
+          </div>
+          <n-input
+            v-model:value="actionModal.remark"
+            type="textarea"
+            :rows="3"
+            :status="actionModal.type === 'reject' && !actionModal.remark.trim() ? 'error' : undefined"
+            :placeholder="actionModal.type === 'reject' ? '请输入驳回原因（必填）' : '请输入备注'"
+          />
+        </div>
         <n-input-number
           v-else
           v-model:value="actionModal.badDebt"
@@ -158,6 +196,12 @@
           style="width: 100%"
         />
       </n-space>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="closeModal">取消</n-button>
+          <n-button type="primary" @click="handleActionConfirm">确定</n-button>
+        </n-space>
+      </template>
     </n-modal>
   </div>
 </template>
@@ -180,6 +224,7 @@
     NTag,
     NTimeline,
     NTimelineItem,
+    NUpload,
     useDialog,
     useMessage,
   } from 'naive-ui';
@@ -198,25 +243,35 @@
     approveAdOrder,
     completeExecuteAdOrder,
     confirmExecuteAdOrder,
+    deleteAdOrderAttachment,
     financialPreActionAdOrder,
     forceArchiveAdOrder,
+    getAdBusinessEntityPage,
+    getAdCustomerPage,
+    getAdDownstreamMediaPage,
     getAdOrderDetail,
     submitAdOrder,
+    uploadAdOrderAttachment,
     voidAdOrder,
   } from '@/api/modules';
+  import useUserStore from '@/store/modules/user';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  import useUserMap from '../useUserMap';
   import { fmtAmount, fmtDate, fmtDateTime } from '../utils';
 
-  const { t } = useI18n();
-  const route = useRoute();
-  const router = useRouter();
+const { t } = useI18n();
+const route = useRoute();
+const router = useRouter();
+const { loadUserMap, getUserName } = useUserMap();
   const message = useMessage();
   const dialog = useDialog();
+  const userStore = useUserStore();
 
   const orderId = route.params.id as string;
   const loading = ref(false);
+  const uploading = ref(false);
   const detail = ref<AdOrderDetail | null>(null);
 
   const actionModal = reactive<{
@@ -276,6 +331,176 @@
     }
   }
 
+  /** 实体名称缓存：type-key-id → name（用于详情页"业务主体/客户"ID 转名称） */
+  const entityNameCache = reactive<Record<string, string>>({});
+
+  /** 同步读取缓存，未命中时返回 id 兜底 */
+  function getEntityName(type: 'entity' | 'customer', id?: string | null) {
+    if (!id) return '';
+    const key = `${type}-${id}`;
+    return entityNameCache[key] || id;
+  }
+
+  /** 预加载业务主体/客户列表到缓存（页面挂载后调用） */
+  async function loadEntityNames() {
+    try {
+      const [beRes, cuRes] = await Promise.all([
+        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
+        getAdCustomerPage({ current: 1, pageSize: 200 }),
+      ]);
+      (beRes.list || []).forEach((it: any) => {
+        if (it.id) entityNameCache[`entity-${it.id}`] = it.name || '';
+      });
+      (cuRes.list || []).forEach((it: any) => {
+        if (it.id) entityNameCache[`customer-${it.id}`] = it.customerName || it.name || '';
+      });
+    } catch {
+      // 静默失败
+    }
+  }
+
+  /** 下游媒体名称缓存 */
+  const downstreamMediaNameCache = reactive<Record<string, string>>({});
+
+  /** 加载下游媒体名称到缓存 */
+  async function loadDownstreamMediaNames() {
+    try {
+      const res = await getAdDownstreamMediaPage({ current: 1, pageSize: 200 });
+      (res.list || []).forEach((it: any) => {
+        if (it.id) downstreamMediaNameCache[it.id] = it.name || '';
+      });
+    } catch {
+      // 静默失败
+    }
+  }
+
+  /** 下游媒体名称（逗号分隔） */
+  const downstreamMediaNames = computed(() => {
+    const ids = detail.value?.downstreamMediaIds;
+    if (!ids || ids.length === 0) return '';
+    return ids.map((id) => downstreamMediaNameCache[id] || id).join('、');
+  });
+
+  /** 操作记录 action 中文映射 */
+  function getLogActionLabel(action?: string): string {
+    const map: Record<string, string> = {
+      SUBMIT: '提交审核',
+      APPROVE: '审核通过',
+      REJECT: '驳回',
+      CHANGE: '变更',
+      AUTO_PREPAY: '自动推算预付',
+      AUTO_EXECUTE: '自动进入执行',
+      COMPLETE_EXECUTE: '完成执行',
+      ARCHIVE: '归档',
+      FORCE_ARCHIVE: '强制归档',
+      VOID: '作废',
+    };
+    return action && map[action] ? map[action] : action || '-';
+  }
+
+  /** 解析 before/after JSON 中的 status 字段为可读文字 */
+  function getStatusLabelFromJson(json?: string): string {
+    if (!json) return '';
+    try {
+      const obj = JSON.parse(json);
+      if (obj.status != null) return getAdOrderStatusLabel(obj.status);
+      return '';
+    } catch {
+      return json;
+    }
+  }
+
+  /** 操作记录描述（解析 status + 驳回 remark） */
+  function formatLogChange(log: any): string {
+    const before = getStatusLabelFromJson(log.beforeValue);
+    const after = getStatusLabelFromJson(log.afterValue);
+    let text = '';
+    if (before && after) {
+      text = `${before} → ${after}`;
+    } else if (after) {
+      text = `→ ${after}`;
+    } else if (before) {
+      text = before;
+    }
+    // 驳回原因（写入 afterValue.remark）
+    if (log.afterValue) {
+      try {
+        const obj = JSON.parse(log.afterValue);
+        if (obj.remark) {
+          text = `${text}  原因：${obj.remark}`;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return text || '-';
+  }
+
+  /** 附件类型标签 */
+  function attTypeLabel(type?: number): string {
+    switch (type) {
+      case 10:
+        return '盖章排期';
+      case 20:
+        return '邮件截图';
+      case 30:
+        return '合同';
+      case 40:
+        return '补充协议';
+      case 50:
+        return '改单附件';
+      default:
+        return '其他';
+    }
+  }
+
+  /** 上传附件（type: 10盖章排期 / 20邮件截图 / 40补充协议） */
+  async function handleUpload(type: number, opts: { file: any; onFinish: () => void; onError: () => void }) {
+    uploading.value = true;
+    try {
+      // n-upload 的 custom-request 传入的 file 是 UploadFileInfo，原生 File 在 .file 属性里
+      const rawFile = opts.file.file as File;
+      await uploadAdOrderAttachment(orderId, type, rawFile);
+      message.success('上传成功');
+      opts.onFinish();
+      await fetchDetail();
+    } catch (e) {
+      message.error((e as Error).message || '上传失败');
+      opts.onError();
+    } finally {
+      uploading.value = false;
+    }
+  }
+
+  /** 删除附件 */
+  async function handleDeleteAttachment(attachmentId: string) {
+    try {
+      await deleteAdOrderAttachment(orderId, attachmentId);
+      message.success('删除成功');
+      await fetchDetail();
+    } catch (e) {
+      message.error((e as Error).message || '删除失败');
+    }
+  }
+
+  /** 附件预览 */
+  function handlePreviewAtt(fileUrl: string) {
+    const previewUrl = `/attachment/preview/${fileUrl}?userId=${userStore.userInfo?.id || ''}`;
+    window.open(previewUrl, '_blank');
+  }
+
+  /** 附件下载 */
+  function handleDownloadAtt(att: any) {
+    const downloadUrl = `/attachment/download/${att.fileUrl}?userId=${userStore.userInfo?.id || ''}`;
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = att.fileName || 'attachment';
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   function goBack() {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_ORDER });
   }
@@ -291,6 +516,11 @@
   }
 
   async function handleActionConfirm() {
+    // 驳回时备注必填
+    if (actionModal.type === 'reject' && !actionModal.remark.trim()) {
+      message.warning('驳回时必须填写原因');
+      return;
+    }
     try {
       switch (actionModal.type) {
         case 'approve':
@@ -358,11 +588,40 @@
     }
   }
 
-  onMounted(fetchDetail);
+  onMounted(async () => {
+    await Promise.all([fetchDetail(), loadUserMap(), loadEntityNames(), loadDownstreamMediaNames()]);
+  });
 </script>
 
 <style scoped>
   .advertising-page {
     padding: 16px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+</style>
+<style scoped>
+  .action-modal-label {
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: var(--text-n2);
+  }
+  .action-modal-label .required-mark {
+    color: var(--error-red);
+    margin-left: 2px;
+  }
+  .log-header {
+    font-weight: 600;
+    margin-right: 12px;
+  }
+  .log-operator {
+    color: var(--text-n3);
+    font-size: 12px;
+    margin-left: 4px;
+  }
+  .log-content {
+    color: var(--text-n2);
+    font-size: 12px;
+    margin-top: 4px;
   }
 </style>

@@ -13,12 +13,11 @@
         </template>
         <template #header-extra>
           <n-space>
-            <n-button type="primary" @click="goEdit">编辑</n-button>
             <n-button @click="goBack">返回</n-button>
           </n-space>
         </template>
 
-        <n-divider title-placement="left">{{ t('advertising.customer.column.name') }}</n-divider>
+        <n-divider title-placement="left">基本信息</n-divider>
         <n-descriptions label-placement="left" :column="3" bordered size="small">
           <n-descriptions-item label="客户名称">{{ detail.customer?.name || '-' }}</n-descriptions-item>
           <n-descriptions-item label="品牌">{{ detail.customer?.brand || '-' }}</n-descriptions-item>
@@ -31,6 +30,14 @@
           <n-descriptions-item label="地址">{{ detail.customer?.address || '-' }}</n-descriptions-item>
           <n-descriptions-item label="关联订单数">{{ detail.orderCount ?? 0 }}</n-descriptions-item>
           <n-descriptions-item label="备注">{{ detail.customer?.remark || '-' }}</n-descriptions-item>
+        </n-descriptions>
+
+        <n-divider title-placement="left">审计信息</n-divider>
+        <n-descriptions label-placement="left" :column="3" bordered size="small">
+          <n-descriptions-item label="创建人">{{ getUserName(detail.customer?.createUser) }}</n-descriptions-item>
+          <n-descriptions-item label="创建时间">{{ fmtDateTime(detail.customer?.createTime) }}</n-descriptions-item>
+          <n-descriptions-item label="修改人">{{ getUserName(detail.customer?.updateUser) }}</n-descriptions-item>
+          <n-descriptions-item label="修改时间">{{ fmtDateTime(detail.customer?.updateTime) }}</n-descriptions-item>
         </n-descriptions>
       </n-card>
     </n-spin>
@@ -49,6 +56,9 @@
   import { getAdCustomerDetail } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
+
+  import useUserMap from '../useUserMap';
+  import { fmtDateTime } from '../utils';
 
   const { t } = useI18n();
   const route = useRoute();
@@ -86,11 +96,12 @@
   function goBack() {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_CUSTOMER });
   }
-  function goEdit() {
-    router.push({ name: AdvertisingRouteEnum.ADVERTISING_CUSTOMER_EDIT, params: { id: customerId } });
-  }
 
-  onMounted(fetchDetail);
+  const { loadUserMap, getUserName } = useUserMap();
+
+  onMounted(async () => {
+    await Promise.all([fetchDetail(), loadUserMap()]);
+  });
 </script>
 
 <style scoped>

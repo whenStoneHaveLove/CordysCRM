@@ -37,8 +37,14 @@ public class AdOrderListResponse {
     @Schema(description = "订单类型:10框架合同/20单笔合同")
     private Integer orderType;
 
+    @Schema(description = "订单类型标签")
+    private String orderTypeLabel;
+
     @Schema(description = "主状态")
     private Integer status;
+
+    @Schema(description = "主状态标签")
+    private String statusLabel;
 
     @Schema(description = "订单总金额")
     private BigDecimal totalAmount;
@@ -55,8 +61,14 @@ public class AdOrderListResponse {
     @Schema(description = "收款方式:10预付款/20账期")
     private Integer receiptMethod;
 
+    @Schema(description = "收款方式标签")
+    private String receiptMethodLabel;
+
     @Schema(description = "付款方式:10预付媒体/20后付媒体")
     private Integer paymentMethod;
+
+    @Schema(description = "付款方式标签")
+    private String paymentMethodLabel;
 
     @Schema(description = "投放起始日")
     private Date deliveryStartDate;

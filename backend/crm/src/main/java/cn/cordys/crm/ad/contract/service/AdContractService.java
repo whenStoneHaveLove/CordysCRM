@@ -9,6 +9,7 @@ import cn.cordys.crm.ad.common.AdEntityPermissionProvider;
 import cn.cordys.crm.ad.common.annotation.OperationLog;
 import cn.cordys.crm.ad.contract.constants.ContractDirection;
 import cn.cordys.crm.ad.contract.constants.ContractType;
+import cn.cordys.crm.ad.contract.constants.RelatedPartyType;
 import cn.cordys.crm.ad.contract.constants.SealStatus;
 import cn.cordys.crm.ad.contract.domain.AdContract;
 import cn.cordys.crm.ad.contract.domain.AdSealRecord;
@@ -19,9 +20,12 @@ import cn.cordys.crm.ad.contract.dto.response.AdContractListResponse;
 import cn.cordys.crm.ad.contract.mapper.ExtAdContractMapper;
 import cn.cordys.crm.ad.customer.domain.AdCustomer;
 import cn.cordys.crm.ad.order.domain.AdOrder;
-import cn.cordys.crm.ad.resource.domain.AdResource;
+import cn.cordys.crm.ad.order.domain.AdOrderContract;
+import cn.cordys.crm.ad.order.mapper.ExtAdOrderContractMapper;
+import cn.cordys.crm.ad.upstreamagent.domain.AdUpstreamAgent;
+import cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMedia;
+import cn.cordys.crm.ad.seal.mapper.ExtAdSealRecordMapper;
 import cn.cordys.mybatis.BaseMapper;
-import cn.cordys.mybatis.lambda.LambdaQueryWrapper;
 import cn.cordys.security.SessionUser;
 import cn.cordys.common.dto.RoleDataScopeDTO;
 import com.github.pagehelper.Page;
@@ -58,19 +62,22 @@ public class AdContractService {
     @Resource
     private BaseMapper<AdContract> contractMapper;
     @Resource
-    private BaseMapper<AdSealRecord> sealRecordMapper;
+    private ExtAdSealRecordMapper sealRecordMapper;
     @Resource
     private BaseMapper<AdBusinessEntity> businessEntityMapper;
     @Resource
     private BaseMapper<AdCustomer> customerMapper;
     @Resource
-    private BaseMapper<AdResource> resourceMapper;
+    private BaseMapper<AdUpstreamAgent> upstreamAgentMapper;
+    private BaseMapper<AdDownstreamMedia> downstreamMediaMapper;
     @Resource
     private BaseMapper<AdOrder> adOrderMapper;
     @Resource
     private ExtAdContractMapper extAdContractMapper;
     @Resource
     private AdEntityPermissionProvider entityPermissionProvider;
+    @Resource
+    private ExtAdOrderContractMapper orderContractMapper;
 
     /** 合同模块角色守卫（best-effort，同 M2/M3）。 */
     private static final String ROLE_MEDIA = "ROLE_MEDIA";
@@ -101,6 +108,8 @@ public class AdContractService {
         c.setCreateTime(now);
         c.setUpdateTime(now);
         contractMapper.insert(c);
+        // 如果关联了订单，自动写入 ad_order_contract 中间表
+        syncOrderContract(c.getId(), request.getOrderId(), userId, orgId);
         return c;
     }
 
@@ -134,6 +143,8 @@ public class AdContractService {
         existing.setUpdateUser(userId);
         existing.setUpdateTime(System.currentTimeMillis());
         contractMapper.update(existing);
+        // 同步 ad_order_contract 中间表
+        syncOrderContract(request.getId(), request.getOrderId(), userId, orgId);
         return existing;
     }
 
@@ -166,10 +177,7 @@ public class AdContractService {
         resp.setTypeLabel(ContractType.labelOf(c.getContractType()));
         resp.setSealStatusLabel(SealStatus.labelOf(c.getSealStatus()));
         resp.setStatusLabel(contractStatusLabel(c.getStatus()));
-        List<AdSealRecord> seals = sealRecordMapper.selectListByLambda(
-                new LambdaQueryWrapper<AdSealRecord>()
-                        .eq(AdSealRecord::getContractId, id)
-                        .eq(AdSealRecord::getDeleted, 0));
+        List<AdSealRecord> seals = sealRecordMapper.selectByContractId(id);
         resp.setSealRecords(seals);
         return resp;
     }
@@ -185,6 +193,7 @@ public class AdContractService {
         for (AdContractListResponse r : list) {
             r.setContractDirectionLabel(ContractDirection.labelOf(r.getContractDirection()));
             r.setContractTypeLabel(ContractType.labelOf(r.getContractType()));
+            r.setRelatedPartyTypeLabel(RelatedPartyType.labelOf(r.getRelatedPartyType()));
             r.setSealStatusLabel(SealStatus.labelOf(r.getSealStatus()));
             r.setStatusLabel(contractStatusLabel(r.getStatus()));
         }
@@ -236,6 +245,31 @@ public class AdContractService {
         }
     }
 
+    /**
+     * 同步 ad_order_contract 中间表：将合同与订单关联写入。
+     * 若 orderId 为 null/blank 则跳过（不清除已有关联）。
+     * 若已存在相同关联则跳过（防重复）。
+     */
+    private void syncOrderContract(String contractId, String orderId, String userId, String orgId) {
+        if (orderId == null || orderId.isBlank()) {
+            return;
+        }
+        // 检查是否已有该订单-合同关联
+        List<AdOrderContract> existing = orderContractMapper.selectByOrderId(orderId);
+        boolean exists = existing.stream().anyMatch(oc -> contractId.equals(oc.getContractId()));
+        if (exists) {
+            return;
+        }
+        AdOrderContract oc = new AdOrderContract();
+        oc.setId(IDGenerator.nextStr());
+        oc.setOrderId(orderId);
+        oc.setContractId(contractId);
+        oc.setOrganizationId(orgId);
+        oc.setDeleted(0);
+        oc.setCreateTime(System.currentTimeMillis());
+        orderContractMapper.insert(oc);
+    }
+
     private String resolveBusinessEntityName(String businessEntityId) {
         if (businessEntityId == null || businessEntityId.isBlank()) {
             return null;
@@ -252,9 +286,13 @@ public class AdContractService {
             AdCustomer cu = customerMapper.selectByPrimaryKey(partyId);
             return cu == null ? null : cu.getName();
         }
-        if (type != null && (type == 20 || type == 30)) {
-            AdResource re = resourceMapper.selectByPrimaryKey(partyId);
-            return re == null ? null : re.getName();
+        if (type != null && type == 20) {
+            AdUpstreamAgent agent = upstreamAgentMapper.selectByPrimaryKey(partyId);
+            return agent == null ? null : agent.getName();
+        }
+        if (type != null && type == 30) {
+            AdDownstreamMedia media = downstreamMediaMapper.selectByPrimaryKey(partyId);
+            return media == null ? null : media.getName();
         }
         return null;
     }

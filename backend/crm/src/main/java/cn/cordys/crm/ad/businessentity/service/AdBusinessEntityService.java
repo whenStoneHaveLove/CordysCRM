@@ -10,6 +10,7 @@ import cn.cordys.crm.ad.businessentity.dto.request.AdBusinessEntitySaveRequest;
 import cn.cordys.crm.ad.businessentity.dto.response.AdBusinessEntityDetailResponse;
 import cn.cordys.crm.ad.businessentity.dto.response.AdBusinessEntityListResponse;
 import cn.cordys.crm.ad.businessentity.mapper.ExtAdBusinessEntityMapper;
+import cn.cordys.crm.ad.common.annotation.OperationLog;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import jakarta.annotation.Resource;
@@ -44,6 +45,19 @@ public class AdBusinessEntityService {
         businessEntityMapper.deleteByPrimaryKey(id);
     }
 
+    /**
+     * 停用业务主体（status 10→20）。
+     */
+    @OperationLog(module = "BUSINESS_ENTITY", action = "DISABLE", targetId = "#id")
+    public void disable(String id) {
+        AdBusinessEntity entity = get(id);
+        if (entity == null || (entity.getDeleted() != null && entity.getDeleted() == 1)) {
+            throw new GenericException("业务主体不存在");
+        }
+        entity.setStatus(BusinessEntityStatus.DISABLED.getCode());
+        businessEntityMapper.updateById(entity);
+    }
+
     public AdBusinessEntity get(String id) {
         return businessEntityMapper.selectByPrimaryKey(id);
     }
@@ -53,6 +67,7 @@ public class AdBusinessEntityService {
     }
 
     /** 新建业务主体（B-3）。 */
+    @OperationLog(module = "BUSINESS_ENTITY", action = "CREATE", targetId = "")
     public AdBusinessEntity create(AdBusinessEntitySaveRequest request, String userId, String orgId) {
         if (request.getName() == null || request.getName().isBlank()) {
             throw new GenericException("主体名称不能为空");
@@ -78,6 +93,7 @@ public class AdBusinessEntityService {
     }
 
     /** 编辑业务主体（B-3）。 */
+    @OperationLog(module = "BUSINESS_ENTITY", action = "UPDATE", targetId = "#request.id")
     public AdBusinessEntity update(AdBusinessEntitySaveRequest request, String userId, String orgId) {
         if (request.getId() == null || request.getId().isBlank()) {
             throw new GenericException("主体id不能为空");

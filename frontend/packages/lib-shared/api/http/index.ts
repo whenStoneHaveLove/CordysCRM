@@ -143,8 +143,9 @@ export default function createAxios(opt: Partial<CreateAxiosOptions>) {
         throw new Error(e as unknown as string);
       }
       opt.checkStatus?.(response?.status, msg, msgDetail, response?.data?.code, config?.requestOptions?.noErrorTip);
+      const msgText = response?.data?.message || error?.message || '请求失败';
       return Promise.reject(
-        response?.config?.requestOptions?.isReturnNativeResponse ? response?.data : response?.data?.message || error
+        response?.config?.requestOptions?.isReturnNativeResponse ? response?.data : new Error(msgText)
       );
     },
   };
@@ -155,7 +156,7 @@ export default function createAxios(opt: Partial<CreateAxiosOptions>) {
         // See https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#authentication_schemes
         // authentication schemes，e.g: Bearer
         // authenticationScheme: 'Bearer',
-        authenticationScheme: '',
+        // authenticationScheme: 'Bearer',
         baseURL: `${window.location.origin}/${import.meta.env.VITE_API_BASE_URL as string}`,
         timeout: 300 * 1000,
         headers: { 'Content-Type': ContentTypeEnum.JSON },

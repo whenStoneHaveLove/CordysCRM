@@ -1,6 +1,7 @@
 import { ModuleConfigEnum } from '@lib/shared/enums/moduleEnum';
 
 import {
+  AdvertisingRouteEnum,
   AgentRouteEnum,
   ClueRouteEnum,
   ContractRouteEnum,
@@ -52,6 +53,13 @@ export const featureRouteMap: Record<string, any> = {
   [AgentRouteEnum.AGENT]: ModuleConfigEnum.AGENT,
   [TenderRouteEnum.TENDER]: ModuleConfigEnum.TENDER,
   [CustomFormRouteEnum.CUSTOM_FORM]: ModuleConfigEnum.CUSTOM_FORM,
+  [AdvertisingRouteEnum.ADVERTISING_WORKBENCH_GROUP]: ModuleConfigEnum.AD_WORKBENCH,
+  [AdvertisingRouteEnum.ADVERTISING_ORDER_MANAGEMENT]: ModuleConfigEnum.AD_ORDER_MANAGEMENT,
+  [AdvertisingRouteEnum.ADVERTISING_CONTRACT_MANAGEMENT]: ModuleConfigEnum.AD_CONTRACT_MANAGEMENT,
+  [AdvertisingRouteEnum.ADVERTISING_RESOURCE_MANAGEMENT]: ModuleConfigEnum.AD_UPSTREAM_AGENT,
+  [AdvertisingRouteEnum.ADVERTISING_APPROVAL_GROUP]: ModuleConfigEnum.AD_APPROVAL,
+  [AdvertisingRouteEnum.ADVERTISING_REPORT_GROUP]: ModuleConfigEnum.AD_REPORT,
+  [AdvertisingRouteEnum.ADVERTISING_SYSTEM_GROUP]: ModuleConfigEnum.AD_SYSTEM,
 };
 
 export const allMenuRouteMap: Record<string, any> = {

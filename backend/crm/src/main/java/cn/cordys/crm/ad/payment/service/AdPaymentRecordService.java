@@ -11,6 +11,7 @@ import cn.cordys.crm.ad.common.constants.OrderStateMachine;
 import cn.cordys.crm.ad.common.constants.PaymentMethod;
 import cn.cordys.crm.ad.order.domain.AdOrder;
 import cn.cordys.crm.ad.order.domain.AdOrderLog;
+import cn.cordys.crm.ad.order.mapper.ExtAdOrderMapper;
 import cn.cordys.crm.ad.payment.constants.PaymentDirection;
 import cn.cordys.crm.ad.payment.constants.PaymentType;
 import cn.cordys.crm.ad.payment.domain.AdPaymentRecord;
@@ -29,7 +30,6 @@ import cn.cordys.crm.ad.payment.dto.response.AdPaymentRecordListResponse;
 import cn.cordys.crm.ad.payment.dto.response.AdPaymentTodoResponse;
 import cn.cordys.crm.ad.payment.mapper.ExtAdPaymentRecordMapper;
 import cn.cordys.mybatis.BaseMapper;
-import cn.cordys.mybatis.lambda.LambdaQueryWrapper;
 import cn.cordys.security.SessionUtils;
 import cn.cordys.security.SessionUser;
 import cn.cordys.common.dto.RoleDataScopeDTO;
@@ -45,9 +45,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -76,9 +79,11 @@ public class AdPaymentRecordService {
     @Resource
     private BaseMapper<AdPaymentRecord> paymentMapper;
     @Resource
-    private BaseMapper<AdOrder> adOrderMapper;
+    private ExtAdOrderMapper adOrderMapper;
     @Resource
     private BaseMapper<AdOrderLog> orderLogMapper;
+    @Resource
+    private cn.cordys.common.service.BaseService baseService;
     @Resource
     private ExtAdPaymentRecordMapper extPaymentMapper;
     @Resource
@@ -216,9 +221,20 @@ public class AdPaymentRecordService {
         request.setEntityIds(entityPermissionProvider.buildEntityFilter());
         Page<AdPaymentRecordListResponse> page = PageHelper.startPage(request.getCurrent(), request.getPageSize());
         List<AdPaymentRecordListResponse> list = extPaymentMapper.pageList(request);
+
+        // 操作人姓名翻译
+        Set<String> userIds = new HashSet<>();
+        for (AdPaymentRecordListResponse r : list) {
+            if (r.getOperatorId() != null) userIds.add(r.getOperatorId());
+        }
+        Map<String, String> userNameMap = userIds.isEmpty() ? new HashMap<>() : baseService.getUserNameMap(userIds);
+
         for (AdPaymentRecordListResponse r : list) {
             r.setDirectionLabel(PaymentDirection.labelOf(r.getDirection()));
             r.setTypeLabel(PaymentType.labelOf(r.getType()));
+            if (r.getOperatorId() != null) {
+                r.setOperatorName(userNameMap.get(r.getOperatorId()));
+            }
         }
         return PageUtils.setPageInfoWithOption(page, list, null);
     }
@@ -463,39 +479,13 @@ public class AdPaymentRecordService {
     }
 
     private List<AdOrder> queryTodoOrders(String orgId, List<String> entityIds, String businessEntityId, String keyword) {
-        LambdaQueryWrapper<AdOrder> w = new LambdaQueryWrapper<AdOrder>()
-                .eq(AdOrder::getOrganizationId, orgId)
-                .eq(AdOrder::getDeleted, 0)
-                .in(AdOrder::getStatus, List.of(
-                        OrderStateMachine.PENDING_PREPAY_CONFIRM,
-                        OrderStateMachine.PENDING_MEDIA_PREPAY,
-                        OrderStateMachine.EXECUTION_COMPLETED,
-                        OrderStateMachine.SETTLEMENT));
-        if (entityIds != null && !entityIds.isEmpty()) {
-            w.in(AdOrder::getBusinessEntityId, entityIds);
-        }
-        if (businessEntityId != null && !businessEntityId.isEmpty()) {
-            w.eq(AdOrder::getBusinessEntityId, businessEntityId);
-        }
-        if (keyword != null && !keyword.isEmpty()) {
-            w.like(AdOrder::getOrderNo, keyword);
-        }
-        List<AdOrder> list1 = adOrderMapper.selectListByLambda(w);
-
-        LambdaQueryWrapper<AdOrder> w2 = new LambdaQueryWrapper<AdOrder>()
-                .eq(AdOrder::getOrganizationId, orgId)
-                .eq(AdOrder::getDeleted, 0)
-                .eq(AdOrder::getNeedsRedInvoice, 1);
-        if (entityIds != null && !entityIds.isEmpty()) {
-            w2.in(AdOrder::getBusinessEntityId, entityIds);
-        }
-        if (businessEntityId != null && !businessEntityId.isEmpty()) {
-            w2.eq(AdOrder::getBusinessEntityId, businessEntityId);
-        }
-        if (keyword != null && !keyword.isEmpty()) {
-            w2.like(AdOrder::getOrderNo, keyword);
-        }
-        List<AdOrder> list2 = adOrderMapper.selectListByLambda(w2);
+        List<Integer> statusList = List.of(
+                OrderStateMachine.PENDING_PREPAY_CONFIRM,
+                OrderStateMachine.PENDING_MEDIA_PREPAY,
+                OrderStateMachine.EXECUTION_COMPLETED,
+                OrderStateMachine.SETTLEMENT);
+        List<AdOrder> list1 = adOrderMapper.selectTodoOrders(orgId, statusList, entityIds, businessEntityId, keyword);
+        List<AdOrder> list2 = adOrderMapper.selectRedInvoiceOrders(orgId, entityIds, businessEntityId, keyword);
 
         Map<String, AdOrder> merged = new LinkedHashMap<>();
         for (AdOrder o : list1) {

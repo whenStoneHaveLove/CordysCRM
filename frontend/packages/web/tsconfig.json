@@ -4,17 +4,16 @@
     "src/**/*",
     "types/**/*",
     "*.d.ts",
+    "config/**/*"
   ],
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      // 路径映射
-      "@/*": [
-        "./src/*"
-      ],
-      "#/*": [
-        "types/*"
-      ],
+      "@/*": ["./src/*"],
+      "#/*": ["types/*"]
     },
-  },
+    // 新增关键：moduleResolution，继承上层如果是classic就会炸vite插件类型
+    "moduleResolution": "bundler",
+    "module": "ESNext"
+  }
 }

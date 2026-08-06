@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.HashMap;
@@ -211,5 +212,14 @@ public class RestControllerExceptionHandler {
     @ExceptionHandler(AsyncRequestNotUsableException.class)
     public ResultHolder asyncRequestNotUsableExceptionHandler(HttpServletRequest request, HttpServletResponse response, Exception exception) {
         return null;
+    }
+
+    /** 客户端断开连接（SSE/长连接），静默处理，不打印堆栈 */
+    @ExceptionHandler(IOException.class)
+    public ResultHolder handleIOException(IOException e) {
+        if (e.getMessage() != null && e.getMessage().contains("中止了一个已建立的连接")) {
+            return null;
+        }
+        return ResultHolder.error(CrmHttpResultCode.FAILED.getCode(), e.getMessage(), getStackTraceAsString(e));
     }
 }

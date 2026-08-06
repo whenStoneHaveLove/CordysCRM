@@ -17,8 +17,8 @@
           style="width: 150px"
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
-        <n-button @click="handleReset">{{ t('advertising.businessEntity.form.cancel') }}</n-button>
-        <n-button type="primary" @click="goCreate">{{ t('advertising.businessEntity.new') }}</n-button>
+        <n-button @click="handleReset">重置</n-button>
+        <n-button type="primary" @click="openCreate">{{ t('advertising.businessEntity.new') }}</n-button>
       </n-space>
     </n-card>
 
@@ -32,19 +32,74 @@
         remote
       />
     </n-card>
+
+    <n-modal
+      v-model:show="showModal"
+      :title="modalTitle"
+      preset="card"
+      style="width: 560px"
+    >
+      <n-form :model="form" label-placement="left" :label-width="120">
+        <n-grid :cols="2" :x-gap="16" item-responsive>
+          <n-form-item-gi :span="1" :label="t('advertising.businessEntity.form.name')" path="name">
+            <n-input v-model:value="form.name" placeholder="请输入主体名称" />
+          </n-form-item-gi>
+          <n-form-item-gi :span="1" :label="t('advertising.businessEntity.form.code')" path="code">
+            <n-input v-model:value="form.code" placeholder="如 JS / TH" />
+          </n-form-item-gi>
+          <n-form-item-gi :span="1" :label="t('advertising.businessEntity.form.status')" path="status">
+            <n-select v-model:value="form.status" :options="statusOptions" placeholder="请选择" />
+          </n-form-item-gi>
+          <n-form-item-gi :span="1" :label="t('advertising.businessEntity.form.isCrossEntity')">
+            <n-switch v-model:value="isCrossEntity" />
+          </n-form-item-gi>
+          <n-form-item-gi :span="2" :label="t('advertising.businessEntity.form.remark')">
+            <n-input v-model:value="form.remark" type="textarea" placeholder="备注" />
+          </n-form-item-gi>
+        </n-grid>
+      </n-form>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showModal = false">{{ t('advertising.businessEntity.form.cancel') }}</n-button>
+          <n-button type="primary" :loading="saving" @click="handleSave">{{
+            t('advertising.businessEntity.form.save')
+          }}</n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { h, onMounted, reactive, ref } from 'vue';
+  import { computed, h, onMounted, reactive, ref } from 'vue';
   import { useRouter } from 'vue-router';
-  import { NButton, NCard, NDataTable, NInput, NSelect, NSpace, NTag, useMessage } from 'naive-ui';
+  import {
+    NButton,
+    NCard,
+    NDataTable,
+    NForm,
+    NFormItemGi,
+    NGrid,
+    NInput,
+    NModal,
+    NSelect,
+    NSpace,
+    NSwitch,
+    NTag,
+    useMessage,
+  } from 'naive-ui';
 
   import { AdBusinessEntityStatusOptions, getAdBusinessEntityStatusLabel } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type { AdBusinessEntityListItem, AdBusinessEntityPageParams } from '@lib/shared/models/advertising';
 
-  import { deleteAdBusinessEntity, getAdBusinessEntityPage } from '@/api/modules';
+  import {
+    createAdBusinessEntity,
+    deleteAdBusinessEntity,
+    getAdBusinessEntityDetail,
+    getAdBusinessEntityPage,
+    updateAdBusinessEntity,
+  } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
@@ -58,6 +113,7 @@
   const statusOptions = AdBusinessEntityStatusOptions;
 
   const loading = ref(false);
+  const saving = ref(false);
   const list = ref<AdBusinessEntityListItem[]>([]);
   const searchForm = reactive({
     keyword: '',
@@ -102,15 +158,107 @@
     }
   }
 
+  // ---- modal ----
+  const showModal = ref(false);
+  const editId = ref('');
+  const modalTitle = computed(() =>
+    editId.value ? t('advertising.businessEntity.form.title.edit') : t('advertising.businessEntity.form.title.create')
+  );
+
+  interface BeForm {
+    name?: string;
+    code?: string;
+    status?: number | null;
+    isCrossEntity?: number;
+    remark?: string;
+  }
+  const form = reactive<BeForm>({
+    name: undefined,
+    code: undefined,
+    status: 10,
+    isCrossEntity: 0,
+    remark: undefined,
+  });
+  const isCrossEntity = computed({
+    get: () => form.isCrossEntity === 1,
+    set: (v: boolean) => {
+      form.isCrossEntity = v ? 1 : 0;
+    },
+  });
+
+  function resetForm() {
+    form.name = undefined;
+    form.code = undefined;
+    form.status = 10;
+    form.isCrossEntity = 0;
+    form.remark = undefined;
+    editId.value = '';
+  }
+
+  function openCreate() {
+    resetForm();
+    showModal.value = true;
+  }
+
+  async function openEdit(row: AdBusinessEntityListItem) {
+    editId.value = row.id;
+    showModal.value = true;
+    try {
+      const res = await getAdBusinessEntityDetail(row.id);
+      form.name = res.entity?.name;
+      form.code = res.entity?.code;
+      form.status = res.entity?.status ?? 10;
+      form.isCrossEntity = res.entity?.isCrossEntity ?? 0;
+      form.remark = res.entity?.remark;
+    } catch (e) {
+      message.error((e as Error).message || '加载失败');
+    }
+  }
+
+  async function handleSave() {
+    if (!form.name) {
+      message.warning(
+        `${t('advertising.businessEntity.form.name')} ${t('advertising.businessEntity.form.required')}`
+      );
+      return;
+    }
+    if (!form.code) {
+      message.warning(
+        `${t('advertising.businessEntity.form.code')} ${t('advertising.businessEntity.form.required')}`
+      );
+      return;
+    }
+    saving.value = true;
+    try {
+      const payload: any = {
+        name: form.name,
+        code: form.code,
+        status: form.status ?? 10,
+        isCrossEntity: form.isCrossEntity ?? 0,
+        remark: form.remark,
+      };
+      if (editId.value) {
+        payload.id = editId.value;
+        await updateAdBusinessEntity(payload);
+      } else {
+        await createAdBusinessEntity(payload);
+      }
+      message.success(t('advertising.common.saveSuccess'));
+      showModal.value = false;
+      fetchData();
+    } catch (e) {
+      message.error((e as Error).message || '保存失败');
+    } finally {
+      saving.value = false;
+    }
+  }
+
   function statusTagType(status?: number): 'success' | 'warning' | 'error' | 'info' | 'default' {
     return status === 10 ? 'success' : 'default';
   }
 
   function openDetail(row: AdBusinessEntityListItem) {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_BUSINESS_ENTITY_DETAIL, params: { id: row.id } });
-  }
-  function openEdit(row: AdBusinessEntityListItem) {
-    router.push({ name: AdvertisingRouteEnum.ADVERTISING_BUSINESS_ENTITY_EDIT, params: { id: row.id } });
   }
   async function handleDisable(row: AdBusinessEntityListItem) {
     try {
@@ -162,13 +310,13 @@
     },
     {
       key: 'action',
-      title: t('advertising.businessEntity.detail'),
-      width: 170,
+      title: t('advertising.businessEntity.action'),
+      width: 200,
       fixed: 'right' as const,
       render: (row) =>
         h(
           NSpace,
-          {},
+          { wrap: false },
           {
             default: () => [
               h(
@@ -200,9 +348,6 @@
     searchForm.keyword = '';
     searchForm.status = null;
     handleSearch();
-  }
-  function goCreate() {
-    router.push({ name: AdvertisingRouteEnum.ADVERTISING_BUSINESS_ENTITY_CREATE });
   }
 
   onMounted(fetchData);

@@ -42,4 +42,26 @@ public interface ExtAdOrderMapper extends BaseMapper<AdOrder> {
      * 条件：status=50(EXECUTING) 且 delivery_end_date < now。
      */
     List<AdOrder> selectOverdue(@Param("now") Date now);
+
+    /**
+     * 统计某客户关联的订单数。
+     */
+    long countByCustomerId(@Param("customerId") String customerId, @Param("orgId") String orgId);
+
+    /**
+     * 查询待处理订单（按状态+主体+关键字筛选）。
+     */
+    List<AdOrder> selectTodoOrders(@Param("orgId") String orgId,
+                                  @Param("statusList") List<Integer> statusList,
+                                  @Param("entityIds") List<String> entityIds,
+                                  @Param("businessEntityId") String businessEntityId,
+                                  @Param("keyword") String keyword);
+
+    /**
+     * 查询需要红冲发票的订单（needRedInvoice=1，按主体筛选）。
+     */
+    List<AdOrder> selectRedInvoiceOrders(@Param("orgId") String orgId,
+                                         @Param("entityIds") List<String> entityIds,
+                                         @Param("businessEntityId") String businessEntityId,
+                                         @Param("keyword") String keyword);
 }

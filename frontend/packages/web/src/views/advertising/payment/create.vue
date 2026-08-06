@@ -16,7 +16,14 @@
           <n-form :model="form" label-placement="left" :label-width="120">
             <n-grid :cols="2" :x-gap="16" item-responsive>
               <n-form-item-gi :span="1" :label="t('advertising.payment.form.orderId')" path="orderId">
-                <n-input v-model:value="form.orderId" placeholder="关联订单ID（必填）" />
+                <n-select
+                  v-model:value="form.orderId"
+                  :options="orderOptions"
+                  filterable
+                  clearable
+                  :placeholder="id ? '' : '请选择订单'"
+                  :disabled="!!id"
+                />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.payment.form.direction')" path="direction">
                 <n-select
@@ -74,7 +81,7 @@
 
   import CrmCard from '@/components/pure/crm-card/index.vue';
 
-  import { createAdPayment } from '@/api/modules';
+  import { createAdPayment, getAdOrderPage } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
@@ -88,6 +95,7 @@
 
   const id = (route.params.id as string) || '';
   const saving = ref(false);
+  const orderOptions = ref<Array<{ label: string; value: string }>>([]);
 
   const form = reactive({
     orderId: undefined as string | undefined,
@@ -151,7 +159,26 @@
       });
   }
 
+  async function loadOrders() {
+    try {
+      const res = await getAdOrderPage({ current: 1, pageSize: 200 });
+      orderOptions.value = (res.list || []).map((it: any) => ({
+        label: `${it.orderNo || it.id}（${it.orderName || ''}）`,
+        value: it.id,
+      }));
+      if (id) {
+        form.orderId = id;
+        // 如果路由带的 id 不在列表中，追加一条确保能选中
+        if (!orderOptions.value.some((o) => o.value === id)) {
+          orderOptions.value.unshift({ label: `${id}（路由传入）`, value: id });
+        }
+      }
+    } catch {
+      // 静默失败
+    }
+  }
+
   onMounted(() => {
-    if (id) form.orderId = id;
+    loadOrders();
   });
 </script>

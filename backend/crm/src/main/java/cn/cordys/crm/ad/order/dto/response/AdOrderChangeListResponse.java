@@ -39,11 +39,17 @@ public class AdOrderChangeListResponse {
     @Schema(description = "审批人")
     private String approverId;
 
+    @Schema(description = "审批人姓名")
+    private String approverName;
+
     @Schema(description = "审批时间")
     private Date approvedAt;
 
     @Schema(description = "创建人")
     private String creatorId;
+
+    @Schema(description = "创建人姓名")
+    private String creatorName;
 
     @Schema(description = "创建时间")
     private Long createTime;

@@ -36,6 +36,9 @@ public class AdCustomerListResponse {
     @Schema(description = "行业类别(字典, M1~M5)")
     private String industryCode;
 
+    @Schema(description = "行业类别标签(翻译后的显示名)")
+    private String industryLabel;
+
     @Schema(description = "签约主体(M1~M5)")
     private String signingEntity;
 

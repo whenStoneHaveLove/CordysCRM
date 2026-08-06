@@ -58,6 +58,9 @@ public class AdPaymentRecordListResponse {
     @Schema(description = "操作人")
     private String operatorId;
 
+    @Schema(description = "操作人姓名")
+    private String operatorName;
+
     @Schema(description = "备注")
     private String remark;
 

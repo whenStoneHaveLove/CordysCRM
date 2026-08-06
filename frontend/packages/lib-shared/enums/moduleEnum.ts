@@ -37,6 +37,27 @@ export enum ModuleConfigEnum {
   
    /** 自定义表单 */
   CUSTOM_FORM = 'customForm',
+
+  /** 广告工作台 */
+  AD_WORKBENCH = 'adWorkbench',
+
+  /** 广告订单管理 */
+  AD_ORDER_MANAGEMENT = 'adOrderManagement',
+
+  /** 广告合同管理 */
+  AD_CONTRACT_MANAGEMENT = 'adContractManagement',
+
+  /** 广告资源管理 */
+  AD_UPSTREAM_AGENT = 'adUpstreamAgent',
+
+  /** 广告审批中心 */
+  AD_APPROVAL = 'adApproval',
+
+  /** 广告报表中心 */
+  AD_REPORT = 'adReport',
+
+  /** 广告系统配置 */
+  AD_SYSTEM = 'adSystem',
 }
 
 // 添加员工API

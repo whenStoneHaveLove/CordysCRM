@@ -42,6 +42,9 @@ public class AdSupportTicketListResponse {
     @Schema(description = "指派处理人")
     private String assignedTo;
 
+    @Schema(description = "指派处理人姓名")
+    private String assignedToName;
+
     @Schema(description = "组织(租户)id")
     private String organizationId;
 

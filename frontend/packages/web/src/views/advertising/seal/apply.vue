@@ -16,7 +16,12 @@
           <n-form ref="formRef" :model="form" label-placement="left" :label-width="120">
             <n-grid :cols="2" :x-gap="16" item-responsive>
               <n-form-item-gi :span="1" :label="t('advertising.seal.form.contractId')" path="contractId">
-                <n-input v-model:value="form.contractId" placeholder="合同ID（必填）" />
+                <n-select
+                  v-model:value="form.contractId"
+                  :options="contractOptions"
+                  filterable
+                  placeholder="请选择待用印合同"
+                />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.seal.form.sealType')" path="sealType">
                 <n-select v-model:value="form.sealType" :options="sealTypeOptions" placeholder="请选择" />
@@ -36,7 +41,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { reactive, ref } from 'vue';
+  import { onMounted, reactive, ref } from 'vue';
   import { useRouter } from 'vue-router';
   import { NButton, NForm, NFormItemGi, NGrid, NInput, NInputNumber, NSelect, useMessage } from 'naive-ui';
 
@@ -46,11 +51,14 @@
 
   import CrmCard from '@/components/pure/crm-card/index.vue';
 
-  import { applyAdSeal } from '@/api/modules';
+  import { applyAdSeal, getAdContractPage } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  type SelectItem = { label: string; value: string };
+
   const sealTypeOptions = AdSealTypeOptions;
+  const contractOptions = ref<SelectItem[]>([]);
 
   /** 表单本地类型 */
   interface AdSealApplyForm {
@@ -75,6 +83,24 @@
 
   function goBack() {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_SEAL });
+  }
+
+  /** 加载「待用印合同」：状态=生效 且 用印状态=未申请 */
+  async function loadPendingContracts() {
+    try {
+      const [pending, rejected] = await Promise.all([
+        getAdContractPage({ current: 1, pageSize: 200, status: 10, sealStatus: 0 }),
+        getAdContractPage({ current: 1, pageSize: 200, status: 10, sealStatus: 30 }),
+      ]);
+      const list = [...(pending.list || []), ...(rejected.list || [])];
+      contractOptions.value = list.map((it) => ({
+        label: `${it.contractNo} - ${it.contractName}`,
+        value: it.id,
+      }));
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
   }
 
   function buildPayload(): AdSealApplyParams {
@@ -116,4 +142,8 @@
       saving.value = false;
     }
   }
+
+  onMounted(() => {
+    loadPendingContracts();
+  });
 </script>

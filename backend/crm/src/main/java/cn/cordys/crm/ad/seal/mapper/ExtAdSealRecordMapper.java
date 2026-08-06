@@ -7,6 +7,7 @@ import cn.cordys.crm.ad.seal.dto.response.AdSealRecordListResponse;
 import cn.cordys.mybatis.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -26,4 +27,10 @@ public interface ExtAdSealRecordMapper extends BaseMapper<AdSealRecord> {
      * @return 列表项
      */
     List<AdSealRecordListResponse> pageList(@Param("request") AdSealRecordPageRequest request);
+
+    /**
+     * 按合同ID查询未删除的用印记录。
+     */
+    @Select("SELECT * FROM ad_seal_record WHERE contract_id = #{contractId} AND deleted = 0 ORDER BY create_time DESC")
+    List<AdSealRecord> selectByContractId(@Param("contractId") String contractId);
 }

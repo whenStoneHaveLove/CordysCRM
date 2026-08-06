@@ -83,9 +83,11 @@ public final class ShiroFilter {
      * 添加文件预览过滤器规则（使用 Cookie 认证）
      */
     private static void addFileAccessFilters() {
-        // 附件预览使用 attachmentAuth 过滤器进行 Cookie 认证
+        // 附件预览/下载使用 attachmentAuth 过滤器进行 Cookie 认证
         FILTER_CHAIN_DEFINITION_MAP.put("/attachment/preview/**", "authf");
+        FILTER_CHAIN_DEFINITION_MAP.put("/attachment/download/**", "authf");
         FILTER_CHAIN_DEFINITION_MAP.put("/pic/preview/**", "authf");
+        FILTER_CHAIN_DEFINITION_MAP.put("/pic/download/**", "authf");
     }
 
     /**

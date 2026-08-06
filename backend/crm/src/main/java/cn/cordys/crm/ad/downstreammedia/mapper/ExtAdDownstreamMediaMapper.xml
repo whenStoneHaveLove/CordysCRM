@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.cordys.crm.ad.downstreammedia.mapper.ExtAdDownstreamMediaMapper">
+
+    <select id="pageList" resultType="cn.cordys.crm.ad.downstreammedia.dto.response.AdDownstreamMediaListResponse">
+        SELECT
+            r.id,
+            r.name,
+            r.media_type AS mediaType,
+            r.channel,
+            r.rate_card AS rateCard,
+            r.discount_policy AS discountPolicy,
+            r.contact_person AS contactPerson,
+            r.contact_phone AS contactPhone,
+            r.cooperation_status AS cooperationStatus,
+            r.status,
+            r.business_entity_id AS businessEntityId,
+            r.create_time AS createTime,
+            be.name AS businessEntityName
+        FROM ad_downstream_media r
+        LEFT JOIN ad_business_entity be ON be.id = r.business_entity_id AND be.deleted = 0
+        WHERE r.deleted = 0
+        AND r.organization_id = #{request.organizationId}
+        <if test="request.keyword != null and request.keyword != ''">
+            AND r.name LIKE CONCAT('%', #{request.keyword}, '%')
+        </if>
+        <if test="request.mediaType != null and request.mediaType != ''">
+            AND r.media_type = #{request.mediaType}
+        </if>
+        <if test="request.status != null">
+            AND r.status = #{request.status}
+        </if>
+        <if test="request.businessEntityId != null and request.businessEntityId != ''">
+            AND r.business_entity_id = #{request.businessEntityId}
+        </if>
+        <if test="request.entityIds != null and request.entityIds.size() > 0">
+            AND r.business_entity_id IN
+            <foreach collection="request.entityIds" item="eid" open="(" separator="," close=")">
+                #{eid}
+            </foreach>
+        </if>
+        ORDER BY r.create_time DESC
+    </select>
+</mapper>

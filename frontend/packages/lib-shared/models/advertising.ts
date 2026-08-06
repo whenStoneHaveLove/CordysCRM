@@ -31,6 +31,10 @@ export interface AdOrderSaveParams {
   industryCode?: string;
   signingEntity?: string;
   orderType?: number;
+  /** 关联合同id（框架订单必选框架合同；单笔订单可后补） */
+  contractId?: string;
+  /** 下游媒体id列表 */
+  downstreamMediaIds?: string[];
   upstreamAgentId?: string;
   agentOrderNo?: string;
   totalAmount?: number;
@@ -45,11 +49,13 @@ export interface AdOrderSaveParams {
   receiptMethod?: number;
   receiptPrepayMode?: number;
   receiptPrepayRatio?: number;
+  receiptPrepayAmount?: number;
   receiptPrepayDeadline?: number | null;
   receiptAccountPeriodDays?: number;
   paymentMethod?: number;
   paymentPrepayMode?: number;
   paymentPrepayRatio?: number;
+  paymentPrepayAmount?: number;
   paymentPrepayDeadline?: number | null;
   paymentPostpayTrigger?: number;
   paymentPostpayDays?: number;
@@ -189,6 +195,8 @@ export interface AdOrderInfo {
 
 export interface AdOrderDetail {
   order: AdOrderInfo;
+  contractId?: string;
+  downstreamMediaIds?: string[];
   attachments: AdOrderAttachment[];
   changes: AdOrderChange[];
   logs: AdOrderLog[];
@@ -621,6 +629,10 @@ export interface AdBusinessEntityInfo {
     status?: number;
     isCrossEntity?: number;
     remark?: string;
+    createUser?: string;
+    updateUser?: string;
+    createTime?: number;
+    updateTime?: number;
   };
   /** 状态标签（顶层）。 */
   statusLabel?: string;
@@ -868,6 +880,7 @@ export interface AdResourceListItem {
   resourceType?: number;
   resourceTypeLabel?: string;
   mediaType?: string;
+  mediaTypeLabel?: string;
   channel?: string;
   businessEntityId?: string;
   businessEntityName?: string;
@@ -926,6 +939,10 @@ export interface AdCustomerInfo {
     customerLevel?: number;
     status?: number;
     remark?: string;
+    createUser?: string;
+    updateUser?: string;
+    createTime?: number;
+    updateTime?: number;
   };
   /** 客户等级标签 */
   customerLevelLabel?: string;

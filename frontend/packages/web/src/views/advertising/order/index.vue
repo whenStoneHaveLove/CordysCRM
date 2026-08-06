@@ -265,7 +265,7 @@
     },
     {
       key: 'action',
-      title: t('advertising.order.detail'),
+      title: '详情',
       width: 150,
       fixed: 'right' as const,
       render: (row) =>

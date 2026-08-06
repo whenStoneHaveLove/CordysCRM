@@ -3,6 +3,7 @@ package cn.cordys.crm.ad.dict.service;
 import cn.cordys.common.exception.GenericException;
 import cn.cordys.common.pager.PageUtils;
 import cn.cordys.common.uid.IDGenerator;
+import cn.cordys.crm.ad.common.annotation.OperationLog;
 import cn.cordys.crm.ad.dict.constants.DictStatus;
 import cn.cordys.crm.ad.dict.domain.AdDict;
 import cn.cordys.crm.ad.dict.dto.request.AdDictPageRequest;
@@ -40,6 +41,7 @@ public class AdDictService {
         dictMapper.updateById(dict);
     }
 
+    @OperationLog(module = "DICT", action = "DELETE", targetId = "#id")
     public void remove(String id) {
         dictMapper.deleteByPrimaryKey(id);
     }
@@ -56,6 +58,7 @@ public class AdDictService {
     }
 
     /** 新建字典项（B-4）。 */
+    @OperationLog(module = "DICT", action = "CREATE", targetId = "")
     public AdDict create(AdDictSaveRequest request, String userId, String orgId) {
         validate(request);
         AdDict dict = new AdDict();
@@ -77,6 +80,7 @@ public class AdDictService {
     }
 
     /** 编辑字典项（B-4）。 */
+    @OperationLog(module = "DICT", action = "UPDATE", targetId = "#request.id")
     public AdDict update(AdDictSaveRequest request, String userId, String orgId) {
         if (request.getId() == null || request.getId().isBlank()) {
             throw new GenericException("字典id不能为空");

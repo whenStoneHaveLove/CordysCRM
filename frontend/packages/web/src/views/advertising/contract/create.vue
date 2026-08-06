@@ -84,8 +84,24 @@
               <n-form-item-gi :span="1" :label="t('advertising.contract.form.validTo')">
                 <n-date-picker v-model:value="form.validTo" type="date" style="width: 100%" />
               </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.contract.form.fileUrl')">
-                <n-input v-model:value="form.fileUrl" placeholder="合同文件地址" />
+              <n-form-item-gi :span="2" :label="t('advertising.contract.form.fileUrl')">
+                <div class="flex items-center gap-3">
+                  <n-upload
+                    :custom-request="handleFileUpload"
+                    :show-file-list="false"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                  >
+                    <n-button size="small" :loading="uploading">{{
+                      form.fileUrl ? '重新上传' : '上传合同文件'
+                    }}</n-button>
+                  </n-upload>
+                  <div v-if="form.fileUrl" class="contract-file-info">
+                    <span class="file-name" :title="form.fileName">{{ displayFileName }}</span>
+                    <n-button size="tiny" type="primary" ghost @click.prevent="handlePreview"> 预览 </n-button>
+                    <n-button size="tiny" type="primary" ghost @click.prevent="handleDownload"> 下载 </n-button>
+                    <n-button text size="tiny" type="error" @click="handleClearFile">清除</n-button>
+                  </div>
+                </div>
               </n-form-item-gi>
               <n-form-item-gi :span="2" :label="t('advertising.contract.form.rebateTerms')">
                 <n-input v-model:value="form.rebateTerms" type="textarea" placeholder="返点条款" />
@@ -101,7 +117,18 @@
 <script lang="ts" setup>
   import { computed, onMounted, reactive, ref, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
-  import { NButton, NDatePicker, NForm, NFormItemGi, NGrid, NInput, NInputNumber, NSelect, useMessage } from 'naive-ui';
+  import {
+    NButton,
+    NDatePicker,
+    NForm,
+    NFormItemGi,
+    NGrid,
+    NInput,
+    NInputNumber,
+    NSelect,
+    NUpload,
+    useMessage,
+  } from 'naive-ui';
 
   import {
     AdContractDirectionOptions,
@@ -118,10 +145,13 @@
     getAdBusinessEntityPage,
     getAdContractDetail,
     getAdCustomerPage,
+    getAdDownstreamMediaPage,
     getAdOrderPage,
-    getAdResourcePage,
+    getAdUpstreamAgentPage,
     updateAdContract,
+    uploadTempAttachment,
   } from '@/api/modules';
+  import useUserStore from '@/store/modules/user';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
@@ -152,17 +182,22 @@
     validTo?: number | null;
     amount?: number | null;
     rebateTerms?: string;
+    /** 合同文件ID（提交到后端 file_url 字段，对应 /attachment/preview/{id} /download/{id}） */
     fileUrl?: string;
+    /** 合同文件名（仅前端展示用） */
+    fileName?: string;
   }
 
   const { t } = useI18n();
   const route = useRoute();
   const router = useRouter();
   const message = useMessage();
+  const userStore = useUserStore();
 
   const id = (route.params.id as string) || '';
   const isEdit = computed(() => !!id);
   const saving = ref(false);
+  const uploading = ref(false);
 
   const form = reactive<AdContractForm>({
     contractNo: undefined,
@@ -179,10 +214,68 @@
     amount: null,
     rebateTerms: undefined,
     fileUrl: undefined,
+    fileName: undefined,
   });
 
   function goBack() {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_CONTRACT });
+  }
+
+  /** 当前用户 id（用于附件预览/下载鉴权） */
+  const currentUserId = computed(() => userStore.userInfo?.id || '');
+  /** 文件预览地址（走 Vite dev proxy / 生产同源，必须是相对路径才能自动经过反代） */
+  const previewUrl = computed(() =>
+    form.fileUrl ? `/attachment/preview/${form.fileUrl}?userId=${currentUserId.value}` : ''
+  );
+  /** 文件下载地址 */
+  const downloadUrl = computed(() =>
+    form.fileUrl ? `/attachment/download/${form.fileUrl}?userId=${currentUserId.value}` : ''
+  );
+  /** 展示用的文件名：新建/重新上传时有原名；编辑回填时后端没返回，则显示通用提示 */
+  const displayFileName = computed(() => form.fileName || (form.fileUrl ? '已上传合同文件' : ''));
+
+  /** 上传合同文件 */
+  async function handleFileUpload(opts: { file: any; onFinish: () => void; onError: () => void }) {
+    uploading.value = true;
+    try {
+      const rawFile = opts.file.file as File;
+      const res: any = await uploadTempAttachment(rawFile);
+      const fileId = res?.data?.[0] || res?.data || '';
+      if (!fileId) {
+        throw new Error('上传返回异常');
+      }
+      form.fileUrl = fileId;
+      form.fileName = rawFile.name;
+      message.success('合同文件上传成功');
+      opts.onFinish();
+    } catch (e) {
+      message.error((e as Error).message || '上传失败');
+      opts.onError();
+    } finally {
+      uploading.value = false;
+    }
+  }
+
+  /** 清除已上传的合同文件 */
+  function handleClearFile() {
+    form.fileUrl = undefined;
+    form.fileName = undefined;
+  }
+
+  /** 预览：新窗口打开，Cookie 继承当前页面 */
+  function handlePreview() {
+    window.open(previewUrl.value, '_blank');
+  }
+
+  /** 下载：隐藏 iframe 触发下载，Cookie 继承当前页面 */
+  function handleDownload() {
+    const a = document.createElement('a');
+    a.href = downloadUrl.value;
+    a.download = form.fileName || 'contract';
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   /** 业务主体 / 关联订单 选项（不依赖关联方类型，可预加载） */
@@ -220,15 +313,22 @@
         // eslint-disable-next-line no-console
         console.error(e);
       }
-    } else if (type === 20 || type === 30) {
+    } else if (type === 20) {
       try {
-        const res = await getAdResourcePage({
-          current: 1,
-          pageSize: 200,
-          resourceType: type === 20 ? 10 : 20,
-        });
-        relatedPartyOptions.value = (res.list || []).map((it) => ({
-          label: it.resourceName || it.id,
+        const res = await getAdUpstreamAgentPage({ current: 1, pageSize: 200 });
+        relatedPartyOptions.value = (res.list || []).map((it: any) => ({
+          label: it.name || it.id,
+          value: it.id,
+        }));
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e);
+      }
+    } else if (type === 30) {
+      try {
+        const res = await getAdDownstreamMediaPage({ current: 1, pageSize: 200 });
+        relatedPartyOptions.value = (res.list || []).map((it: any) => ({
+          label: it.name || it.id,
           value: it.id,
         }));
       } catch (e) {
@@ -370,3 +470,23 @@
     }
   });
 </script>
+
+<style scoped>
+  .contract-file-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    border: 1px solid var(--text-n8);
+    border-radius: 4px;
+    background: var(--text-n10);
+    font-size: 12px;
+  }
+  .contract-file-info .file-name {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-n2);
+  }
+</style>

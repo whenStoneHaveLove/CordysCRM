@@ -146,7 +146,6 @@
 
   onBeforeMount(async () => {
     try {
-      appStore.initThirdPartyResource();
       await licenseStore.getValidateLicense();
       if (licenseStore.hasLicense()) {
         await appStore.initPageConfig();

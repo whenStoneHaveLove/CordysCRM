@@ -274,62 +274,63 @@ const contractManagement: AppRouteRecordRaw = {
 };
 
 /**
- * 资源管理（父模块）：上下游资源 / 客户信息 / 业务主体
+ * 资源管理（父模块）：上游代理 / 下游媒体 / 客户信息 / 业务主体
  */
 const resourceManagement: AppRouteRecordRaw = {
   path: '/advertising/resource-management',
   name: AdvertisingRouteEnum.ADVERTISING_RESOURCE_MANAGEMENT,
-  redirect: '/advertising/resource-management/resource',
+  redirect: '/advertising/resource-management/upstream-agent',
   component: DEFAULT_LAYOUT,
   meta: {
     locale: 'module.advertising.resourceManagement',
-    permissions: ['AD_RESOURCE:READ', 'AD_CUSTOMER:READ', 'AD_BUSINESS_ENTITY:READ'],
+    permissions: ['AD_UPSTREAM_AGENT:READ', 'AD_DOWNSTREAM_MEDIA:READ', 'AD_CUSTOMER:READ', 'AD_BUSINESS_ENTITY:READ'],
     icon: 'iconicon_enterprise',
     hideChildrenInMenu: true,
     collapsedLocale: 'module.advertising.resourceManagement',
   },
   children: [
     {
-      path: 'resource',
-      name: AdvertisingRouteEnum.ADVERTISING_RESOURCE,
-      component: () => import('@/views/advertising/resource/index.vue'),
+      path: 'upstream-agent',
+      name: AdvertisingRouteEnum.ADVERTISING_UPSTREAM_AGENT,
+      component: () => import('@/views/advertising/upstreamAgent/index.vue'),
       meta: {
-        locale: 'module.advertising.resource',
+        locale: 'module.advertising.upstreamAgent',
         isTopMenu: true,
-        permissions: ['AD_RESOURCE:READ'],
+        permissions: ['AD_UPSTREAM_AGENT:READ'],
       },
     },
     {
-      path: 'resource/create',
-      name: AdvertisingRouteEnum.ADVERTISING_RESOURCE_CREATE,
-      component: () => import('@/views/advertising/resource/create.vue'),
+      path: 'upstream-agent/detail/:id',
+      name: AdvertisingRouteEnum.ADVERTISING_UPSTREAM_AGENT_DETAIL,
+      // eslint-disable-next-line import/no-unresolved
+      component: () => import('@/views/advertising/upstreamAgent/detail.vue'),
       meta: {
-        locale: 'module.advertising.resource',
-        permissions: ['AD_RESOURCE:READ'],
+        locale: 'module.advertising.upstreamAgent',
+        permissions: ['AD_UPSTREAM_AGENT:READ'],
         hideInMenu: true,
-        activeMenu: AdvertisingRouteEnum.ADVERTISING_RESOURCE,
+        activeMenu: AdvertisingRouteEnum.ADVERTISING_UPSTREAM_AGENT,
       },
     },
     {
-      path: 'resource/edit/:id',
-      name: AdvertisingRouteEnum.ADVERTISING_RESOURCE_EDIT,
-      component: () => import('@/views/advertising/resource/create.vue'),
+      path: 'downstream-media',
+      name: AdvertisingRouteEnum.ADVERTISING_DOWNSTREAM_MEDIA,
+      component: () => import('@/views/advertising/downstreamMedia/index.vue'),
       meta: {
-        locale: 'module.advertising.resource',
-        permissions: ['AD_RESOURCE:READ'],
-        hideInMenu: true,
-        activeMenu: AdvertisingRouteEnum.ADVERTISING_RESOURCE,
+        locale: 'module.advertising.downstreamMedia',
+        isTopMenu: true,
+        permissions: ['AD_DOWNSTREAM_MEDIA:READ'],
       },
     },
     {
-      path: 'resource/detail/:id',
-      name: AdvertisingRouteEnum.ADVERTISING_RESOURCE_DETAIL,
-      component: () => import('@/views/advertising/resource/detail.vue'),
+      path: 'downstream-media/detail/:id',
+      name: AdvertisingRouteEnum.ADVERTISING_DOWNSTREAM_MEDIA_DETAIL,
+      // eslint-disable-next-line import/no-unresolved
+      component: () => import('@/views/advertising/downstreamMedia/detail.vue'),
       meta: {
-        locale: 'module.advertising.resource',
-        permissions: ['AD_RESOURCE:READ'],
+        locale: 'module.advertising.downstreamMedia',
+        permissions: ['AD_DOWNSTREAM_MEDIA:READ'],
         hideInMenu: true,
-        activeMenu: AdvertisingRouteEnum.ADVERTISING_RESOURCE,
+        activeMenu: AdvertisingRouteEnum.ADVERTISING_DOWNSTREAM_MEDIA,
       },
     },
     {

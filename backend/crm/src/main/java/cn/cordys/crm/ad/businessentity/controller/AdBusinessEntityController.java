@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.util.List;
 
@@ -72,5 +73,12 @@ public class AdBusinessEntityController {
     @Operation(summary = "业务主体分页（关键字+状态筛选+排序）")
     public PagerWithOption<List<AdBusinessEntityListResponse>> page(@RequestBody AdBusinessEntityPageRequest request) {
         return adBusinessEntityService.page(request, userId(), orgId());
+    }
+
+    @DeleteMapping("/{id}")
+    @CsPermission(PermissionConstants.AD_BUSINESS_ENTITY_UPDATE)
+    @Operation(summary = "停用业务主体（status=20）")
+    public void disable(@PathVariable("id") String id) {
+        adBusinessEntityService.disable(id);
     }
 }

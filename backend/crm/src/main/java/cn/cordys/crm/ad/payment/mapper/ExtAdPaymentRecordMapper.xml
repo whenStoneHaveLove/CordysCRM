@@ -14,7 +14,7 @@
             p.business_entity_id AS businessEntityId,
             be.name             AS businessEntityName,
             c.name              AS customerName,
-            r.name              AS resourceName,
+            COALESCE(ua.name, dm.name) AS resourceName,
             p.direction         AS direction,
             p.type              AS type,
             p.amount            AS amount,
@@ -27,7 +27,8 @@
         LEFT JOIN ad_order o ON o.id = p.order_id AND o.deleted = 0
         LEFT JOIN ad_business_entity be ON be.id = p.business_entity_id AND be.deleted = 0
         LEFT JOIN ad_customer c ON c.id = o.customer_id AND c.deleted = 0
-        LEFT JOIN ad_resource r ON r.id = p.resource_id AND r.deleted = 0
+        LEFT JOIN ad_upstream_agent ua ON ua.id = p.resource_id AND ua.deleted = 0
+        LEFT JOIN ad_downstream_media dm ON dm.id = p.resource_id AND dm.deleted = 0
         WHERE p.organization_id = #{request.organizationId}
           AND p.deleted = 0
         <if test="request.orderId != null and request.orderId != ''">
@@ -62,7 +63,7 @@
         <include refid="cn.cordys.common.mapper.CommonMapper.sort">
             <property name="sort" value="request.sort"/>
             <property name="prefix" value="p"/>
-            <property name="defaultSort" value="p.create_time DESC"/>
+            <property name="defaultSort" value="create_time DESC"/>
         </include>
     </select>
 

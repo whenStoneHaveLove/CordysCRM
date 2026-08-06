@@ -3,6 +3,7 @@ package cn.cordys.crm.ad.order.service;
 import cn.cordys.crm.ad.common.constants.PaymentMethod;
 import cn.cordys.crm.ad.common.constants.PaymentPostpayTrigger;
 import cn.cordys.crm.ad.common.constants.ReceiptMethod;
+import cn.cordys.common.exception.GenericException;
 import cn.cordys.crm.ad.order.domain.AdOrder;
 import cn.cordys.crm.ad.order.dto.response.AdOrderFinancialPlan;
 import org.springframework.stereotype.Component;
@@ -39,18 +40,31 @@ public class AdAmountCalculator {
         BigDecimal total = nvl(order.getTotalAmount());
         BigDecimal noRebate = nvl(order.getNoRebateAmount());
 
-        // L-02 返点（不记返部分不参与返点）
+        // L-02 返点（不记返部分不参与返点） — 比例不可超过100
         BigDecimal rebateBase = total.subtract(noRebate);
-        BigDecimal rebate = calcByMode(order.getRebateMode(), rebateBase, nvl(order.getRebateValue()));
+        BigDecimal rebateValue = nvl(order.getRebateValue());
+        if (order.getRebateMode() != null && order.getRebateMode() == 10 && rebateValue.compareTo(new BigDecimal("100")) > 0) {
+            throw new GenericException("返点比例不可超过 100%");
+        }
+        BigDecimal rebate = calcByMode(order.getRebateMode(), rebateBase, rebateValue);
         order.setRebateAmount(rebate);
         order.setReceivableAmount(total.subtract(rebate));
 
-        // L-11 预收金额（基数=应收）
-        BigDecimal receiptPrepay = calcByMode(order.getReceiptPrepayMode(), nvl(order.getReceivableAmount()), nvl(order.getReceiptPrepayRatio()));
+        // 媒体应付总额：前端未传则默认等于总额
+        if (order.getMediaPayableAmount() == null) {
+            order.setMediaPayableAmount(total);
+        }
+
+        // L-11 预收金额（基数=应收） — mode=10 用比例，mode=20 用固定金额
+        BigDecimal receiptPrepay = order.getReceiptPrepayMode() != null && order.getReceiptPrepayMode() == 20
+                ? nvl(order.getReceiptPrepayAmount())
+                : calcByMode(order.getReceiptPrepayMode(), nvl(order.getReceivableAmount()), nvl(order.getReceiptPrepayRatio()));
         order.setReceiptPrepayAmount(receiptPrepay);
 
         // L-28 媒体预付金额（基数=媒体应付）
-        BigDecimal mediaPrepay = calcByMode(order.getPaymentPrepayMode(), nvl(order.getMediaPayableAmount()), nvl(order.getPaymentPrepayRatio()));
+        BigDecimal mediaPrepay = order.getPaymentPrepayMode() != null && order.getPaymentPrepayMode() == 20
+                ? nvl(order.getPaymentPrepayAmount())
+                : calcByMode(order.getPaymentPrepayMode(), nvl(order.getMediaPayableAmount()), nvl(order.getPaymentPrepayRatio()));
         order.setPaymentPrepayAmount(mediaPrepay);
     }
 

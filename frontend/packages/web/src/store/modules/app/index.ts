@@ -107,6 +107,34 @@ const defaultModuleConfig = [
     moduleKey: ModuleConfigEnum.CUSTOM_FORM,
     enable: true,
   },
+  {
+    moduleKey: ModuleConfigEnum.AD_WORKBENCH,
+    enable: true,
+  },
+  {
+    moduleKey: ModuleConfigEnum.AD_ORDER_MANAGEMENT,
+    enable: true,
+  },
+  {
+    moduleKey: ModuleConfigEnum.AD_CONTRACT_MANAGEMENT,
+    enable: true,
+  },
+  {
+    moduleKey: ModuleConfigEnum.AD_UPSTREAM_AGENT,
+    enable: true,
+  },
+  {
+    moduleKey: ModuleConfigEnum.AD_APPROVAL,
+    enable: true,
+  },
+  {
+    moduleKey: ModuleConfigEnum.AD_REPORT,
+    enable: true,
+  },
+  {
+    moduleKey: ModuleConfigEnum.AD_SYSTEM,
+    enable: true,
+  },
 ];
 
 const useAppStore = defineStore('app', {

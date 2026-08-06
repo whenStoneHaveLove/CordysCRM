@@ -10,11 +10,17 @@ import cn.cordys.crm.ad.common.AdEntityPermissionProvider;
 import cn.cordys.crm.ad.common.annotation.OperationLog;
 import cn.cordys.crm.ad.common.constants.OrderStateMachine;
 import cn.cordys.crm.ad.common.constants.OrderStatus;
+import cn.cordys.crm.ad.common.constants.OrderType;
+import cn.cordys.crm.ad.common.constants.PaymentMethod;
+import cn.cordys.crm.ad.common.constants.ReceiptMethod;
 import cn.cordys.common.dto.RoleDataScopeDTO;
+import cn.cordys.crm.ad.contract.constants.ContractType;
+import cn.cordys.crm.ad.contract.domain.AdContract;
 import cn.cordys.crm.ad.order.domain.AdOrder;
 import cn.cordys.crm.ad.order.domain.AdOrderAttachment;
 import cn.cordys.crm.ad.order.domain.AdOrderChange;
 import cn.cordys.crm.ad.order.domain.AdOrderContract;
+import cn.cordys.crm.ad.order.domain.AdOrderDownstreamMedia;
 import cn.cordys.crm.ad.order.domain.AdOrderLog;
 import cn.cordys.crm.ad.order.dto.request.AdOrderApproveRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderForceArchiveRequest;
@@ -25,9 +31,13 @@ import cn.cordys.crm.ad.order.dto.response.AdOrderAllowedAction;
 import cn.cordys.crm.ad.order.dto.response.AdOrderDetailResponse;
 import cn.cordys.crm.ad.order.dto.response.AdOrderFinancialPlan;
 import cn.cordys.crm.ad.order.dto.response.AdOrderListResponse;
+import cn.cordys.crm.ad.order.mapper.ExtAdOrderChangeMapper;
+import cn.cordys.crm.ad.order.mapper.ExtAdOrderContractMapper;
+import cn.cordys.crm.ad.order.mapper.ExtAdOrderDownstreamMediaMapper;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderMapper;
+import cn.cordys.crm.ad.order.mapper.ExtAdOrderAttachmentMapper;
+import cn.cordys.crm.ad.order.mapper.ExtAdOrderLogMapper;
 import cn.cordys.mybatis.BaseMapper;
-import cn.cordys.mybatis.lambda.LambdaQueryWrapper;
 import cn.cordys.security.SessionUtils;
 import cn.cordys.security.SessionUser;
 import com.github.pagehelper.Page;
@@ -78,13 +88,17 @@ public class AdOrderService {
     @Resource
     private BaseMapper<AdOrder> adOrderMapper;
     @Resource
-    private BaseMapper<AdOrderAttachment> attachmentMapper;
+    private ExtAdOrderAttachmentMapper attachmentMapper;
     @Resource
-    private BaseMapper<AdOrderContract> orderContractMapper;
+    private ExtAdOrderContractMapper orderContractMapper;
     @Resource
-    private BaseMapper<AdOrderChange> orderChangeMapper;
+    private ExtAdOrderDownstreamMediaMapper orderDownstreamMediaMapper;
     @Resource
-    private BaseMapper<AdOrderLog> orderLogMapper;
+    private cn.cordys.mybatis.BaseMapper<AdContract> contractMapper;
+    @Resource
+    private ExtAdOrderChangeMapper orderChangeMapper;
+    @Resource
+    private ExtAdOrderLogMapper orderLogMapper;
     @Resource
     private BaseMapper<AdBusinessEntity> businessEntityMapper;
     @Resource
@@ -122,6 +136,10 @@ public class AdOrderService {
         order.setOrderNo(generateOrderNo(order.getBusinessEntityId(), orgId, now));
         amountCalculator.computeAmounts(order);
         adOrderMapper.insert(order);
+        // 关联合同：框架订单必选框架合同；单笔订单可后补
+        syncOrderContract(order.getId(), request.getContractId(), request.getOrderType(), userId, orgId);
+        // 关联下游媒体
+        syncOrderDownstreamMedia(order.getId(), request.getDownstreamMediaIds(), userId, orgId);
         return order;
     }
 
@@ -145,6 +163,10 @@ public class AdOrderService {
         order.setUpdateTime(System.currentTimeMillis());
         amountCalculator.computeAmounts(order);
         adOrderMapper.update(order);
+        // 同步合同关联
+        syncOrderContract(order.getId(), request.getContractId(), request.getOrderType(), userId, orgId);
+        // 同步下游媒体
+        syncOrderDownstreamMedia(order.getId(), request.getDownstreamMediaIds(), userId, orgId);
         return order;
     }
 
@@ -155,22 +177,24 @@ public class AdOrderService {
      */
     public AdOrderDetailResponse detail(String id, String userId, String orgId) {
         AdOrder order = requireOrder(id);
-        List<AdOrderAttachment> attachments = attachmentMapper.selectListByLambda(
-                new LambdaQueryWrapper<AdOrderAttachment>()
-                        .eq(AdOrderAttachment::getOrderId, id)
-                        .eq(AdOrderAttachment::getDeleted, 0));
-        List<AdOrderChange> changes = orderChangeMapper.selectListByLambda(
-                new LambdaQueryWrapper<AdOrderChange>()
-                        .eq(AdOrderChange::getOrderId, id)
-                        .eq(AdOrderChange::getDeleted, 0));
-        List<AdOrderLog> logs = orderLogMapper.selectListByLambda(
-                new LambdaQueryWrapper<AdOrderLog>()
-                        .eq(AdOrderLog::getOrderId, id)
-                        .eq(AdOrderLog::getDeleted, 0));
+        List<AdOrderAttachment> attachments = attachmentMapper.selectByOrderId(id);
+        List<AdOrderChange> changes = orderChangeMapper.selectByOrderId(id);
+        List<AdOrderLog> logs = orderLogMapper.selectByOrderId(id);
         logs.sort(Comparator.comparing(AdOrderLog::getCreateTime, Comparator.nullsLast(Comparator.reverseOrder())));
+        // 关联合同 ID（取第一条即可，单笔/框架订单都按 1:1 简化）
+        List<AdOrderContract> orderContracts = orderContractMapper.selectByOrderId(id);
+        String contractId = orderContracts.isEmpty() ? null : orderContracts.get(0).getContractId();
+
+        // 下游媒体 id 列表
+        List<AdOrderDownstreamMedia> downstreamMedias = orderDownstreamMediaMapper.selectByOrderId(id);
+        List<String> downstreamMediaIds = downstreamMedias.stream()
+                .map(AdOrderDownstreamMedia::getDownstreamMediaId)
+                .collect(Collectors.toList());
 
         AdOrderDetailResponse response = new AdOrderDetailResponse();
         response.setOrder(order);
+        response.setContractId(contractId);
+        response.setDownstreamMediaIds(downstreamMediaIds);
         response.setAttachments(attachments);
         response.setChanges(changes);
         response.setLogs(logs);
@@ -186,6 +210,12 @@ public class AdOrderService {
         request.setEntityIds(entityPermissionProvider.buildEntityFilter());
         Page<AdOrderListResponse> page = PageHelper.startPage(request.getCurrent(), request.getPageSize());
         List<AdOrderListResponse> list = extAdOrderMapper.pageList(request);
+        for (AdOrderListResponse r : list) {
+            r.setOrderTypeLabel(OrderType.labelOf(r.getOrderType()));
+            r.setStatusLabel(OrderStatus.labelOf(r.getStatus()));
+            r.setReceiptMethodLabel(ReceiptMethod.labelOf(r.getReceiptMethod()));
+            r.setPaymentMethodLabel(PaymentMethod.labelOf(r.getPaymentMethod()));
+        }
         return PageUtils.setPageInfoWithOption(page, list, null);
     }
 
@@ -202,7 +232,10 @@ public class AdOrderService {
         // §6.2 提交守卫
         requireAttachment(order.getId(), 10, "提交前需上传【盖章排期】附件(类型10)");
         requireAttachment(order.getId(), 20, "提交前需上传【邮件截图】附件(类型20)");
-        requireContract(order.getId(), "提交前需关联【框架合同】(ad_order_contract)");
+        // 框架订单(10) 必传合同；单笔订单(20) 允许后补合同（执行完成前需上传附件）
+        if (order.getOrderType() != null && order.getOrderType() == OrderType.FRAMEWORK.getCode()) {
+            requireContract(order.getId(), "提交前需关联【框架合同】(ad_order_contract)");
+        }
         order.setUpdateUser(userId);
         order.setUpdateTime(System.currentTimeMillis());
         int from = order.getStatus();
@@ -226,7 +259,21 @@ public class AdOrderService {
         int from = order.getStatus();
         order.setStatus(to);
         adOrderMapper.update(order);
-        recordLog(order, reject ? OrderStateMachine.TRIGGER_REJECT : OrderStateMachine.TRIGGER_APPROVE, from, to, userId, orgId);
+        String action = reject ? OrderStateMachine.TRIGGER_REJECT : OrderStateMachine.TRIGGER_APPROVE;
+        AdOrderLog log = new AdOrderLog();
+        log.setId(IDGenerator.nextStr());
+        log.setOrderId(order.getId());
+        log.setAction(action);
+        log.setOperatorId(userId);
+        log.setOrganizationId(orgId);
+        log.setBeforeValue(String.format("{\"status\":%d}", from));
+        String afterValue = String.format("{\"status\":%d}", to);
+        if (reject && request.getRemark() != null && !request.getRemark().isBlank()) {
+            afterValue = String.format("{\"status\":%d,\"remark\":\"%s\"}", to, request.getRemark());
+        }
+        log.setAfterValue(afterValue);
+        log.setCreateTime(System.currentTimeMillis());
+        orderLogMapper.insert(log);
         return order;
     }
 
@@ -275,7 +322,8 @@ public class AdOrderService {
     }
 
     /**
-     * 执行完成：50→70。守卫 L-26 需 ≥1 份关联合同；并按 L-09 起算账期。
+     * 执行完成：50→70。
+     * 守卫：框架订单必须关联合同（L-26），单笔订单可后补但关联后必须有附件；并按 L-09 起算账期。
      */
     @OperationLog(module = "ORDER", action = "COMPLETE_EXECUTE", targetId = "#id")
     public AdOrder completeExecute(String id, String userId, String orgId) {
@@ -283,7 +331,12 @@ public class AdOrderService {
         int from = order.getStatus();
         int to = OrderStateMachine.EXECUTION_COMPLETED;
         assertTransition(from, to);
-        requireContract(order.getId(), "执行完成前需至少关联一份合同(L-26)");
+        // 框架订单强制要求关联合同；单笔订单可后补（没关联则不校验）
+        if (order.getOrderType() != null && order.getOrderType() == OrderType.FRAMEWORK.getCode()) {
+            requireContract(order.getId(), "执行完成前需至少关联一份合同(L-26)");
+        }
+        // 单笔合同订单：执行完成前必须上传合同附件
+        requireSingleContractUploaded(order);
         order.setExecutionCompletedAt(new Date());
         // L-09 账期起算（账期收款方式）
         if (order.getReceiptMethod() != null
@@ -446,23 +499,109 @@ public class AdOrderService {
     }
 
     private void requireAttachment(String orderId, int type, String message) {
-        long cnt = attachmentMapper.selectListByLambda(
-                new LambdaQueryWrapper<AdOrderAttachment>()
-                        .eq(AdOrderAttachment::getOrderId, orderId)
-                        .eq(AdOrderAttachment::getType, type)
-                        .eq(AdOrderAttachment::getDeleted, 0)).size();
+        long cnt = attachmentMapper.selectByOrderIdAndType(orderId, type).size();
         if (cnt == 0) {
             throw new GenericException(message);
         }
     }
 
+    /**
+     * 单笔合同订单执行完成前必须先关联单笔合同（附件统一在合同管理页面上传）。
+     */
+    private void requireSingleContractUploaded(AdOrder order) {
+        if (order.getOrderType() == null || order.getOrderType() != OrderType.SINGLE.getCode()) {
+            return;
+        }
+        List<AdOrderContract> contracts = orderContractMapper.selectByOrderId(order.getId());
+        if (contracts.isEmpty()) {
+            throw new GenericException("单笔合同订单执行完成前必须先关联单笔合同");
+        }
+    }
+
     private void requireContract(String orderId, String message) {
-        long cnt = orderContractMapper.selectListByLambda(
-                new LambdaQueryWrapper<AdOrderContract>()
-                        .eq(AdOrderContract::getOrderId, orderId)
-                        .eq(AdOrderContract::getDeleted, 0)).size();
+        long cnt = orderContractMapper.selectByOrderId(orderId).size();
         if (cnt == 0) {
             throw new GenericException(message);
+        }
+    }
+
+    /**
+     * 同步订单与合同的关联到 ad_order_contract 中间表。
+     *
+     * <ul>
+     *   <li>contractId 为空 → 跳过（单笔订单可后补合同）</li>
+     *   <li>订单类型为 FRAMEWORK(10) → 合同必须是 FRAMEWORK(10)，否则报错</li>
+     *   <li>订单类型为 SINGLE(20) → 合同允许后补，contractId 非空时校验合同存在即可</li>
+     *   <li>已存在该订单-合同关联 → 跳过</li>
+     * </ul>
+     */
+    private void syncOrderContract(String orderId, String contractId, Integer orderType, String userId, String orgId) {
+        if (contractId == null || contractId.isBlank()) {
+            return;
+        }
+        AdContract contract = contractMapper.selectByPrimaryKey(contractId);
+        if (contract == null || (contract.getDeleted() != null && contract.getDeleted() == 1)) {
+            throw new GenericException("关联合同不存在");
+        }
+        // 框架订单必须绑定框架合同
+        if (orderType != null && orderType == OrderType.FRAMEWORK.getCode()
+                && contract.getContractType() != ContractType.FRAMEWORK.getCode()) {
+            throw new GenericException("框架订单必须关联【框架合同】");
+        }
+        // 防重复
+        List<AdOrderContract> existing = orderContractMapper.selectByOrderId(orderId);
+        boolean exists = existing.stream().anyMatch(oc -> contractId.equals(oc.getContractId()));
+        if (exists) {
+            return;
+        }
+        AdOrderContract oc = new AdOrderContract();
+        oc.setId(IDGenerator.nextStr());
+        oc.setOrderId(orderId);
+        oc.setContractId(contractId);
+        oc.setOrganizationId(orgId);
+        oc.setDeleted(0);
+        oc.setCreateTime(System.currentTimeMillis());
+        orderContractMapper.insert(oc);
+    }
+
+    /**
+     * 同步订单与下游媒体的关联到 ad_order_downstream_media 中间表。
+     * 全量替换：先逻辑删除旧的关联，再插入新的关联。
+     * 注意：由于唯一键 (order_id, downstream_media_id) 不区分 deleted，
+     * 插入前先检查已存在记录（含已删除），若存在则复用（设 deleted=0）。
+     */
+    private void syncOrderDownstreamMedia(String orderId, List<String> downstreamMediaIds, String userId, String orgId) {
+        // 先逻辑删除该订单的所有现有下游媒体关联
+        List<AdOrderDownstreamMedia> existing = orderDownstreamMediaMapper.selectByOrderId(orderId);
+        for (AdOrderDownstreamMedia odm : existing) {
+            odm.setDeleted(1);
+            orderDownstreamMediaMapper.update(odm);
+        }
+        // 插入新的关联
+        if (downstreamMediaIds == null || downstreamMediaIds.isEmpty()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        for (String mediaId : downstreamMediaIds) {
+            if (mediaId == null || mediaId.isBlank()) {
+                continue;
+            }
+            // 检查是否已有同组合记录（含已删除的），有则复用避免唯一键冲突
+            AdOrderDownstreamMedia reused = orderDownstreamMediaMapper.selectByOrderIdAndMediaId(orderId, mediaId);
+            if (reused != null) {
+                reused.setDeleted(0);
+                reused.setOrganizationId(orgId);
+                orderDownstreamMediaMapper.update(reused);
+            } else {
+                AdOrderDownstreamMedia odm = new AdOrderDownstreamMedia();
+                odm.setId(IDGenerator.nextStr());
+                odm.setOrderId(orderId);
+                odm.setDownstreamMediaId(mediaId);
+                odm.setOrganizationId(orgId);
+                odm.setDeleted(0);
+                odm.setCreateTime(now);
+                orderDownstreamMediaMapper.insert(odm);
+            }
         }
     }
 

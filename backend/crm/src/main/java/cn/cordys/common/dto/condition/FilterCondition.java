@@ -48,6 +48,25 @@ public class FilterCondition {
     @Schema(description = "包含新增子部门集合")
     private List<String> containChildIds;
 
+    // 以下字段用于 CommonMapper 的动态 SQL，OGNL 表达式需要父类也有这些属性
+    @Schema(description = "是否是自定义字段")
+    private Boolean customField;
+
+    @Schema(description = "是否是大字段")
+    private Boolean blob;
+
+    @Schema(description = "是否是显示字段")
+    private Boolean refFiled;
+
+    @Schema(description = "显示字段的主字段是否是自定义字段")
+    private Boolean refMainCustomField;
+
+    @Schema(description = "显示字段的主字段名称或ID")
+    private String refMainFieldName;
+
+    @Schema(description = "显示字段的主表名")
+    private String refMainTableName;
+
     public String getName() {
         if (SqlInjectionChecker.containsSqlInjectionRisk(name)) {
             throw new GenericException("condition name illegal");

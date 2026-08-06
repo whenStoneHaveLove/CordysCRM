@@ -496,6 +496,55 @@
       groupList: [],
       enable: true,
     },
+    {
+      label: t('module.advertising.workbench'),
+      key: ModuleConfigEnum.AD_WORKBENCH,
+      icon: 'iconicon_home',
+      groupList: [],
+      enable: true,
+    },
+    {
+      label: t('module.advertising.orderManagement'),
+      key: ModuleConfigEnum.AD_ORDER_MANAGEMENT,
+      icon: 'iconicon_order_form',
+      groupList: [],
+      enable: true,
+    },
+    {
+      label: t('module.advertising.contractManagement'),
+      key: ModuleConfigEnum.AD_CONTRACT_MANAGEMENT,
+      icon: 'iconicon_contract',
+      groupList: [],
+      enable: true,
+    },
+    {
+      label: t('module.advertising.resourceManagement'),
+      key: ModuleConfigEnum.AD_UPSTREAM_AGENT,
+      icon: 'iconicon_enterprise',
+      groupList: [],
+      enable: true,
+    },
+    {
+      label: t('module.advertising.approval'),
+      key: ModuleConfigEnum.AD_APPROVAL,
+      icon: 'iconicon_check',
+      groupList: [],
+      enable: true,
+    },
+    {
+      label: t('module.advertising.report'),
+      key: ModuleConfigEnum.AD_REPORT,
+      icon: 'iconicon_data',
+      groupList: [],
+      enable: true,
+    },
+    {
+      label: t('module.advertising.system'),
+      key: ModuleConfigEnum.AD_SYSTEM,
+      icon: 'iconicon_set_up',
+      groupList: [],
+      enable: true,
+    },
   ];
 
   const moduleConfigList = computed<ModuleConfigItem[]>(() => {

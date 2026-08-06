@@ -8,18 +8,20 @@
           </div>
           <n-space>
             <n-button @click="goBack">{{ t('advertising.order.form.cancel') }}</n-button>
-            <n-button type="primary" :loading="saving" @click="handleSave">{{
-              t('advertising.order.form.save')
+            <n-button @click="handleSave('draft')">{{ t('advertising.order.form.saveDraft') }}</n-button>
+            <n-button type="primary" :loading="saving" @click="handleSave('submit')">{{
+              t('advertising.order.form.submit')
             }}</n-button>
           </n-space>
         </n-space>
 
         <div class="flex-1 overflow-auto">
           <n-form ref="formRef" :model="form" label-placement="left" :label-width="120">
-            <n-grid :cols="2" :x-gap="16" item-responsive>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.orderName')" path="orderName">
-                <n-input v-model:value="form.orderName" placeholder="请输入订单名称" />
-              </n-form-item-gi>
+            <!-- 1. 基础信息 -->
+            <n-divider title-placement="left">
+              <span class="section-title">1. 基础信息</span>
+            </n-divider>
+            <n-grid :cols="2" :x-gap="16">
               <n-form-item-gi :span="1" :label="t('advertising.order.form.businessEntityId')" path="businessEntityId">
                 <n-select
                   v-model:value="form.businessEntityId"
@@ -27,6 +29,15 @@
                   filterable
                   placeholder="请选择业务主体"
                 />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.orderName')" path="orderName">
+                <n-input v-model:value="form.orderName" placeholder="请输入订单名称" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.orderType')" path="orderType">
+                <n-radio-group v-model:value="form.orderType" name="orderType">
+                  <n-radio :value="10">{{ t('advertising.order.form.orderTypeFramework') }}</n-radio>
+                  <n-radio :value="20">{{ t('advertising.order.form.orderTypeSingle') }}</n-radio>
+                </n-radio-group>
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.customerId')" path="customerId">
                 <n-select
@@ -47,35 +58,189 @@
               <n-form-item-gi :span="1" :label="t('advertising.order.form.signingEntity')">
                 <n-input v-model:value="form.signingEntity" placeholder="签约主体" />
               </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.orderType')" path="orderType">
-                <n-select v-model:value="form.orderType" :options="orderTypeOptions" placeholder="请选择" />
-              </n-form-item-gi>
+            </n-grid>
+
+            <!-- 2. 合作方 -->
+            <n-divider title-placement="left">
+              <span class="section-title">2. 合作方</span>
+            </n-divider>
+            <n-grid :cols="2" :x-gap="16">
               <n-form-item-gi :span="1" :label="t('advertising.order.form.upstreamAgentId')">
                 <n-select
                   v-model:value="form.upstreamAgentId"
                   :options="upstreamAgentOptions"
                   filterable
-                  placeholder="请选择上游代理"
+                  clearable
+                  placeholder="请选择上游代理（可留空）"
                 />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.agentOrderNo')">
                 <n-input v-model:value="form.agentOrderNo" placeholder="代理订单号" />
               </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.totalAmount')" path="totalAmount">
-                <n-input-number v-model:value="form.totalAmount" :min="0" style="width: 100%" />
+            </n-grid>
+
+            <!-- 3. 收款方式（上游） -->
+            <n-divider title-placement="left">
+              <span class="section-title">3. 收款方式（上游）</span>
+            </n-divider>
+            <n-grid :cols="2" :x-gap="16">
+              <n-form-item-gi :span="2" :label="t('advertising.order.form.receiptMethod')" path="receiptMethod">
+                <n-radio-group v-model:value="form.receiptMethod" name="receiptMethod">
+                  <n-radio :value="10">预付款</n-radio>
+                  <n-radio :value="20">执行后账期</n-radio>
+                </n-radio-group>
               </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.rebateMode')">
-                <n-select v-model:value="form.rebateMode" :options="rebateModeOptions" placeholder="请选择" />
+              <!-- 预付款时：预付比例/金额(自动)/预付截止日 -->
+              <template v-if="form.receiptMethod === 10">
+                <n-form-item-gi :span="1" :label="t('advertising.order.form.receiptPrepayMode')">
+                  <n-select
+                    v-model:value="form.receiptPrepayMode"
+                    :options="prepayModeOptions"
+                    placeholder="预收模式"
+                  />
+                </n-form-item-gi>
+                <n-form-item-gi
+                  v-if="form.receiptPrepayMode === 10"
+                  :span="1"
+                  :label="t('advertising.order.form.receiptPrepayRatio')"
+                >
+                  <n-input-number v-model:value="form.receiptPrepayRatio" :min="0" :max="100" style="width: 100%">
+                    <template #suffix>%</template>
+                  </n-input-number>
+                </n-form-item-gi>
+                <n-form-item-gi :span="1" :label="t('advertising.order.form.receiptPrepayAmount')">
+                  <n-input-number
+                    v-model:value="form.receiptPrepayAmount"
+                    :min="0"
+                    :precision="2"
+                    style="width: 100%"
+                    :disabled="form.receiptPrepayMode === 10"
+                    placeholder="自动计算"
+                  />
+                </n-form-item-gi>
+                <n-form-item-gi :span="1" :label="t('advertising.order.form.receiptPrepayDeadline')">
+                  <n-date-picker v-model:value="form.receiptPrepayDeadline" type="date" style="width: 100%" />
+                </n-form-item-gi>
+              </template>
+              <!-- 账期时：账期天数 -->
+              <n-form-item-gi
+                v-if="form.receiptMethod === 20"
+                :span="1"
+                :label="t('advertising.order.form.receiptAccountPeriodDays')"
+              >
+                <n-input-number v-model:value="form.receiptAccountPeriodDays" :min="0" style="width: 100%" />
               </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.rebateValue')">
-                <n-input-number v-model:value="form.rebateValue" :min="0" style="width: 100%" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.noRebateAmount')">
-                <n-input-number v-model:value="form.noRebateAmount" :min="0" style="width: 100%" />
+            </n-grid>
+
+            <!-- 4. 付款方式（下游媒体） -->
+            <n-divider title-placement="left">
+              <span class="section-title">4. 付款方式（下游媒体）</span>
+            </n-divider>
+            <n-grid :cols="2" :x-gap="16">
+              <n-form-item-gi :span="2" :label="t('advertising.order.form.paymentMethod')" path="paymentMethod">
+                <n-radio-group v-model:value="form.paymentMethod" name="paymentMethod">
+                  <n-radio :value="10">预付媒体</n-radio>
+                  <n-radio :value="20">后付媒体</n-radio>
+                </n-radio-group>
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.mediaPayableAmount')">
-                <n-input-number v-model:value="form.mediaPayableAmount" :min="0" style="width: 100%" />
+                <n-input-number v-model:value="form.mediaPayableAmount" :min="0" :precision="2" style="width: 100%" />
               </n-form-item-gi>
+              <template v-if="form.paymentMethod === 10">
+                <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPrepayMode')">
+                  <n-select
+                    v-model:value="form.paymentPrepayMode"
+                    :options="prepayModeOptions"
+                    placeholder="媒体预付模式"
+                  />
+                </n-form-item-gi>
+                <n-form-item-gi
+                  v-if="form.paymentPrepayMode === 10"
+                  :span="1"
+                  :label="t('advertising.order.form.paymentPrepayRatio')"
+                >
+                  <n-input-number v-model:value="form.paymentPrepayRatio" :min="0" :max="100" style="width: 100%">
+                    <template #suffix>%</template>
+                  </n-input-number>
+                </n-form-item-gi>
+                <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPrepayAmount')">
+                  <n-input-number
+                    v-model:value="form.paymentPrepayAmount"
+                    :min="0"
+                    :precision="2"
+                    style="width: 100%"
+                    :disabled="form.paymentPrepayMode === 10"
+                    placeholder="自动计算"
+                  />
+                </n-form-item-gi>
+                <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPrepayDeadline')">
+                  <n-date-picker v-model:value="form.paymentPrepayDeadline" type="date" style="width: 100%" />
+                </n-form-item-gi>
+              </template>
+              <template v-if="form.paymentMethod === 20">
+                <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPostpayTrigger')">
+                  <n-select
+                    v-model:value="form.paymentPostpayTrigger"
+                    :options="postpayTriggerOptions"
+                    placeholder="后付触发"
+                  />
+                </n-form-item-gi>
+                <n-form-item-gi
+                  v-if="form.paymentPostpayTrigger === 20"
+                  :span="1"
+                  :label="t('advertising.order.form.paymentPostpayDays')"
+                >
+                  <n-input-number v-model:value="form.paymentPostpayDays" :min="0" style="width: 100%" />
+                </n-form-item-gi>
+              </template>
+            </n-grid>
+
+            <!-- 5. 金额与返点 -->
+            <n-divider title-placement="left">
+              <span class="section-title">5. 金额与返点</span>
+            </n-divider>
+            <n-grid :cols="2" :x-gap="16">
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.totalAmount')" path="totalAmount">
+                <n-input-number v-model:value="form.totalAmount" :min="0" :precision="2" style="width: 100%" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.noRebateAmount')">
+                <n-input-number v-model:value="form.noRebateAmount" :min="0" :precision="2" style="width: 100%" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.rebateMode')">
+                <n-radio-group v-model:value="form.rebateMode" name="rebateMode">
+                  <n-radio :value="10">比例</n-radio>
+                  <n-radio :value="20">固定金额</n-radio>
+                </n-radio-group>
+              </n-form-item-gi>
+              <n-form-item-gi v-if="form.rebateMode === 10" :span="1" :label="t('advertising.order.form.rebateRatio')">
+                <n-input-number v-model:value="form.rebateValue" :min="0" :max="100" :precision="2" style="width: 100%">
+                  <template #suffix>%</template>
+                </n-input-number>
+              </n-form-item-gi>
+              <n-form-item-gi
+                v-else-if="form.rebateMode === 20"
+                :span="1"
+                :label="t('advertising.order.form.rebateAmount')"
+              >
+                <n-input-number v-model:value="form.rebateValue" :min="0" :precision="2" style="width: 100%" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.rebateAmountAuto')">
+                <span class="readonly-field">
+                  {{ formatMoney(autoCalc.rebateAmount) }}
+                </span>
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.receivableAmount')">
+                <span class="readonly-field">
+                  {{ formatMoney(autoCalc.receivableAmount) }}
+                </span>
+              </n-form-item-gi>
+            </n-grid>
+
+            <!-- 6. 投放信息 -->
+            <n-divider title-placement="left">
+              <span class="section-title">6. 投放信息</span>
+            </n-divider>
+            <n-grid :cols="2" :x-gap="16">
               <n-form-item-gi :span="1" :label="t('advertising.order.form.deliveryStart')">
                 <n-date-picker v-model:value="form.deliveryStartDate" type="date" style="width: 100%" />
               </n-form-item-gi>
@@ -85,52 +250,73 @@
               <n-form-item-gi :span="1" :label="t('advertising.order.form.deliveryVolume')">
                 <n-input v-model:value="form.deliveryVolume" placeholder="投放量+单位" />
               </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.receiptMethod')" path="receiptMethod">
-                <n-select v-model:value="form.receiptMethod" :options="receiptMethodOptions" placeholder="请选择" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.receiptPrepayMode')">
-                <n-select v-model:value="form.receiptPrepayMode" :options="prepayModeOptions" placeholder="预收模式" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.receiptPrepayRatio')">
-                <n-input-number v-model:value="form.receiptPrepayRatio" :min="0" style="width: 100%" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.receiptPrepayDeadline')">
-                <n-date-picker v-model:value="form.receiptPrepayDeadline" type="date" style="width: 100%" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.receiptAccountPeriodDays')">
-                <n-input-number v-model:value="form.receiptAccountPeriodDays" :min="0" style="width: 100%" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentMethod')" path="paymentMethod">
-                <n-select v-model:value="form.paymentMethod" :options="paymentMethodOptions" placeholder="请选择" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPrepayMode')">
-                <n-select
-                  v-model:value="form.paymentPrepayMode"
-                  :options="prepayModeOptions"
-                  placeholder="媒体预付模式"
-                />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPrepayRatio')">
-                <n-input-number v-model:value="form.paymentPrepayRatio" :min="0" style="width: 100%" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPrepayDeadline')">
-                <n-date-picker v-model:value="form.paymentPrepayDeadline" type="date" style="width: 100%" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPostpayTrigger')">
-                <n-select
-                  v-model:value="form.paymentPostpayTrigger"
-                  :options="postpayTriggerOptions"
-                  placeholder="后付触发"
-                />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPostpayDays')">
-                <n-input-number v-model:value="form.paymentPostpayDays" :min="0" style="width: 100%" />
-              </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.currency')">
                 <n-input v-model:value="form.currency" placeholder="币种，默认 CNY" />
               </n-form-item-gi>
               <n-form-item-gi :span="2" :label="t('advertising.order.form.remark')">
                 <n-input v-model:value="form.remark" type="textarea" placeholder="备注" />
+              </n-form-item-gi>
+            </n-grid>
+
+            <!-- 7. 附件与合同 -->
+            <n-divider title-placement="left">
+              <span class="section-title">7. 附件与合同</span>
+            </n-divider>
+            <n-grid :cols="2" :x-gap="16">
+              <n-form-item-gi :span="1" label="关联合同" path="contractId">
+                <n-select
+                  v-model:value="form.contractId"
+                  :options="contractOptions"
+                  filterable
+                  clearable
+                  :placeholder="form.orderType === 10 ? '请选择已生效的上游框架合同' : '请选择上游单笔合同（可后补）'"
+                />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" label="下游媒体">
+                <n-select
+                  v-model:value="form.downstreamMediaIds"
+                  :options="downstreamMediaOptions"
+                  filterable
+                  multiple
+                  clearable
+                  placeholder="请选择下游媒体（至少选一个）"
+                />
+              </n-form-item-gi>
+            </n-grid>
+            <!-- 附件上传区 -->
+            <n-grid :cols="1" :x-gap="16">
+              <n-form-item-gi :span="1" label="盖章排期（必传）">
+                <n-upload
+                  v-model:file-list="fileListType10"
+                  :custom-request="(opts: any) => handleFileSelect(10, opts)"
+                  :show-file-list="true"
+                  :on-remove="(opts: any) => handleFileRemove(10, opts)"
+                  accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
+                >
+                  <n-button size="small">选择文件</n-button>
+                </n-upload>
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" label="邮件截图（必传）">
+                <n-upload
+                  v-model:file-list="fileListType20"
+                  :custom-request="(opts: any) => handleFileSelect(20, opts)"
+                  :show-file-list="true"
+                  :on-remove="(opts: any) => handleFileRemove(20, opts)"
+                  accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
+                >
+                  <n-button size="small">选择文件</n-button>
+                </n-upload>
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" label="补充协议（选填）">
+                <n-upload
+                  v-model:file-list="fileListType40"
+                  :custom-request="(opts: any) => handleFileSelect(40, opts)"
+                  :show-file-list="true"
+                  :on-remove="(opts: any) => handleFileRemove(40, opts)"
+                  accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
+                >
+                  <n-button size="small">选择文件</n-button>
+                </n-upload>
               </n-form-item-gi>
             </n-grid>
           </n-form>
@@ -141,9 +327,24 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed, onMounted, reactive, ref } from 'vue';
+  import { computed, onMounted, reactive, ref, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
-  import { NButton, NDatePicker, NForm, NFormItemGi, NGrid, NInput, NInputNumber, NSelect, useMessage } from 'naive-ui';
+  import {
+    NButton,
+    NDatePicker,
+    NDivider,
+    NForm,
+    NFormItemGi,
+    NGrid,
+    NInput,
+    NInputNumber,
+    NRadio,
+    NRadioGroup,
+    NSelect,
+    NText,
+    NUpload,
+    useMessage,
+  } from 'naive-ui';
 
   import {
     AdModeOptions,
@@ -159,31 +360,117 @@
 
   import {
     createAdOrder,
+    deleteAdOrderAttachment,
     getAdBusinessEntityPage,
+    getAdContractPage,
     getAdCustomerPage,
     getAdDictPage,
+    getAdDownstreamMediaPage,
     getAdOrderDetail,
-    getAdResourcePage,
+    getAdUpstreamAgentPage,
+    submitAdOrder,
     updateAdOrder,
+    uploadAdOrderAttachment,
   } from '@/api/modules';
+  import useUserStore from '@/store/modules/user';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  const { t } = useI18n();
+  const route = useRoute();
+  const router = useRouter();
+  const message = useMessage();
+  const userStore = useUserStore();
+
   const orderTypeOptions = AdOrderTypeOptions;
+  const rebateModeOptions = AdModeOptions;
   const receiptMethodOptions = AdReceiptMethodOptions;
   const paymentMethodOptions = AdPaymentMethodOptions;
-  const rebateModeOptions = AdModeOptions;
-  const prepayModeOptions = AdModeOptions;
   const postpayTriggerOptions = AdPostpayTriggerOptions;
+  const prepayModeOptions = AdModeOptions;
 
-  type SelectItem = { label: string; value: string };
+  const isEdit = computed(() => !!route.params.id);
+  const orderId = computed(() => (route.params.id as string) || '');
+  const saving = ref(false);
+  const loading = ref(false);
 
+  type SelectItem = { label: string; value: string | number };
   const businessEntityOptions = ref<SelectItem[]>([]);
   const customerOptions = ref<SelectItem[]>([]);
   const upstreamAgentOptions = ref<SelectItem[]>([]);
+  const downstreamMediaOptions = ref<SelectItem[]>([]);
   const industryOptions = ref<SelectItem[]>([]);
+  const contractOptions = ref<SelectItem[]>([]);
 
-  /** 表单本地类型：数值/日期使用 number | null 以适配 Naive UI 控件 */
+  // 已有附件（编辑时从 API 加载，已上传到服务器的）
+  interface SavedAttach {
+    id: string;
+    type: number;
+    fileName: string;
+    fileUrl: string;
+  }
+  const savedAttachments = ref<SavedAttach[]>([]);
+
+  // 暂存待上传的新附件（创建/编辑订单后再上传）
+  interface PendingFile {
+    _key: string;
+    type: number; // 10盖章排期 / 20邮件截图 / 40补充协议
+    file: File;
+  }
+  const pendingFiles = ref<PendingFile[]>([]);
+  let pendingFileSeq = 0;
+
+  // 响应式 fileList（按 type 分组），给 n-upload 用 v-model:file-list
+  const fileListType10 = ref<any[]>([]);
+  const fileListType20 = ref<any[]>([]);
+  const fileListType40 = ref<any[]>([]);
+
+  function buildFileListForType(type: number) {
+    const saved = savedAttachments.value
+      .filter((a) => a.type === type)
+      .map((a) => ({ id: a.id, name: a.fileName, status: 'finished', url: a.fileUrl }));
+    const pending = pendingFiles.value
+      .filter((f) => f.type === type)
+      .map((f) => ({ id: f._key, name: f.file.name, status: 'finished' }));
+    return [...saved, ...pending];
+  }
+
+  function handleFileSelect(type: number, opts: { file: any; onFinish: () => void; onError: () => void }) {
+    const rawFile = opts.file.file as File;
+    const _key = `f_${++pendingFileSeq}_${Date.now()}`;
+    pendingFiles.value.push({ _key, type, file: rawFile });
+    // 把新文件也写回对应 fileList，保持 UI 同步
+    let targetFileList: any;
+    if (type === 10) targetFileList = fileListType10;
+    else if (type === 20) targetFileList = fileListType20;
+    else targetFileList = fileListType40;
+    targetFileList.value.push({ id: _key, name: rawFile.name, status: 'finished' });
+    opts.onFinish();
+  }
+
+  /** 处理 n-upload 的文件移除：已有附件调后端删除接口，新文件只本地移除 */
+  async function handleFileRemove(type: number, opts: { file: any }) {
+    const removed = opts.file;
+    if (!removed) return false;
+    // 是否已有附件（已上传到服务器的，id 是后端生成的）
+    const isSaved = savedAttachments.value.some((a) => a.id === removed.id);
+    if (isSaved) {
+      // 调后端删除
+      try {
+        await deleteAdOrderAttachment(orderId.value, removed.id);
+        savedAttachments.value = savedAttachments.value.filter((a) => a.id !== removed.id);
+        message.success('附件已删除');
+      } catch (e) {
+        message.error((e as Error).message || '删除失败');
+        return false; // 返回 false 阻止 n-upload 移除
+      }
+    } else {
+      // 新暂存文件，仅本地移除
+      pendingFiles.value = pendingFiles.value.filter((f) => f._key !== removed.id);
+    }
+    return true;
+  }
+
   interface AdOrderForm {
     orderName?: string;
     businessEntityId?: string;
@@ -191,39 +478,34 @@
     industryCode?: string;
     signingEntity?: string;
     orderType?: number | null;
+    contractId?: string;
+    downstreamMediaIds?: string[];
     upstreamAgentId?: string;
     agentOrderNo?: string;
     totalAmount?: number | null;
+    noRebateAmount?: number | null;
     rebateMode?: number | null;
     rebateValue?: number | null;
-    noRebateAmount?: number | null;
     mediaPayableAmount?: number | null;
     deliveryStartDate?: number | null;
     deliveryEndDate?: number | null;
     deliveryVolume?: string;
-    remark?: string;
     receiptMethod?: number | null;
     receiptPrepayMode?: number | null;
     receiptPrepayRatio?: number | null;
+    receiptPrepayAmount?: number | null;
     receiptPrepayDeadline?: number | null;
     receiptAccountPeriodDays?: number | null;
     paymentMethod?: number | null;
     paymentPrepayMode?: number | null;
     paymentPrepayRatio?: number | null;
+    paymentPrepayAmount?: number | null;
     paymentPrepayDeadline?: number | null;
     paymentPostpayTrigger?: number | null;
     paymentPostpayDays?: number | null;
     currency?: string;
+    remark?: string;
   }
-
-  const { t } = useI18n();
-  const route = useRoute();
-  const router = useRouter();
-  const message = useMessage();
-
-  const id = (route.params.id as string) || '';
-  const isEdit = computed(() => !!id);
-  const saving = ref(false);
 
   const form = reactive<AdOrderForm>({
     orderName: undefined,
@@ -232,201 +514,407 @@
     industryCode: undefined,
     signingEntity: undefined,
     orderType: null,
+    contractId: undefined,
+    downstreamMediaIds: [],
     upstreamAgentId: undefined,
     agentOrderNo: undefined,
     totalAmount: null,
+    noRebateAmount: 0,
     rebateMode: null,
     rebateValue: null,
-    noRebateAmount: null,
     mediaPayableAmount: null,
     deliveryStartDate: null,
     deliveryEndDate: null,
     deliveryVolume: undefined,
-    remark: undefined,
     receiptMethod: null,
     receiptPrepayMode: null,
     receiptPrepayRatio: null,
+    receiptPrepayAmount: null,
     receiptPrepayDeadline: null,
     receiptAccountPeriodDays: null,
     paymentMethod: null,
     paymentPrepayMode: null,
     paymentPrepayRatio: null,
+    paymentPrepayAmount: null,
     paymentPrepayDeadline: null,
     paymentPostpayTrigger: null,
     paymentPostpayDays: null,
     currency: 'CNY',
+    remark: undefined,
   });
 
-  function goBack() {
-    router.push({ name: AdvertisingRouteEnum.ADVERTISING_ORDER });
-  }
-
-  /** 拉取所有外键/字典下拉选项（onMounted 预加载） */
-  async function loadSelectOptions() {
-    try {
-      const [beRes, cuRes, reRes, dictRes] = await Promise.all([
-        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
-        getAdCustomerPage({ current: 1, pageSize: 200 }),
-        getAdResourcePage({ current: 1, pageSize: 200, resourceType: 10 }),
-        getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' }),
-      ]);
-      businessEntityOptions.value = (beRes.list || []).map((it) => ({
-        label: it.name || it.id,
-        value: it.id,
-      }));
-      customerOptions.value = (cuRes.list || []).map((it) => ({
-        label: it.customerName || it.id,
-        value: it.id,
-      }));
-      upstreamAgentOptions.value = (reRes.list || []).map((it) => ({
-        label: it.resourceName || it.id,
-        value: it.id,
-      }));
-      industryOptions.value = (dictRes.list || []).map((it) => ({
-        label: it.dictLabel || it.dictValue || it.id,
-        value: it.dictValue || it.id,
-      }));
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e);
+  // 自动计算：返点金额、实际应收
+  const autoCalc = computed(() => {
+    const total = Number(form.totalAmount || 0);
+    const noRebate = Number(form.noRebateAmount || 0);
+    const rebateBase = Math.max(total - noRebate, 0);
+    let rebate = 0;
+    if (form.rebateMode === 10 && form.rebateValue) {
+      rebate = (rebateBase * Number(form.rebateValue)) / 100;
+    } else if (form.rebateMode === 20 && form.rebateValue) {
+      rebate = Number(form.rebateValue);
     }
+    rebate = Math.min(rebate, rebateBase); // 返点不超过返点基数
+    return {
+      rebateAmount: rebate.toFixed(2),
+      receivableAmount: (total - rebate).toFixed(2),
+    };
+  });
+
+  // 比例模式下，实时计算预收金额（应收 × 比例%）
+  watch(
+    [() => form.receiptPrepayMode, () => form.receiptPrepayRatio, () => autoCalc.value.receivableAmount],
+    ([mode, ratio, receivable]) => {
+      if (mode === 10) {
+        form.receiptPrepayAmount = +((Number(receivable) * Number(ratio || 0)) / 100).toFixed(2);
+      }
+    }
+  );
+  // 比例模式下，实时计算媒体预付金额（媒体应付 × 比例%）
+  watch(
+    [() => form.paymentPrepayMode, () => form.paymentPrepayRatio, () => form.mediaPayableAmount],
+    ([mode, ratio, base]) => {
+      if (mode === 10) {
+        form.paymentPrepayAmount = +((Number(base || 0) * Number(ratio || 0)) / 100).toFixed(2);
+      }
+    }
+  );
+
+  function formatMoney(v: string | number) {
+    if (v == null || v === '') return '-';
+    const num = typeof v === 'string' ? parseFloat(v) : v;
+    if (Number.isNaN(num)) return '-';
+    return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  function buildPayload(): AdOrderSaveParams {
-    return {
-      orderName: form.orderName,
-      businessEntityId: form.businessEntityId,
-      customerId: form.customerId,
-      industryCode: form.industryCode,
-      signingEntity: form.signingEntity,
-      orderType: form.orderType ?? undefined,
-      upstreamAgentId: form.upstreamAgentId,
-      agentOrderNo: form.agentOrderNo,
-      totalAmount: form.totalAmount ?? undefined,
-      rebateMode: form.rebateMode ?? undefined,
-      rebateValue: form.rebateValue ?? undefined,
-      noRebateAmount: form.noRebateAmount ?? undefined,
-      mediaPayableAmount: form.mediaPayableAmount ?? undefined,
-      deliveryStartDate: form.deliveryStartDate ?? undefined,
-      deliveryEndDate: form.deliveryEndDate ?? undefined,
-      deliveryVolume: form.deliveryVolume,
-      remark: form.remark,
-      receiptMethod: form.receiptMethod ?? undefined,
-      receiptPrepayMode: form.receiptPrepayMode ?? undefined,
-      receiptPrepayRatio: form.receiptPrepayRatio ?? undefined,
-      receiptPrepayDeadline: form.receiptPrepayDeadline ?? undefined,
-      receiptAccountPeriodDays: form.receiptAccountPeriodDays ?? undefined,
-      paymentMethod: form.paymentMethod ?? undefined,
-      paymentPrepayMode: form.paymentPrepayMode ?? undefined,
-      paymentPrepayRatio: form.paymentPrepayRatio ?? undefined,
-      paymentPrepayDeadline: form.paymentPrepayDeadline ?? undefined,
-      paymentPostpayTrigger: form.paymentPostpayTrigger ?? undefined,
-      paymentPostpayDays: form.paymentPostpayDays ?? undefined,
-      currency: form.currency || 'CNY',
-    };
+  function fetchData() {
+    // placeholder for pagination callback
+  }
+
+  const pagination = reactive({
+    page: 1,
+    pageSize: 10,
+    itemCount: 0,
+    onUpdatePage: () => fetchData(),
+  });
+
+  function resetForm() {
+    Object.assign(form, {
+      orderName: undefined,
+      businessEntityId: undefined,
+      customerId: undefined,
+      industryCode: undefined,
+      signingEntity: undefined,
+      orderType: null,
+      contractId: undefined,
+      upstreamAgentId: undefined,
+      agentOrderNo: undefined,
+      totalAmount: null,
+      noRebateAmount: 0,
+      rebateMode: null,
+      rebateValue: null,
+      mediaPayableAmount: null,
+      deliveryStartDate: null,
+      deliveryEndDate: null,
+      deliveryVolume: undefined,
+      receiptMethod: null,
+      receiptPrepayMode: null,
+      receiptPrepayRatio: null,
+      receiptPrepayAmount: null,
+      receiptPrepayDeadline: null,
+      receiptAccountPeriodDays: null,
+      paymentMethod: null,
+      paymentPrepayMode: null,
+      paymentPrepayRatio: null,
+      paymentPrepayAmount: null,
+      paymentPrepayDeadline: null,
+      paymentPostpayTrigger: null,
+      paymentPostpayDays: null,
+      currency: 'CNY',
+      remark: undefined,
+    });
   }
 
   function validate(): boolean {
     if (!form.orderName) {
-      message.warning(`${t('advertising.order.form.orderName')} ${t('advertising.order.form.required')}`);
+      message.warning(`订单名称 ${t('advertising.order.form.required')}`);
       return false;
     }
     if (!form.businessEntityId) {
-      message.warning(`${t('advertising.order.form.businessEntityId')} ${t('advertising.order.form.required')}`);
-      return false;
-    }
-    if (!form.customerId) {
-      message.warning(`${t('advertising.order.form.customerId')} ${t('advertising.order.form.required')}`);
+      message.warning(`业务主体 ${t('advertising.order.form.required')}`);
       return false;
     }
     if (form.orderType === null || form.orderType === undefined) {
-      message.warning(`${t('advertising.order.form.orderType')} ${t('advertising.order.form.required')}`);
+      message.warning(`订单类型 ${t('advertising.order.form.required')}`);
       return false;
     }
-    if (form.receiptMethod === null || form.receiptMethod === undefined) {
-      message.warning(`${t('advertising.order.form.receiptMethod')} ${t('advertising.order.form.required')}`);
+    if (!form.totalAmount || form.totalAmount <= 0) {
+      message.warning(`订单总金额 ${t('advertising.order.form.required')}`);
       return false;
     }
-    if (form.paymentMethod === null || form.paymentMethod === undefined) {
-      message.warning(`${t('advertising.order.form.paymentMethod')} ${t('advertising.order.form.required')}`);
+    if (form.mediaPayableAmount === null || form.mediaPayableAmount === undefined || form.mediaPayableAmount < 0) {
+      message.warning(`媒体应付总额 ${t('advertising.order.form.required')}`);
       return false;
     }
     return true;
   }
 
-  async function handleSave() {
-    if (!validate()) return;
+  async function loadSelectOptions() {
     try {
-      saving.value = true;
-      const payload = buildPayload();
-      if (isEdit.value) {
-        payload.id = id;
-        await updateAdOrder(payload);
-      } else {
-        await createAdOrder(payload);
-      }
-      message.success(t('advertising.common.saveSuccess'));
-      router.push({ name: AdvertisingRouteEnum.ADVERTISING_ORDER });
+      const [beRes, cuRes, uaRes, dictRes, dmRes] = await Promise.all([
+        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
+        getAdCustomerPage({ current: 1, pageSize: 200 }),
+        getAdUpstreamAgentPage({ current: 1, pageSize: 200 }),
+        getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' }),
+        getAdDownstreamMediaPage({ current: 1, pageSize: 200 }),
+      ]);
+      businessEntityOptions.value = (beRes.list || []).map((it: any) => ({
+        label: it.name || it.id,
+        value: it.id,
+      }));
+      customerOptions.value = (cuRes.list || []).map((it: any) => ({
+        label: it.customerName || it.name || it.id,
+        value: it.id,
+      }));
+      upstreamAgentOptions.value = (uaRes.list || []).map((it: any) => ({
+        label: it.resourceName || it.name || it.id,
+        value: it.id,
+      }));
+      industryOptions.value = (dictRes.list || []).map((it: any) => ({
+        label: it.dictLabel || it.dictValue || it.id,
+        value: it.dictValue || it.id,
+      }));
+      downstreamMediaOptions.value = (dmRes.list || []).map((it: any) => ({
+        label: it.name || it.id,
+        value: it.id,
+      }));
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);
-    } finally {
-      saving.value = false;
     }
   }
 
-  /** 后端日期可能是 number(ms) 或 string(ISO)，统一转 number 供 NDatePicker 使用 */
-  function toDateValue(value?: number | string | null): number | null {
-    if (value === undefined || value === null || value === '') return null;
-    if (typeof value === 'number') return value;
-    const parsed = Date.parse(value);
-    return Number.isNaN(parsed) ? null : parsed;
+  /** 加载合同列表（按订单类型过滤） */
+  async function loadContractOptions() {
+    try {
+      const res = await getAdContractPage({
+        current: 1,
+        pageSize: 200,
+        contractType: form.orderType ?? undefined,
+      });
+      contractOptions.value = (res.list || []).map((it: any) => ({
+        label: [it.contractNo, it.contractName].filter(Boolean).join(' ') || it.id,
+        value: it.id,
+      }));
+      if (form.contractId && !contractOptions.value.some((opt) => opt.value === form.contractId)) {
+        form.contractId = undefined;
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
+  }
+
+  watch(
+    () => form.orderType,
+    (newType, oldType) => {
+      if (newType !== oldType) {
+        form.contractId = undefined;
+        if (newType === 10 || newType === 20) {
+          loadContractOptions();
+        } else {
+          contractOptions.value = [];
+        }
+      }
+    }
+  );
+
+  // 媒体应付总额默认联动订单总额，可手动改
+  watch(
+    () => form.totalAmount,
+    (val) => {
+      if (form.mediaPayableAmount === null || form.mediaPayableAmount === undefined) {
+        form.mediaPayableAmount = val ?? null;
+      }
+    }
+  );
+
+  function toDateValue(v: any): number | null {
+    if (v == null || v === '') return null;
+    if (typeof v === 'number') return v;
+    const ts = new Date(v).getTime();
+    return Number.isNaN(ts) ? null : ts;
   }
 
   async function loadForEdit() {
+    if (!orderId.value) return;
     try {
-      const res = await getAdOrderDetail(id);
+      const res = await getAdOrderDetail(orderId.value);
       const o = res.order;
-      if (!o) return;
       form.orderName = o.orderName;
       form.businessEntityId = o.businessEntityId;
       form.customerId = o.customerId;
       form.industryCode = o.industryCode;
       form.signingEntity = o.signingEntity;
       form.orderType = o.orderType ?? null;
+      form.contractId = res.contractId || undefined;
+      form.downstreamMediaIds = res.downstreamMediaIds || [];
       form.upstreamAgentId = o.upstreamAgentId;
       form.agentOrderNo = o.agentOrderNo;
-      form.totalAmount = o.totalAmount ?? null;
+      form.totalAmount = o.totalAmount;
+      form.noRebateAmount = o.noRebateAmount ?? 0;
       form.rebateMode = o.rebateMode ?? null;
-      form.rebateValue = o.rebateValue ?? null;
-      form.noRebateAmount = o.noRebateAmount ?? null;
-      form.mediaPayableAmount = o.mediaPayableAmount ?? null;
-      form.deliveryStartDate = toDateValue(o.deliveryStartDate);
-      form.deliveryEndDate = toDateValue(o.deliveryEndDate);
+      form.rebateValue = o.rebateValue;
+      form.mediaPayableAmount = o.mediaPayableAmount;
+      form.deliveryStartDate = o.deliveryStartDate != null ? Number(o.deliveryStartDate) : null;
+      form.deliveryEndDate = o.deliveryEndDate != null ? Number(o.deliveryEndDate) : null;
       form.deliveryVolume = o.deliveryVolume;
-      form.remark = o.remark;
       form.receiptMethod = o.receiptMethod ?? null;
       form.receiptPrepayMode = o.receiptPrepayMode ?? null;
       form.receiptPrepayRatio = o.receiptPrepayRatio ?? null;
-      form.receiptPrepayDeadline = toDateValue(o.receiptPrepayDeadline);
+      form.receiptPrepayAmount = o.receiptPrepayAmount ?? null;
+      form.receiptPrepayDeadline = o.deliveryEndDate != null ? Number(o.deliveryEndDate) : null;
       form.receiptAccountPeriodDays = o.receiptAccountPeriodDays ?? null;
       form.paymentMethod = o.paymentMethod ?? null;
       form.paymentPrepayMode = o.paymentPrepayMode ?? null;
       form.paymentPrepayRatio = o.paymentPrepayRatio ?? null;
-      form.paymentPrepayDeadline = toDateValue(o.paymentPrepayDeadline);
+      form.paymentPrepayAmount = o.paymentPrepayAmount ?? null;
+      form.paymentPrepayDeadline = o.paymentPrepayDeadline != null ? Number(o.paymentPrepayDeadline) : null;
       form.paymentPostpayTrigger = o.paymentPostpayTrigger ?? null;
       form.paymentPostpayDays = o.paymentPostpayDays ?? null;
       form.currency = o.currency || 'CNY';
+      form.remark = o.remark;
+      // 回填已有附件
+      savedAttachments.value = (res.attachments || []).map((att: any) => ({
+        id: att.id,
+        type: att.type,
+        fileName: att.fileName || att.fileUrl || '未知文件',
+        fileUrl: att.fileUrl,
+      }));
+      fileListType10.value = buildFileListForType(10);
+      fileListType20.value = buildFileListForType(20);
+      fileListType40.value = buildFileListForType(40);
     } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error(e);
+      message.error((e as Error).message || '加载失败');
     }
+  }
+
+  async function buildPayload() {
+    const payload: any = {
+      orderName: form.orderName,
+      businessEntityId: form.businessEntityId,
+      customerId: form.customerId,
+      industryCode: form.industryCode,
+      signingEntity: form.signingEntity,
+      orderType: form.orderType ?? undefined,
+      contractId: form.contractId,
+      downstreamMediaIds: form.downstreamMediaIds,
+      upstreamAgentId: form.upstreamAgentId,
+      agentOrderNo: form.agentOrderNo,
+      totalAmount: form.totalAmount ?? undefined,
+      noRebateAmount: form.noRebateAmount ?? undefined,
+      rebateMode: form.rebateMode ?? undefined,
+      rebateValue: form.rebateValue ?? undefined,
+      mediaPayableAmount: form.mediaPayableAmount ?? undefined,
+      deliveryStartDate: form.deliveryStartDate ?? undefined,
+      deliveryEndDate: form.deliveryEndDate ?? undefined,
+      deliveryVolume: form.deliveryVolume,
+      receiptMethod: form.receiptMethod ?? undefined,
+      receiptPrepayMode: form.receiptPrepayMode ?? undefined,
+      receiptPrepayRatio: form.receiptPrepayRatio ?? undefined,
+      receiptPrepayAmount: form.receiptPrepayAmount ?? undefined,
+      receiptPrepayDeadline: form.receiptPrepayDeadline ?? undefined,
+      receiptAccountPeriodDays: form.receiptAccountPeriodDays ?? undefined,
+      paymentMethod: form.paymentMethod ?? undefined,
+      paymentPrepayMode: form.paymentPrepayMode ?? undefined,
+      paymentPrepayRatio: form.paymentPrepayRatio ?? undefined,
+      paymentPrepayAmount: form.paymentPrepayAmount ?? undefined,
+      paymentPrepayDeadline: form.paymentPrepayDeadline ?? undefined,
+      paymentPostpayTrigger: form.paymentPostpayTrigger ?? undefined,
+      paymentPostpayDays: form.paymentPostpayDays ?? undefined,
+      currency: form.currency,
+      remark: form.remark,
+    };
+    if (isEdit.value) {
+      payload.id = orderId.value;
+    }
+    return payload;
+  }
+
+  async function handleSave(action: 'draft' | 'submit') {
+    if (!validate()) return;
+    // 提交时校验必传附件（已有 + 新暂存）
+    if (action === 'submit') {
+      const hasSchedule =
+        savedAttachments.value.some((a) => a.type === 10) || pendingFiles.value.some((f) => f.type === 10);
+      const hasEmail =
+        savedAttachments.value.some((a) => a.type === 20) || pendingFiles.value.some((f) => f.type === 20);
+      if (!hasSchedule) {
+        message.warning('请上传【盖章排期】附件');
+        return;
+      }
+      if (!hasEmail) {
+        message.warning('请上传【邮件截图】附件');
+        return;
+      }
+    }
+    saving.value = true;
+    try {
+      const payload = await buildPayload();
+      let newOrderId = orderId.value;
+      if (isEdit.value) {
+        await updateAdOrder(payload);
+      } else {
+        const created = await createAdOrder(payload);
+        newOrderId = created.id || (created as any).order?.id;
+      }
+      // 上传附件
+      if (pendingFiles.value.length > 0 && newOrderId) {
+        await Promise.all(pendingFiles.value.map((f) => uploadAdOrderAttachment(newOrderId, f.type, f.file)));
+      }
+      // 提交时调提交接口
+      if (action === 'submit' && newOrderId) {
+        await submitAdOrder(newOrderId);
+      }
+      message.success(action === 'submit' ? '保存并提交成功' : '保存草稿成功');
+      router.push({ name: AdvertisingRouteEnum.ADVERTISING_ORDER });
+    } catch (e) {
+      message.error((e as Error).message || '保存失败');
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  function goBack() {
+    router.push({ name: AdvertisingRouteEnum.ADVERTISING_ORDER });
   }
 
   onMounted(async () => {
     await loadSelectOptions();
     if (isEdit.value) {
-      loadForEdit();
+      await loadForEdit();
+    }
+    if (form.orderType === 10 || form.orderType === 20) {
+      await loadContractOptions();
     }
   });
 </script>
+
+<style scoped>
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary-color);
+  }
+  .readonly-field {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--text-n10);
+    border-radius: 4px;
+    color: var(--text-n2);
+    font-weight: 500;
+  }
+  .attach-tip {
+    margin: 0 0 16px 120px;
+  }
+</style>

@@ -19,167 +19,11 @@ export interface PathMapItem {
  * route 是路由的 name
  * routeQuery 是路由的固定参数集合，与routeParamKeys互斥，用于跳转同一个路由但不同 tab 时或其他需要固定参数的情况
  * children 是子路由/tab集合
+ *
+ * 当前只保留：系统/组织架构/角色权限/模块配置 + 全部广告模块
  */
 export const pathMap: PathMapItem[] = [
-  {
-    key: 'WORKBENCH',
-    locale: 'menu.workbench',
-    route: AppRouteEnum.WORKBENCH_INDEX,
-  },
-  {
-    key: 'PRODUCT_MANAGEMENT',
-    locale: 'module.productManagement',
-    route: AppRouteEnum.PRODUCT,
-    children: [
-      {
-        key: 'PRODUCT_MANAGEMENT_PRO',
-        locale: 'module.productManagement',
-        route: AppRouteEnum.PRODUCT_PRO,
-      },
-      {
-        key: 'PRODUCT_MANAGEMENT_PRICE',
-        locale: 'module.productManagementPrice',
-        route: AppRouteEnum.PRODUCT_PRICE,
-      },
-    ],
-  },
-  {
-    key: 'DASHBOARD',
-    locale: 'menu.dashboard',
-    route: AppRouteEnum.DASHBOARD_INDEX,
-  },
-  {
-    key: 'AGENT',
-    locale: 'menu.agent',
-    route: AppRouteEnum.AGENT_INDEX,
-  },
-  {
-    key: 'CUSTOM_FORM',
-    locale: 'module.customForm',
-    route: AppRouteEnum.CUSTOM_FORM,
-    children: [
-      {
-        key: 'CUSTOM_FORM_INDEX',
-        route: AppRouteEnum.CUSTOM_FORM_INDEX,
-        locale: 'module.customForm',
-      },
-      {
-        key: 'CUSTOM_FORM_DATA',
-        route: AppRouteEnum.CUSTOM_FORM_INDEX,
-        locale: 'module.customFormData',
-      },
-    ],
-  },
-  {
-    key: 'CUSTOMER',
-    route: AppRouteEnum.CUSTOMER,
-    locale: 'module.customerManagement',
-    children: [
-      {
-        key: 'CUSTOMER_INDEX',
-        route: AppRouteEnum.CUSTOMER_INDEX,
-        locale: 'menu.customer',
-      },
-      {
-        key: 'CUSTOMER_CONTACT',
-        route: AppRouteEnum.CUSTOMER_CONTACT,
-        locale: 'menu.contact',
-      },
-      {
-        key: 'CUSTOMER_POOL',
-        route: AppRouteEnum.CUSTOMER_OPEN_SEA,
-        locale: 'module.openSea',
-      },
-    ],
-  },
-  {
-    key: 'CONTRACT',
-    route: AppRouteEnum.CONTRACT,
-    locale: 'module.contract',
-    children: [
-      {
-        key: 'CONTRACT_INDEX',
-        route: AppRouteEnum.CONTRACT_INDEX,
-        locale: 'module.contract',
-      },
-      {
-        key: 'CONTRACT_PAYMENT',
-        route: AppRouteEnum.CONTRACT_PAYMENT,
-        locale: 'module.paymentPlan',
-      },
-      {
-        key: 'CONTRACT_PAYMENT_RECORD',
-        route: AppRouteEnum.CONTRACT_PAYMENT_RECORD,
-        locale: 'module.paymentRecord',
-      },
-      {
-        key: 'CONTRACT_BUSINESS_TITLE',
-        route: AppRouteEnum.CONTRACT_BUSINESS_NAME,
-        locale: 'module.businessTitle',
-      },
-      {
-        key: 'CONTRACT_INVOICE',
-        route: AppRouteEnum.CONTRACT_INVOICE,
-        locale: 'module.invoice',
-      },
-    ],
-  },
-  {
-    key: 'ORDER',
-    route: AppRouteEnum.ORDER,
-    locale: 'module.order',
-    children: [
-      {
-        key: 'ORDER_INDEX',
-        route: AppRouteEnum.ORDER_INDEX,
-        locale: 'module.order',
-      },
-    ],
-  },
-  {
-    key: 'CLUE_MANAGEMENT',
-    route: AppRouteEnum.CLUE_MANAGEMENT,
-    locale: 'module.clueManagement',
-    children: [
-      {
-        key: 'CLUE_MANAGEMENT_CLUE',
-        route: AppRouteEnum.CLUE_MANAGEMENT_CLUE,
-        locale: 'menu.clue',
-      },
-      {
-        key: 'CLUE_MANAGEMENT_POOL',
-        route: AppRouteEnum.CLUE_MANAGEMENT_POOL,
-        locale: 'module.cluePool',
-      },
-    ],
-  },
-  {
-    key: 'OPPORTUNITY',
-    route: AppRouteEnum.OPPORTUNITY,
-    locale: 'module.businessManagement',
-    children: [
-      {
-        key: 'OPPORTUNITY_INDEX',
-        route: AppRouteEnum.OPPORTUNITY_OPT,
-        locale: 'menu.opportunity',
-      },
-      {
-        key: 'OPPORTUNITY_QUOTATION',
-        route: AppRouteEnum.OPPORTUNITY_QUOTATION,
-        locale: 'menu.quotation',
-      },
-    ],
-  },
-  {
-    key: 'FOLLOW_UP_RECORD',
-    route: AppRouteEnum.OPPORTUNITY_OPT, // TODO lmy 跟进记录
-    locale: 'module.customer.followRecord',
-  },
-  {
-    key: 'FOLLOW_UP_PLAN',
-    route: AppRouteEnum.OPPORTUNITY_OPT, // TODO lmy 跟进计划
-    locale: 'module.customer.followPlan',
-  },
+  // 系统设置（仅保留组织架构/角色权限/模块配置）
   {
     key: 'SYSTEM',
     route: AppRouteEnum.SYSTEM,
@@ -200,77 +44,69 @@ export const pathMap: PathMapItem[] = [
         route: AppRouteEnum.SYSTEM_MODULE,
         locale: 'menu.settings.moduleSetting',
       },
+    ],
+  },
+  // 广告模块
+  {
+    key: 'ORDER',
+    route: AppRouteEnum.ADVERTISING_ORDER,
+    locale: 'menu.advertisingOrder',
+    children: [
       {
-        key: 'SYSTEM_MESSAGE',
-        route: AppRouteEnum.SYSTEM_MESSAGE,
-        locale: 'menu.settings.messageSetting',
-        children: [
-          {
-            key: 'SYSTEM_MESSAGE_MESSAGE',
-            route: AppRouteEnum.SYSTEM_MESSAGE,
-            locale: 'system.message.notify',
-            routeQuery: {
-              tab: 'notify',
-            },
-          },
-          {
-            key: 'SYSTEM_MESSAGE_ANNOUNCEMENT',
-            route: AppRouteEnum.SYSTEM_MESSAGE,
-            locale: 'system.message.announcement',
-            routeQuery: {
-              tab: 'announcement',
-            },
-          },
-        ],
+        key: 'ORDER_INDEX',
+        route: AppRouteEnum.ADVERTISING_ORDER,
+        locale: 'menu.advertisingOrder',
       },
       {
-        key: 'SYSTEM_PROCESS',
-        route: AppRouteEnum.SYSTEM_PROCESS,
-        locale: 'menu.settings.processSetting',
-        children: [
-          {
-            key: 'SYSTEM_PROCESS_APPROVAL',
-            route: AppRouteEnum.SYSTEM_PROCESS_INDEX,
-            locale: 'menu.settings.approvalFlow',
-          },
-        ],
-      },
-      {
-        key: 'SYSTEM_BUSINESS',
-        route: AppRouteEnum.SYSTEM_BUSINESS,
-        locale: 'menu.settings.businessSetting',
-        children: [
-          {
-            key: 'SYSTEM_BUSINESS_UI',
-            route: AppRouteEnum.SYSTEM_BUSINESS,
-            locale: 'system.business.tab.interfaceSettings',
-            routeQuery: {
-              tab: 'pageSettings',
-            },
-          },
-          {
-            key: 'SYSTEM_BUSINESS_THIRD',
-            route: AppRouteEnum.SYSTEM_BUSINESS,
-            locale: 'system.business.tab.third',
-            routeQuery: {
-              tab: 'syncOrganization',
-            },
-          },
-          {
-            key: 'SYSTEM_BUSINESS_MAIL',
-            route: AppRouteEnum.SYSTEM_BUSINESS,
-            locale: 'system.business.tab.mailSettings',
-            routeQuery: {
-              tab: 'mailSettings',
-            },
-          },
-        ],
-      },
-      {
-        key: 'OPERATION_LOG',
-        route: AppRouteEnum.SYSTEM_LOG,
-        locale: 'menu.settings.log',
+        key: 'ORDER_CHANGE',
+        route: AppRouteEnum.ADVERTISING_ORDER,
+        locale: 'menu.advertisingOrder',
       },
     ],
+  },
+  {
+    key: 'CONTRACT',
+    route: AppRouteEnum.ADVERTISING_CONTRACT,
+    locale: 'menu.advertisingContract',
+  },
+  {
+    key: 'CUSTOMER',
+    route: AppRouteEnum.ADVERTISING_CUSTOMER,
+    locale: 'menu.advertisingCustomer',
+  },
+  {
+    key: 'BUSINESS_ENTITY',
+    route: AppRouteEnum.ADVERTISING_BUSINESS_ENTITY,
+    locale: 'menu.advertisingBusinessEntity',
+  },
+  {
+    key: 'DOWNSTREAM_MEDIA',
+    route: AppRouteEnum.ADVERTISING_DOWNSTREAM_MEDIA,
+    locale: 'menu.advertisingDownstreamMedia',
+  },
+  {
+    key: 'UPSTREAM_AGENT',
+    route: AppRouteEnum.ADVERTISING_UPSTREAM_AGENT,
+    locale: 'menu.advertisingUpstreamAgent',
+  },
+  {
+    key: 'PAYMENT',
+    route: AppRouteEnum.ADVERTISING_PAYMENT,
+    locale: 'menu.advertisingPayment',
+  },
+  {
+    key: 'SEAL',
+    route: AppRouteEnum.ADVERTISING_SEAL,
+    locale: 'menu.advertisingSeal',
+  },
+  {
+    key: 'SUPPORT',
+    route: AppRouteEnum.ADVERTISING_WORKBENCH,
+    locale: 'menu.advertisingWorkbench',
+  },
+  {
+    key: 'DICT',
+    route: AppRouteEnum.ADVERTISING_SYSTEM_DICT,
+    locale: 'menu.advertisingSystemDict',
   },
 ];

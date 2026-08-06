@@ -61,7 +61,7 @@
         <include refid="cn.cordys.common.mapper.CommonMapper.sort">
             <property name="sort" value="request.sort"/>
             <property name="prefix" value="s"/>
-            <property name="defaultSort" value="s.create_time DESC"/>
+            <property name="defaultSort" value="create_time DESC"/>
         </include>
     </select>
 

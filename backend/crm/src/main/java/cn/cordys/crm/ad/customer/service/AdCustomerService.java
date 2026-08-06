@@ -14,10 +14,10 @@ import cn.cordys.crm.ad.customer.dto.request.AdCustomerSaveRequest;
 import cn.cordys.crm.ad.customer.dto.response.AdCustomerDetailResponse;
 import cn.cordys.crm.ad.customer.dto.response.AdCustomerListResponse;
 import cn.cordys.crm.ad.customer.mapper.ExtAdCustomerMapper;
-import cn.cordys.crm.ad.order.domain.AdOrder;
+import cn.cordys.crm.ad.dict.domain.AdDict;
+import cn.cordys.crm.ad.dict.service.AdDictService;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderMapper;
 import cn.cordys.mybatis.BaseMapper;
-import cn.cordys.mybatis.lambda.LambdaQueryWrapper;
 import cn.cordys.security.SessionUser;
 import cn.cordys.common.dto.RoleDataScopeDTO;
 import com.github.pagehelper.Page;
@@ -29,7 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -48,6 +50,8 @@ public class AdCustomerService {
     private ExtAdCustomerMapper extAdCustomerMapper;
     @Resource
     private ExtAdOrderMapper extAdOrderMapper;
+    @Resource
+    private AdDictService adDictService;
     @Resource
     private AdEntityPermissionProvider entityPermissionProvider;
 
@@ -128,11 +132,7 @@ public class AdCustomerService {
         resp.setCustomerLevelLabel(CustomerLevel.labelOf(c.getCustomerLevel()));
         resp.setStatusLabel(CustomerStatus.labelOf(c.getStatus()));
         // 关联订单数：按 customerId 统计同租户、未删除的订单
-        LambdaQueryWrapper<AdOrder> orderWrapper = new LambdaQueryWrapper<>();
-        orderWrapper.eq(AdOrder::getCustomerId, id)
-                .eq(AdOrder::getOrganizationId, orgId)
-                .eq(AdOrder::getDeleted, 0);
-        long orderCount = extAdOrderMapper.selectListByLambda(orderWrapper).size();
+        long orderCount = extAdOrderMapper.countByCustomerId(id, orgId);
         resp.setOrderCount(orderCount);
         return resp;
     }
@@ -142,9 +142,18 @@ public class AdCustomerService {
         request.setOrganizationId(orgId);
         Page<AdCustomerListResponse> page = PageHelper.startPage(request.getCurrent(), request.getPageSize());
         List<AdCustomerListResponse> list = extAdCustomerMapper.pageList(request);
+
+        // 行业字典翻译
+        List<AdDict> industryDicts = adDictService.listByDictCode("industry");
+        Map<String, String> industryLabelMap = industryDicts.stream()
+                .collect(Collectors.toMap(AdDict::getDictValue, AdDict::getDictLabel, (a, b) -> a));
+
         for (AdCustomerListResponse r : list) {
             r.setCustomerLevelLabel(CustomerLevel.labelOf(r.getCustomerLevel()));
             r.setStatusLabel(CustomerStatus.labelOf(r.getStatus()));
+            if (r.getIndustryCode() != null) {
+                r.setIndustryLabel(industryLabelMap.getOrDefault(r.getIndustryCode(), r.getIndustryCode()));
+            }
         }
         return PageUtils.setPageInfoWithOption(page, list, null);
     }

@@ -1,67 +1,60 @@
 <template>
-  <div class="h-full">
-    <CrmCard no-content-padding hide-footer>
-      <div class="flex h-full flex-col px-[16px] py-[16px]">
-        <n-space class="mb-[12px]" justify="space-between" align="center">
-          <div class="text-[16px] font-semibold">
-            {{ t('advertising.businessEntity.detail') }} · {{ detail.entity?.name || id }}
-          </div>
-          <n-space>
-            <n-button @click="goBack">{{ t('advertising.businessEntity.form.cancel') }}</n-button>
-            <n-button type="primary" @click="goEdit">{{ t('advertising.businessEntity.edit') }}</n-button>
+  <div class="advertising-page">
+    <n-spin :show="loading">
+      <n-card v-if="detail" :bordered="false">
+        <template #header>
+          <n-space align="center">
+            <span>{{ detail.entity?.name || '-' }}</span>
+            <n-tag :type="statusTagType(detail.entity?.status)">{{ statusLabelText }}</n-tag>
           </n-space>
-        </n-space>
+        </template>
+        <template #header-extra>
+          <n-space>
+            <n-button @click="goBack">返回</n-button>
+          </n-space>
+        </template>
 
-        <div class="flex-1 overflow-auto">
-          <n-descriptions bordered :column="2" label-placement="left">
-            <n-descriptions-item :label="t('advertising.businessEntity.form.name')">{{
-              detail.entity?.name || '-'
-            }}</n-descriptions-item>
-            <n-descriptions-item :label="t('advertising.businessEntity.form.code')">{{
-              detail.entity?.code || '-'
-            }}</n-descriptions-item>
-            <n-descriptions-item :label="t('advertising.businessEntity.form.status')">
-              <n-tag :type="detail.entity?.status === 10 ? 'success' : 'default'">{{
-                getAdBusinessEntityStatusLabel(detail.entity?.status)
-              }}</n-tag>
-            </n-descriptions-item>
-            <n-descriptions-item :label="t('advertising.businessEntity.form.isCrossEntity')">
-              {{ detail.entity?.isCrossEntity === 1 ? t('advertising.common.yes') : t('advertising.common.no') }}
-            </n-descriptions-item>
-            <n-descriptions-item :label="t('advertising.businessEntity.column.userCount')">{{
-              detail.userCount ?? '-'
-            }}</n-descriptions-item>
-            <n-descriptions-item :label="t('advertising.businessEntity.column.orderCount')">{{
-              detail.orderCount ?? '-'
-            }}</n-descriptions-item>
-            <n-descriptions-item :label="t('advertising.businessEntity.column.remark')">{{
-              detail.entity?.remark || '-'
-            }}</n-descriptions-item>
-            <n-descriptions-item :label="t('advertising.businessEntity.column.createTime')">{{
-              fmtDateTime(detail.createTime)
-            }}</n-descriptions-item>
-          </n-descriptions>
-        </div>
-      </div>
-    </CrmCard>
+        <n-divider title-placement="left">基本信息</n-divider>
+        <n-descriptions label-placement="left" :column="3" bordered size="small">
+          <n-descriptions-item label="主体名称">{{ detail.entity?.name || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="主体代码">{{ detail.entity?.code || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="状态">
+            <n-tag :type="statusTagType(detail.entity?.status)">{{ statusLabelText }}</n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="是否跨主体">
+            {{ detail.entity?.isCrossEntity === 1 ? t('advertising.common.yes') : t('advertising.common.no') }}
+          </n-descriptions-item>
+          <n-descriptions-item label="关联用户数">{{ detail.userCount ?? '-' }}</n-descriptions-item>
+          <n-descriptions-item label="关联订单数">{{ detail.orderCount ?? '-' }}</n-descriptions-item>
+          <n-descriptions-item label="备注" :span="3">{{ detail.entity?.remark || '-' }}</n-descriptions-item>
+        </n-descriptions>
+
+        <n-divider title-placement="left">审计信息</n-divider>
+        <n-descriptions label-placement="left" :column="3" bordered size="small">
+          <n-descriptions-item label="创建人">{{ getUserName(detail.entity?.createUser) }}</n-descriptions-item>
+          <n-descriptions-item label="创建时间">{{ fmtDateTime(detail.entity?.createTime) }}</n-descriptions-item>
+          <n-descriptions-item label="修改人">{{ getUserName(detail.entity?.updateUser) }}</n-descriptions-item>
+          <n-descriptions-item label="修改时间">{{ fmtDateTime(detail.entity?.updateTime) }}</n-descriptions-item>
+        </n-descriptions>
+      </n-card>
+    </n-spin>
   </div>
 </template>
 
-<script lang="ts" setup>
-  import { onMounted, reactive } from 'vue';
+<script setup lang="ts">
+  import { computed, onMounted, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
-  import { NButton, NDescriptions, NDescriptionsItem, NTag, useMessage } from 'naive-ui';
+  import { NButton, NCard, NDescriptions, NDescriptionsItem, NDivider, NSpin, NTag, useMessage } from 'naive-ui';
 
   import { getAdBusinessEntityStatusLabel } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type { AdBusinessEntityDetail } from '@lib/shared/models/advertising';
 
-  import CrmCard from '@/components/pure/crm-card/index.vue';
-
   import { getAdBusinessEntityDetail } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  import useUserMap from '../useUserMap';
   import { fmtDateTime } from '../utils';
 
   const { t } = useI18n();
@@ -69,38 +62,45 @@
   const router = useRouter();
   const message = useMessage();
 
-  const id = (route.params.id as string) || '';
+  const entityId = route.params.id as string;
+  const loading = ref(false);
+  const detail = ref<AdBusinessEntityDetail | null>(null);
 
-  const detail = reactive<AdBusinessEntityDetail>({
-    entity: {
-      id,
-      name: undefined,
-      code: undefined,
-      status: undefined,
-      isCrossEntity: undefined,
-      remark: undefined,
-    },
-    statusLabel: undefined,
-    userCount: undefined,
-    orderCount: undefined,
-    createTime: undefined,
+  const statusLabelText = computed(() => {
+    const s = detail.value?.entity?.status;
+    if (s === 20) return '停用';
+    if (s === 10) return '启用';
+    return getAdBusinessEntityStatusLabel(s);
   });
+
+  function statusTagType(status?: number): 'success' | 'default' {
+    return status === 10 ? 'success' : 'default';
+  }
+
+  async function fetchDetail() {
+    loading.value = true;
+    try {
+      detail.value = await getAdBusinessEntityDetail(entityId);
+    } catch (e) {
+      message.error((e as Error).message || '加载失败');
+    } finally {
+      loading.value = false;
+    }
+  }
 
   function goBack() {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_BUSINESS_ENTITY });
   }
-  function goEdit() {
-    router.push({ name: AdvertisingRouteEnum.ADVERTISING_BUSINESS_ENTITY_EDIT, params: { id } });
-  }
 
-  async function load() {
-    try {
-      const res = await getAdBusinessEntityDetail(id);
-      Object.assign(detail, res);
-    } catch (e) {
-      message.error((e as Error).message || '加载失败');
-    }
-  }
+  const { loadUserMap, getUserName } = useUserMap();
 
-  onMounted(load);
+  onMounted(async () => {
+    await Promise.all([fetchDetail(), loadUserMap()]);
+  });
 </script>
+
+<style scoped>
+  .advertising-page {
+    padding: 16px;
+  }
+</style>

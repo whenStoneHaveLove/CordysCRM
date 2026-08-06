@@ -35,4 +35,10 @@ public enum OrderStatus {
         }
         return null;
     }
+
+    public static String labelOf(Integer code) {
+        if (code == null) return null;
+        OrderStatus s = of(code);
+        return s == null ? String.valueOf(code) : s.getLabel();
+    }
 }

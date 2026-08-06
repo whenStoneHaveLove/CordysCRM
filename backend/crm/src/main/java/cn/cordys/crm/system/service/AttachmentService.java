@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -87,12 +88,13 @@ public class AttachmentService {
      *
      * @return 文件流
      */
-    public ResponseEntity<org.springframework.core.io.Resource> getResource(String attachmentId) {
+    public ResponseEntity<org.springframework.core.io.Resource> getResource(String attachmentId, boolean asDownload) {
         Attachment attachment = attachmentMapper.selectByPrimaryKey(attachmentId);
         FileRequest request;
         ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.ok();
         try {
             InputStream fileStream;
+            String dispositionPrefix = asDownload ? "attachment" : "inline";
             if (attachment == null) {
                 // get pic from temp dir
                 request = new FileRequest(DefaultRepositoryDir.getTempFileDir(attachmentId), StorageType.LOCAL.name(), null);
@@ -102,9 +104,12 @@ public class AttachmentService {
                 }
                 File file = folderFiles.getFirst();
                 fileStream = new FileInputStream(file);
-                responseBuilder.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodeName(file.getName()))
+                String contentType = isSvg(file.getName()) ? "image/svg+xml"
+                        : isImage(file.getName()) ? Files.probeContentType(file.toPath())
+                        : "application/octet-stream";
+                responseBuilder.header(HttpHeaders.CONTENT_DISPOSITION, dispositionPrefix + "; filename*=UTF-8''" + encodeName(file.getName()))
                         .contentLength(file.length())
-                        .contentType(isSvg(file.getName()) ? MediaType.parseMediaType("image/svg+xml") : MediaType.parseMediaType("application/octet-stream"));
+                        .contentType(MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"));
             } else {
                 // get attachment from transferred dir
                 request = new FileRequest(DefaultRepositoryDir.getTransferFileDir(attachment.getOrganizationId(), attachment.getResourceId(), attachment.getId()), StorageType.LOCAL.name(), attachment.getName());
@@ -112,9 +117,11 @@ public class AttachmentService {
                 if (fileStream == null) {
                     throw new GenericException("The file does not exist or has been deleted");
                 }
-                responseBuilder.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodeName(attachment.getName()))
+                String contentType = isSvg(attachment.getName()) ? "image/svg+xml"
+                        : "application/octet-stream";
+                responseBuilder.header(HttpHeaders.CONTENT_DISPOSITION, dispositionPrefix + "; filename*=UTF-8''" + encodeName(attachment.getName()))
                         .contentLength(attachment.getSize())
-                        .contentType(isSvg(attachment.getName()) ? MediaType.parseMediaType("image/svg+xml") : MediaType.parseMediaType("application/octet-stream"));
+                        .contentType(MediaType.parseMediaType(contentType));
             }
             return responseBuilder
                     .body(new InputStreamResource(fileStream));
@@ -122,6 +129,13 @@ public class AttachmentService {
             log.error(e.getMessage());
             return null;
         }
+    }
+
+    private boolean isImage(String name) {
+        if (name == null) return false;
+        String lower = name.toLowerCase();
+        return lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".jpeg")
+                || lower.endsWith(".gif") || lower.endsWith(".webp") || lower.endsWith(".bmp");
     }
 
 

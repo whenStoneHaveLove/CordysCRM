@@ -26,4 +26,10 @@ public enum PaymentMethod {
         }
         return null;
     }
+
+    public static String labelOf(Integer code) {
+        if (code == null) return null;
+        PaymentMethod e = of(code);
+        return e == null ? String.valueOf(code) : e.getLabel();
+    }
 }

@@ -36,6 +36,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +81,8 @@ public class AdOrderChangeService {
     private AdEntityPermissionProvider entityPermissionProvider;
     @Resource
     private AdAmountCalculator amountCalculator;
+    @Resource
+    private cn.cordys.common.service.BaseService baseService;
 
     /** L-14 审批开关（默认开启）。 */
     @Value("${ad.order.approval.enabled:true}")
@@ -288,8 +292,23 @@ public class AdOrderChangeService {
         request.setEntityIds(entityPermissionProvider.buildEntityFilter());
         Page<AdOrderChangeListResponse> page = PageHelper.startPage(request.getCurrent(), request.getPageSize());
         List<AdOrderChangeListResponse> list = extAdOrderChangeMapper.pageList(request);
+
+        // 审批人/创建人姓名翻译
+        Set<String> userIds = new HashSet<>();
+        for (AdOrderChangeListResponse r : list) {
+            if (r.getApproverId() != null) userIds.add(r.getApproverId());
+            if (r.getCreatorId() != null) userIds.add(r.getCreatorId());
+        }
+        Map<String, String> userNameMap = userIds.isEmpty() ? new HashMap<>() : baseService.getUserNameMap(userIds);
+
         for (AdOrderChangeListResponse r : list) {
             r.setStatusLabel(AdOrderChangeStatus.labelOf(r.getStatus()));
+            if (r.getApproverId() != null) {
+                r.setApproverName(userNameMap.get(r.getApproverId()));
+            }
+            if (r.getCreatorId() != null) {
+                r.setCreatorName(userNameMap.get(r.getCreatorId()));
+            }
         }
         return PageUtils.setPageInfoWithOption(page, list, null);
     }

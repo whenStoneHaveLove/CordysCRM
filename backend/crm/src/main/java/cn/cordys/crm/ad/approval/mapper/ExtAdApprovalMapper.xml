@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.ad.approval.mapper.ExtAdApprovalMapper">
+
+    <select id="pendingOrders" resultType="java.util.HashMap">
+        SELECT
+            id, order_no AS refNo, order_name AS summary, creator_id AS applicantId,
+            total_amount AS amount, create_time AS createTime, status
+        FROM ad_order
+        WHERE organization_id = #{orgId} AND status = #{status} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="pendingChanges" resultType="java.util.HashMap">
+        SELECT
+            id, id AS refNo, reason AS summary, create_user AS applicantId,
+            create_time AS createTime, status
+        FROM ad_order_change
+        WHERE organization_id = #{orgId} AND status = 0 AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="pendingSeals" resultType="java.util.HashMap">
+        SELECT
+            id, contract_id AS refNo, apply_remark AS summary, applicant_id AS applicantId,
+            create_time AS createTime, status
+        FROM ad_seal_record
+        WHERE organization_id = #{orgId} AND status = 0 AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

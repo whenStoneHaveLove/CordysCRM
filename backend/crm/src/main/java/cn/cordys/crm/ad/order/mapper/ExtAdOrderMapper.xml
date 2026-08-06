@@ -72,7 +72,7 @@
         <include refid="cn.cordys.common.mapper.CommonMapper.sort">
             <property name="sort" value="request.sort"/>
             <property name="prefix" value="o"/>
-            <property name="defaultSort" value="o.create_time DESC"/>
+            <property name="defaultSort" value="create_time DESC"/>
         </include>
     </select>
 
@@ -108,6 +108,59 @@
         WHERE status = 50
           AND deleted = 0
           AND `delivery_end_date` &lt; #{now}
+    </select>
+
+    <!-- 统计客户关联订单数 -->
+    <select id="countByCustomerId" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM ad_order
+        WHERE customer_id = #{customerId}
+          AND organization_id = #{orgId}
+          AND deleted = 0
+    </select>
+
+    <!-- 待处理订单（收付款管理，按状态+主体+关键字筛选） -->
+    <select id="selectTodoOrders" resultType="cn.cordys.crm.ad.order.domain.AdOrder">
+        SELECT * FROM ad_order
+        WHERE organization_id = #{orgId}
+          AND deleted = 0
+          AND status IN
+          <foreach collection="statusList" item="s" open="(" separator="," close=")">
+              #{s}
+          </foreach>
+        <if test="entityIds != null and entityIds.size() > 0">
+            AND business_entity_id IN
+            <foreach collection="entityIds" item="eid" open="(" separator="," close=")">
+                #{eid}
+            </foreach>
+        </if>
+        <if test="businessEntityId != null and businessEntityId != ''">
+            AND business_entity_id = #{businessEntityId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND order_no LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+    </select>
+
+    <!-- 需红冲发票订单（needRedInvoice=1，按主体筛选） -->
+    <select id="selectRedInvoiceOrders" resultType="cn.cordys.crm.ad.order.domain.AdOrder">
+        SELECT * FROM ad_order
+        WHERE organization_id = #{orgId}
+          AND deleted = 0
+          AND needs_red_invoice = 1
+        <if test="entityIds != null and entityIds.size() > 0">
+            AND business_entity_id IN
+            <foreach collection="entityIds" item="eid" open="(" separator="," close=")">
+                #{eid}
+            </foreach>
+        </if>
+        <if test="businessEntityId != null and businessEntityId != ''">
+            AND business_entity_id = #{businessEntityId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND order_no LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY create_time DESC
     </select>
 
 </mapper>

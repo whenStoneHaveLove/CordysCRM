@@ -314,12 +314,19 @@ public class PermissionConstants {
     public static final String AD_SEAL_UPLOAD = "AD_SEAL:UPLOAD";
     /*------ end: AD_SEAL ------*/
 
-    /*------ start: AD_RESOURCE（§8.4 / §9.4） ------*/
-    public static final String AD_RESOURCE_READ = "AD_RESOURCE:READ";
-    public static final String AD_RESOURCE_CREATE = "AD_RESOURCE:CREATE";
-    public static final String AD_RESOURCE_UPDATE = "AD_RESOURCE:UPDATE";
-    public static final String AD_RESOURCE_DELETE = "AD_RESOURCE:DELETE";
-    /*------ end: AD_RESOURCE ------*/
+    /*------ start: AD_UPSTREAM_AGENT（§8.4 / §9.4） ------*/
+    public static final String AD_UPSTREAM_AGENT_READ = "AD_UPSTREAM_AGENT:READ";
+    public static final String AD_UPSTREAM_AGENT_CREATE = "AD_UPSTREAM_AGENT:CREATE";
+    public static final String AD_UPSTREAM_AGENT_UPDATE = "AD_UPSTREAM_AGENT:UPDATE";
+    public static final String AD_UPSTREAM_AGENT_DELETE = "AD_UPSTREAM_AGENT:DELETE";
+    /*------ end: AD_UPSTREAM_AGENT ------*/
+
+    /*------ start: AD_DOWNSTREAM_MEDIA（§8.4 / §9.4） ------*/
+    public static final String AD_DOWNSTREAM_MEDIA_READ = "AD_DOWNSTREAM_MEDIA:READ";
+    public static final String AD_DOWNSTREAM_MEDIA_CREATE = "AD_DOWNSTREAM_MEDIA:CREATE";
+    public static final String AD_DOWNSTREAM_MEDIA_UPDATE = "AD_DOWNSTREAM_MEDIA:UPDATE";
+    public static final String AD_DOWNSTREAM_MEDIA_DELETE = "AD_DOWNSTREAM_MEDIA:DELETE";
+    /*------ end: AD_DOWNSTREAM_MEDIA ------*/
 
     /*------ start: AD_CUSTOMER（§8.4 / §9.4） ------*/
     public static final String AD_CUSTOMER_READ = "AD_CUSTOMER:READ";

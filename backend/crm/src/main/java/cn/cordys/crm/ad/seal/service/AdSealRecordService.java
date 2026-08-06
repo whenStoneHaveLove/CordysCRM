@@ -10,6 +10,8 @@ import cn.cordys.crm.ad.common.annotation.OperationLog;
 import cn.cordys.crm.ad.contract.constants.SealStatus;
 import cn.cordys.crm.ad.contract.domain.AdContract;
 import cn.cordys.crm.ad.contract.domain.AdSealRecord;
+import cn.cordys.crm.ad.dict.domain.AdDict;
+import cn.cordys.crm.ad.dict.service.AdDictService;
 import cn.cordys.crm.ad.order.domain.AdOrder;
 import cn.cordys.crm.ad.seal.constants.AdSealRecordStatus;
 import cn.cordys.crm.ad.seal.dto.request.AdSealApplyRequest;
@@ -31,8 +33,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -56,6 +62,9 @@ import java.util.stream.Collectors;
 public class AdSealRecordService {
 
     @Resource
+    private cn.cordys.common.service.BaseService baseService;
+
+    @Resource
     private BaseMapper<AdSealRecord> sealRecordMapper;
     @Resource
     private BaseMapper<AdContract> contractMapper;
@@ -65,6 +74,8 @@ public class AdSealRecordService {
     private BaseMapper<AdBusinessEntity> businessEntityMapper;
     @Resource
     private ExtAdSealRecordMapper extAdSealRecordMapper;
+    @Resource
+    private AdDictService adDictService;
     @Resource
     private AdEntityPermissionProvider entityPermissionProvider;
 
@@ -232,8 +243,32 @@ public class AdSealRecordService {
         request.setEntityIds(entityPermissionProvider.buildEntityFilter());
         Page<AdSealRecordListResponse> page = PageHelper.startPage(request.getCurrent(), request.getPageSize());
         List<AdSealRecordListResponse> list = extAdSealRecordMapper.pageList(request);
+
+        // 用印类型字典翻译
+        List<AdDict> sealTypeDicts = adDictService.listByDictCode("seal_type");
+        Map<String, String> sealTypeLabelMap = sealTypeDicts.stream()
+                .collect(Collectors.toMap(AdDict::getDictValue, AdDict::getDictLabel, (a, b) -> a));
+
+        // 申请人/审批人姓名翻译
+        Set<String> userIds = new HashSet<>();
+        for (AdSealRecordListResponse r : list) {
+            if (r.getApplicantId() != null) userIds.add(r.getApplicantId());
+            if (r.getApproverId() != null) userIds.add(r.getApproverId());
+        }
+        Map<String, String> userNameMap = userIds.isEmpty() ? new HashMap<>() : baseService.getUserNameMap(userIds);
+
         for (AdSealRecordListResponse r : list) {
             r.setStatusLabel(AdSealRecordStatus.labelOf(r.getStatus()));
+            if (r.getSealType() != null) {
+                String key = String.valueOf(r.getSealType());
+                r.setSealTypeLabel(sealTypeLabelMap.getOrDefault(key, key));
+            }
+            if (r.getApplicantId() != null) {
+                r.setApplicantName(userNameMap.get(r.getApplicantId()));
+            }
+            if (r.getApproverId() != null) {
+                r.setApproverName(userNameMap.get(r.getApproverId()));
+            }
         }
         return PageUtils.setPageInfoWithOption(page, list, null);
     }

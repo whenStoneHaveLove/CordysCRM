@@ -1,16 +1,21 @@
 package cn.cordys.crm.ad.order.domain;
 
-import cn.cordys.common.domain.BaseModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Table;
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * 广告订单操作记录（详情 Tab，V3.1 §5.2）。
+ * 注：ad_order_log 表无 deleted/createUser/updateUser/updateTime 列，故不继承 BaseModel。
  */
 @Data
 @Table(name = "ad_order_log")
-public class AdOrderLog extends BaseModel {
+public class AdOrderLog implements Serializable {
+
+    @Schema(description = "id")
+    private String id;
 
     @Schema(description = "订单id")
     private String orderId;
@@ -33,6 +38,6 @@ public class AdOrderLog extends BaseModel {
     @Schema(description = "组织(租户)id")
     private String organizationId;
 
-    @Schema(description = "是否删除:0-否/1-是")
-    private Integer deleted = 0;
+    @Schema(description = "创建时间")
+    private Long createTime;
 }

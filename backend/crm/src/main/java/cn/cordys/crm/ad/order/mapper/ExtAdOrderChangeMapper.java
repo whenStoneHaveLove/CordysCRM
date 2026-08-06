@@ -7,6 +7,7 @@ import cn.cordys.crm.ad.order.dto.response.AdOrderChangeListResponse;
 import cn.cordys.mybatis.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -27,4 +28,7 @@ public interface ExtAdOrderChangeMapper extends BaseMapper<AdOrderChange> {
      * @return 列表项
      */
     List<AdOrderChangeListResponse> pageList(@Param("request") AdOrderChangePageRequest request);
+
+    @Select("SELECT * FROM ad_order_change WHERE order_id = #{orderId} AND deleted = 0")
+    List<AdOrderChange> selectByOrderId(@Param("orderId") String orderId);
 }

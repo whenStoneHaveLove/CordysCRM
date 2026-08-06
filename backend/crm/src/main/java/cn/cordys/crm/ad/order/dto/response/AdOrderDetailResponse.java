@@ -19,6 +19,12 @@ public class AdOrderDetailResponse {
     @Schema(description = "订单主信息")
     private AdOrder order;
 
+    @Schema(description = "关联合同ID（详情时从 ad_order_contract 查询填充）")
+    private String contractId;
+
+    @Schema(description = "下游媒体id列表（详情时从 ad_order_downstream_media 查询填充）")
+    private List<String> downstreamMediaIds;
+
     @Schema(description = "附件列表")
     private List<AdOrderAttachment> attachments;
 

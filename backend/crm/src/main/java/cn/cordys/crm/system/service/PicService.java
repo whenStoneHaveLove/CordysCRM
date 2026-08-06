@@ -42,6 +42,6 @@ public class PicService {
      * @return 文件流
      */
     public ResponseEntity<org.springframework.core.io.Resource> getResource(String picId) {
-        return attachmentService.getResource(picId);
+        return attachmentService.getResource(picId, false);
     }
 }

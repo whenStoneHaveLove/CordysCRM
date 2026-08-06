@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 广告订单新建/编辑（草稿）请求（V3.1 §13.2）。
@@ -33,6 +34,9 @@ public class AdOrderSaveRequest {
 
     @Schema(description = "订单类型:10框架合同/20单笔合同")
     private Integer orderType;
+
+    @Schema(description = "关联合同id(框架订单必选框架合同；单笔订单可后补)")
+    private String contractId;
 
     @Schema(description = "上游代理(可空)")
     private String upstreamAgentId;
@@ -73,8 +77,11 @@ public class AdOrderSaveRequest {
     @Schema(description = "预收模式:10比例/20固定(L-25)")
     private Integer receiptPrepayMode;
 
-    @Schema(description = "预收比例%")
+    @Schema(description = "预收比例%(mode=10时填)")
     private BigDecimal receiptPrepayRatio;
+
+    @Schema(description = "预收固定金额(mode=20时填)")
+    private BigDecimal receiptPrepayAmount;
 
     @Schema(description = "预收截止日")
     private Date receiptPrepayDeadline;
@@ -88,8 +95,11 @@ public class AdOrderSaveRequest {
     @Schema(description = "媒体预付模式:10比例/20固定")
     private Integer paymentPrepayMode;
 
-    @Schema(description = "媒体预付比例%")
+    @Schema(description = "媒体预付比例%(mode=10时填)")
     private BigDecimal paymentPrepayRatio;
+
+    @Schema(description = "媒体预付固定金额(mode=20时填)")
+    private BigDecimal paymentPrepayAmount;
 
     @Schema(description = "媒体预付截止日")
     private Date paymentPrepayDeadline;
@@ -102,4 +112,7 @@ public class AdOrderSaveRequest {
 
     @Schema(description = "币种，默认 CNY")
     private String currency = "CNY";
+
+    @Schema(description = "下游媒体id列表(至少选一个)")
+    private List<String> downstreamMediaIds;
 }
