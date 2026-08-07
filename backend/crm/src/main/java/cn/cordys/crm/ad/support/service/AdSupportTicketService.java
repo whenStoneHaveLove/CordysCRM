@@ -49,7 +49,7 @@ public class AdSupportTicketService {
     private static final String ROLE_MEDIA = "ROLE_MEDIA";
 
     /** 新建工单。自动生成工单编号。 */
-    @OperationLog(module = "SUPPORT", action = "CREATE", targetId = "")
+    @OperationLog(module = "AD_SUPPORT", action = "CREATE", targetId = "")
     public AdSupportTicket create(AdSupportTicketSaveRequest request, String userId, String orgId) {
         assertRole(ROLE_MEDIA);
         validate(request);
@@ -74,7 +74,7 @@ public class AdSupportTicketService {
     }
 
     /** 编辑工单（指派/解决/状态变更）。 */
-    @OperationLog(module = "SUPPORT", action = "UPDATE", targetId = "#request.id")
+    @OperationLog(module = "AD_SUPPORT", action = "UPDATE", targetId = "#request.id")
     public AdSupportTicket update(AdSupportTicketSaveRequest request, String userId, String orgId) {
         assertRole(ROLE_MEDIA);
         if (request.getId() == null || request.getId().isBlank()) {
@@ -112,7 +112,7 @@ public class AdSupportTicketService {
     }
 
     /** 关闭工单。 */
-    @OperationLog(module = "SUPPORT", action = "CLOSE", targetId = "#id")
+    @OperationLog(module = "AD_SUPPORT", action = "CLOSE", targetId = "#id")
     public AdSupportTicket close(String id, String userId, String orgId) {
         assertRole(ROLE_MEDIA);
         AdSupportTicket t = requireTicket(id);

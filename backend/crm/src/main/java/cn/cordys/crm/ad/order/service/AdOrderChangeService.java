@@ -110,7 +110,7 @@ public class AdOrderChangeService {
     /**
      * 新建改单申请（草稿 0）。捕获变更前快照、校验字段白名单与 order_type 不可变(L-24)。
      */
-    @OperationLog(module = "CHANGE", action = "CREATE", targetId = "")
+    @OperationLog(module = "AD_ORDER_CHANGE", action = "CREATE", targetId = "")
     public AdOrderChange create(AdOrderChangeSaveRequest request, String userId, String orgId) {
         AdOrder order = requireOrder(request.getOrderId());
         List<String> fields = request.getChangeFields();
@@ -153,7 +153,7 @@ public class AdOrderChangeService {
     /**
      * 提交改单：草稿(0) → 已提交(10) [L-14 关闭时直达审批通过(20)]；父单 EXECUTING(50) → CHANGE_APPROVING(60) 锁定。
      */
-    @OperationLog(module = "CHANGE", action = "SUBMIT", targetId = "#id")
+    @OperationLog(module = "AD_ORDER_CHANGE", action = "SUBMIT", targetId = "#id")
     public AdOrderChange submit(String id, String userId, String orgId) {
         AdOrderChange change = requireChange(id);
         if (change.getStatus() != AdOrderChangeStatus.DRAFT.getCode()) {
@@ -184,7 +184,7 @@ public class AdOrderChangeService {
     /**
      * 老板审批通过：已提交(10) → 审批通过(20)；父单保持锁定(60)，待执行时应用。
      */
-    @OperationLog(module = "CHANGE", action = "APPROVE", targetId = "#id")
+    @OperationLog(module = "AD_ORDER_CHANGE", action = "APPROVE", targetId = "#id")
     public AdOrderChange approve(String id, AdOrderChangeApproveRequest request, String userId, String orgId) {
         AdOrderChange change = requireChange(id);
         if (change.getStatus() != AdOrderChangeStatus.SUBMITTED.getCode()) {
@@ -207,7 +207,7 @@ public class AdOrderChangeService {
     /**
      * 老板驳回：已提交(10) → 已驳回(30)；父单 CHANGE_APPROVING(60) → EXECUTING(50) 恢复（保留数据 L-21）。
      */
-    @OperationLog(module = "CHANGE", action = "REJECT", targetId = "#id")
+    @OperationLog(module = "AD_ORDER_CHANGE", action = "REJECT", targetId = "#id")
     public AdOrderChange reject(String id, AdOrderChangeApproveRequest request, String userId, String orgId) {
         AdOrderChange change = requireChange(id);
         if (change.getStatus() != AdOrderChangeStatus.SUBMITTED.getCode()) {
@@ -237,7 +237,7 @@ public class AdOrderChangeService {
     /**
      * 执行改单：审批通过(20) → 已执行(40)。应用快照 + 金额重算 + L-04 资金侧；父单 CHANGE_APPROVING(60) → EXECUTING(50)。
      */
-    @OperationLog(module = "CHANGE", action = "EXECUTE", targetId = "#id")
+    @OperationLog(module = "AD_ORDER_CHANGE", action = "EXECUTE", targetId = "#id")
     public AdOrderChange execute(String id, String userId, String orgId) {
         AdOrderChange change = requireChange(id);
         if (change.getStatus() != AdOrderChangeStatus.APPROVED.getCode()) {

@@ -48,64 +48,57 @@ export const pathMap: PathMapItem[] = [
   },
   // 广告模块
   {
-    key: 'ORDER',
+    key: 'AD_ORDER',
     route: AppRouteEnum.ADVERTISING_ORDER,
     locale: 'menu.advertisingOrder',
-    children: [
-      {
-        key: 'ORDER_INDEX',
-        route: AppRouteEnum.ADVERTISING_ORDER,
-        locale: 'menu.advertisingOrder',
-      },
-      {
-        key: 'ORDER_CHANGE',
-        route: AppRouteEnum.ADVERTISING_ORDER,
-        locale: 'menu.advertisingOrder',
-      },
-    ],
   },
   {
-    key: 'CONTRACT',
+    key: 'AD_ORDER_CHANGE',
+    route: AppRouteEnum.ADVERTISING_ORDER,
+    locale: 'menu.advertisingOrder',
+  },
+  {
+    key: 'AD_CONTRACT',
     route: AppRouteEnum.ADVERTISING_CONTRACT,
     locale: 'menu.advertisingContract',
   },
   {
-    key: 'CUSTOMER',
+    key: 'AD_CUSTOMER',
     route: AppRouteEnum.ADVERTISING_CUSTOMER,
     locale: 'menu.advertisingCustomer',
   },
   {
-    key: 'BUSINESS_ENTITY',
+    key: 'AD_BUSINESS_ENTITY',
     route: AppRouteEnum.ADVERTISING_BUSINESS_ENTITY,
     locale: 'menu.advertisingBusinessEntity',
   },
   {
-    key: 'DOWNSTREAM_MEDIA',
+    key: 'AD_DOWNSTREAM_MEDIA',
     route: AppRouteEnum.ADVERTISING_DOWNSTREAM_MEDIA,
     locale: 'menu.advertisingDownstreamMedia',
   },
   {
-    key: 'UPSTREAM_AGENT',
+    key: 'AD_UPSTREAM_AGENT',
     route: AppRouteEnum.ADVERTISING_UPSTREAM_AGENT,
     locale: 'menu.advertisingUpstreamAgent',
   },
   {
-    key: 'PAYMENT',
+    key: 'AD_PAYMENT',
     route: AppRouteEnum.ADVERTISING_PAYMENT,
     locale: 'menu.advertisingPayment',
   },
   {
-    key: 'SEAL',
+    key: 'AD_SEAL',
     route: AppRouteEnum.ADVERTISING_SEAL,
     locale: 'menu.advertisingSeal',
   },
   {
-    key: 'SUPPORT',
+    key: 'AD_SUPPORT',
     route: AppRouteEnum.ADVERTISING_WORKBENCH,
     locale: 'menu.advertisingWorkbench',
   },
   {
-    key: 'DICT',
+    key: 'AD_DICT',
     route: AppRouteEnum.ADVERTISING_SYSTEM_DICT,
     locale: 'menu.advertisingSystemDict',
   },

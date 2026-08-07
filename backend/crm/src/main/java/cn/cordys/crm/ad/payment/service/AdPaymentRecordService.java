@@ -94,7 +94,7 @@ public class AdPaymentRecordService {
     /**
      * 通用收付款登记（M4 核心入口）：记录一笔资金动作并回写订单发票/收款/媒体付款进度与累计。
      */
-    @OperationLog(module = "PAYMENT", action = "CREATE", targetId = "#request.orderId")
+    @OperationLog(module = "AD_PAYMENT", action = "CREATE", targetId = "#request.orderId")
     public AdPaymentRecord create(AdPaymentRecordCreateRequest request, String userId, String orgId) {
         assertFinanceRole();
         AdOrder order = requireOrder(request.getOrderId());
@@ -108,7 +108,7 @@ public class AdPaymentRecordService {
     /**
      * 确认预收款（T-31，L-11 基数=应收）。回写 received_amount，并驱动主状态 30→40/50。
      */
-    @OperationLog(module = "PAYMENT", action = "CONFIRM_PREPAY", targetId = "#request.orderId")
+    @OperationLog(module = "AD_PAYMENT", action = "CONFIRM_PREPAY", targetId = "#request.orderId")
     public AdPaymentRecord confirmPrepay(AdPaymentConfirmPrepayRequest request, String userId, String orgId) {
         assertFinanceRole();
         AdOrder order = requireOrder(request.getOrderId());
@@ -121,7 +121,7 @@ public class AdPaymentRecordService {
     /**
      * 付媒体预付款（T-31，L-28 基数=media_payable）。回写 media_paid_amount，并驱动主状态 40→50。
      */
-    @OperationLog(module = "PAYMENT", action = "PAY_MEDIA_PREPAY", targetId = "#request.orderId")
+    @OperationLog(module = "AD_PAYMENT", action = "PAY_MEDIA_PREPAY", targetId = "#request.orderId")
     public AdPaymentRecord payMediaPrepay(AdPaymentMediaPrepayRequest request, String userId, String orgId) {
         assertFinanceRole();
         AdOrder order = requireOrder(request.getOrderId());
@@ -134,7 +134,7 @@ public class AdPaymentRecordService {
     /**
      * 开票（T-32，L-02 开票金额=应收）。仅回写 invoiced_amount / invoice_status，不触碰已收款。
      */
-    @OperationLog(module = "PAYMENT", action = "INVOICE", targetId = "#request.orderId")
+    @OperationLog(module = "AD_PAYMENT", action = "INVOICE", targetId = "#request.orderId")
     public AdPaymentRecord invoice(AdPaymentInvoiceRequest request, String userId, String orgId) {
         assertFinanceRole();
         AdOrder order = requireOrder(request.getOrderId());
@@ -146,7 +146,7 @@ public class AdPaymentRecordService {
     /**
      * 收款登记（T-32）。仅回写 received_amount / receipt_status，不触碰已开票。
      */
-    @OperationLog(module = "PAYMENT", action = "RECEIVE", targetId = "#request.orderId")
+    @OperationLog(module = "AD_PAYMENT", action = "RECEIVE", targetId = "#request.orderId")
     public AdPaymentRecord receive(AdPaymentReceiveRequest request, String userId, String orgId) {
         assertFinanceRole();
         AdOrder order = requireOrder(request.getOrderId());
@@ -158,7 +158,7 @@ public class AdPaymentRecordService {
     /**
      * 付媒体尾款（T-33，L-05/L-28）。回写 media_paid_amount；媒体已全额付清时非强制触发将被拒绝。
      */
-    @OperationLog(module = "PAYMENT", action = "PAY_MEDIA_POSTPAY", targetId = "#request.orderId")
+    @OperationLog(module = "AD_PAYMENT", action = "PAY_MEDIA_POSTPAY", targetId = "#request.orderId")
     public AdPaymentRecord payMediaPostpay(AdPaymentMediaPostpayRequest request, String userId, String orgId) {
         assertFinanceRole();
         AdOrder order = requireOrder(request.getOrderId());
@@ -173,7 +173,7 @@ public class AdPaymentRecordService {
     /**
      * 清除红冲标记（T-33，L-27）。财务线下红冲处理完毕后清除订单 needs_red_invoice 标记。
      */
-    @OperationLog(module = "PAYMENT", action = "RED_INVOICE_CLEAR", targetId = "#request.orderId")
+    @OperationLog(module = "AD_PAYMENT", action = "RED_INVOICE_CLEAR", targetId = "#request.orderId")
     public AdOrder clearRedInvoice(AdPaymentRedInvoiceClearRequest request, String userId, String orgId) {
         assertFinanceRole();
         AdOrder order = requireOrder(request.getOrderId());
@@ -189,7 +189,7 @@ public class AdPaymentRecordService {
     /**
      * 撤销收付款记录（M4，cancel/reverse）。反向回写订单金额进度，并对原记录做逻辑删除。
      */
-    @OperationLog(module = "PAYMENT", action = "CANCEL", targetId = "#request.id")
+    @OperationLog(module = "AD_PAYMENT", action = "CANCEL", targetId = "#request.id")
     public AdPaymentRecord cancel(AdPaymentCancelRequest request, String userId, String orgId) {
         assertFinanceRole();
         AdPaymentRecord rec = paymentMapper.selectByPrimaryKey(request.getId());
@@ -284,7 +284,7 @@ public class AdPaymentRecordService {
     /**
      * 改单资金侧：生成"应退款"明细（type=50）。由 M3 改单执行（金额变小、已收&gt;新应收）调用。
      */
-    @OperationLog(module = "PAYMENT", action = "CHANGE_REFUND", targetId = "#orderId")
+    @OperationLog(module = "AD_PAYMENT", action = "CHANGE_REFUND", targetId = "#orderId")
     public AdPaymentRecord createRefundForChange(String orderId, BigDecimal refundAmount, String userId, String orgId) {
         AdOrder order = requireOrder(orderId);
         if (refundAmount == null || refundAmount.compareTo(ZERO) <= 0) {
@@ -297,7 +297,7 @@ public class AdPaymentRecordService {
     /**
      * 改单资金侧：生成"坏账"标记明细（type=60）。由 M3 改单执行（金额变小、已收&gt;新应收）调用。
      */
-    @OperationLog(module = "PAYMENT", action = "CHANGE_BAD_DEBT", targetId = "#orderId")
+    @OperationLog(module = "AD_PAYMENT", action = "CHANGE_BAD_DEBT", targetId = "#orderId")
     public AdPaymentRecord createBadDebtForChange(String orderId, BigDecimal badDebtAmount, String userId, String orgId) {
         AdOrder order = requireOrder(orderId);
         if (badDebtAmount == null || badDebtAmount.compareTo(ZERO) <= 0) {

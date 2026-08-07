@@ -88,7 +88,7 @@ public class AdSealRecordService {
     /**
      * 申请用印（L-07 先申请后盖章）：创建 seal 记录(status=0)，合同 seal_status=审批中(10)。
      */
-    @OperationLog(module = "SEAL", action = "APPLY", targetId = "")
+    @OperationLog(module = "AD_SEAL", action = "APPLY", targetId = "")
     public AdSealRecord apply(AdSealApplyRequest request, String userId, String orgId) {
         assertRole(ROLE_MEDIA);
         if (request.getContractId() == null || request.getContractId().isBlank()) {
@@ -128,7 +128,7 @@ public class AdSealRecordService {
     /**
      * 用印审批通过（填实际份数）。合同若已有文件直接置已用印(20)，否则保持审批中(10)待上传。
      */
-    @OperationLog(module = "SEAL", action = "APPROVE", targetId = "#id")
+    @OperationLog(module = "AD_SEAL", action = "APPROVE", targetId = "#id")
     public AdSealRecord approve(String id, AdSealApproveRequest request, String userId, String orgId) {
         assertRole(ROLE_BOSS);
         AdSealRecord s = requireSeal(id);
@@ -159,7 +159,7 @@ public class AdSealRecordService {
     /**
      * 用印驳回。合同 seal_status=已驳回(30)。
      */
-    @OperationLog(module = "SEAL", action = "REJECT", targetId = "#id")
+    @OperationLog(module = "AD_SEAL", action = "REJECT", targetId = "#id")
     public AdSealRecord reject(String id, AdSealApproveRequest request, String userId, String orgId) {
         assertRole(ROLE_BOSS);
         AdSealRecord s = requireSeal(id);
@@ -186,7 +186,7 @@ public class AdSealRecordService {
     /**
      * 执行（上传盖章版，L-07）：回填合同 file_url，置 seal_status=已用印(20)。需先审批通过。
      */
-    @OperationLog(module = "SEAL", action = "EXECUTE", targetId = "#id")
+    @OperationLog(module = "AD_SEAL", action = "EXECUTE", targetId = "#id")
     public AdSealRecord upload(String id, AdSealUploadRequest request, String userId, String orgId) {
         assertRole(ROLE_MEDIA);
         AdSealRecord s = requireSeal(id);

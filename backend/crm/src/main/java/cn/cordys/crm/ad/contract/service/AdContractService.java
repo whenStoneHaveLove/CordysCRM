@@ -88,7 +88,7 @@ public class AdContractService {
     /**
      * 新建合同（默认生效 status=10，未申请 seal_status=0）。生成合同编号、校验关键字段。
      */
-    @OperationLog(module = "CONTRACT", action = "CREATE", targetId = "")
+    @OperationLog(module = "AD_CONTRACT", action = "CREATE", targetId = "")
     public AdContract create(AdContractSaveRequest request, String userId, String orgId) {
         assertRole(ROLE_MEDIA);
         validate(request);
@@ -116,7 +116,7 @@ public class AdContractService {
     /**
      * 编辑合同（维持受控字段：编号/状态/用印状态/组织/创建人/时间）。
      */
-    @OperationLog(module = "CONTRACT", action = "UPDATE", targetId = "#request.id")
+    @OperationLog(module = "AD_CONTRACT", action = "UPDATE", targetId = "#request.id")
     public AdContract update(AdContractSaveRequest request, String userId, String orgId) {
         assertRole(ROLE_MEDIA);
         if (request.getId() == null || request.getId().isBlank()) {
@@ -151,7 +151,7 @@ public class AdContractService {
     /**
      * 逻辑删除合同。
      */
-    @OperationLog(module = "CONTRACT", action = "DELETE", targetId = "#id")
+    @OperationLog(module = "AD_CONTRACT", action = "DELETE", targetId = "#id")
     public void delete(String id, String userId, String orgId) {
         assertRole(ROLE_MEDIA);
         AdContract c = requireContract(id);

@@ -58,7 +58,7 @@ public class AdCustomerService {
     private static final String ROLE_MEDIA = "ROLE_MEDIA";
 
     /** 新建客户。 */
-    @OperationLog(module = "CUSTOMER", action = "CREATE", targetId = "")
+    @OperationLog(module = "AD_CUSTOMER", action = "CREATE", targetId = "")
     public AdCustomer create(AdCustomerSaveRequest request, String userId, String orgId) {
         assertRole(ROLE_MEDIA);
         validate(request);
@@ -88,7 +88,7 @@ public class AdCustomerService {
     }
 
     /** 编辑客户。 */
-    @OperationLog(module = "CUSTOMER", action = "UPDATE", targetId = "#request.id")
+    @OperationLog(module = "AD_CUSTOMER", action = "UPDATE", targetId = "#request.id")
     public AdCustomer update(AdCustomerSaveRequest request, String userId, String orgId) {
         assertRole(ROLE_MEDIA);
         if (request.getId() == null || request.getId().isBlank()) {
@@ -159,7 +159,7 @@ public class AdCustomerService {
     }
 
     /** 逻辑删除客户（B-7）。 */
-    @OperationLog(module = "CUSTOMER", action = "DELETE", targetId = "#id")
+    @OperationLog(module = "AD_CUSTOMER", action = "DELETE", targetId = "#id")
     public void delete(String id, String userId, String orgId) {
         AdCustomer existing = requireCustomer(id);
         existing.setDeleted(1);

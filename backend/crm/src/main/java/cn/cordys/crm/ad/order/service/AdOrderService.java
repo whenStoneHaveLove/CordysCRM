@@ -120,7 +120,7 @@ public class AdOrderService {
     /**
      * 新建订单（草稿 0）。生成订单号、计算金额。
      */
-    @OperationLog(module = "ORDER", action = "CREATE", targetId = "")
+    @OperationLog(module = "AD_ORDER", action = "CREATE", targetId = "")
     public AdOrder create(AdOrderSaveRequest request, String userId, String orgId) {
         AdOrder order = new AdOrder();
         BeanUtils.copyProperties(request, order);
@@ -146,7 +146,7 @@ public class AdOrderService {
     /**
      * 编辑草稿（仅 0 状态）。重新计算金额。
      */
-    @OperationLog(module = "ORDER", action = "UPDATE", targetId = "#request.id")
+    @OperationLog(module = "AD_ORDER", action = "UPDATE", targetId = "#request.id")
     public AdOrder update(AdOrderSaveRequest request, String userId, String orgId) {
         AdOrder order = requireOrder(request.getId());
         if (order.getStatus() != OrderStateMachine.DRAFT) {
@@ -224,7 +224,7 @@ public class AdOrderService {
     /**
      * 提交：0→10（或 L-14 开关关闭时 0→20）。守卫 §6.2 附件/合同齐备。
      */
-    @OperationLog(module = "ORDER", action = "SUBMIT", targetId = "#id")
+    @OperationLog(module = "AD_ORDER", action = "SUBMIT", targetId = "#id")
     public AdOrder submit(String id, String userId, String orgId) {
         AdOrder order = requireOrder(id);
         int to = approvalEnabled ? OrderStateMachine.PENDING_BOSS_APPROVAL : OrderStateMachine.APPROVED;
@@ -248,7 +248,7 @@ public class AdOrderService {
     /**
      * 老板审核：通过 10→20；驳回 10→0（保留附件 L-21）。
      */
-    @OperationLog(module = "ORDER", action = "APPROVE", targetId = "#id")
+    @OperationLog(module = "AD_ORDER", action = "APPROVE", targetId = "#id")
     public AdOrder approve(String id, AdOrderApproveRequest request, String userId, String orgId) {
         AdOrder order = requireOrder(id);
         boolean reject = "REJECT".equalsIgnoreCase(request.getAction());
@@ -281,7 +281,7 @@ public class AdOrderService {
      * 财务前置动作（L-05 矩阵）。仅审核通过(20) 可触发，推导 30/40/50 与所需财务步骤。
      * 仅做订单侧状态流转；ad_payment_record 明细由 M4 负责（本方法不阻塞）。
      */
-    @OperationLog(module = "ORDER", action = "FINANCIAL_PRE_ACTION", targetId = "#id")
+    @OperationLog(module = "AD_ORDER", action = "FINANCIAL_PRE_ACTION", targetId = "#id")
     public AdOrderFinancialPlan financialPreAction(String id, String userId, String orgId) {
         AdOrder order = requireOrder(id);
         if (order.getStatus() != OrderStateMachine.APPROVED) {
@@ -307,7 +307,7 @@ public class AdOrderService {
     /**
      * 确认执行：20/30/40 → 50（执行中）。
      */
-    @OperationLog(module = "ORDER", action = "CONFIRM_EXECUTE", targetId = "#id")
+    @OperationLog(module = "AD_ORDER", action = "CONFIRM_EXECUTE", targetId = "#id")
     public AdOrder confirmExecute(String id, String userId, String orgId) {
         AdOrder order = requireOrder(id);
         int from = order.getStatus();
@@ -325,7 +325,7 @@ public class AdOrderService {
      * 执行完成：50→70。
      * 守卫：框架订单必须关联合同（L-26），单笔订单可后补但关联后必须有附件；并按 L-09 起算账期。
      */
-    @OperationLog(module = "ORDER", action = "COMPLETE_EXECUTE", targetId = "#id")
+    @OperationLog(module = "AD_ORDER", action = "COMPLETE_EXECUTE", targetId = "#id")
     public AdOrder completeExecute(String id, String userId, String orgId) {
         AdOrder order = requireOrder(id);
         int from = order.getStatus();
@@ -360,7 +360,7 @@ public class AdOrderService {
     /**
      * 作废：→100（允许自 0/10/50/60/70/80）。保留附件(L-21)；已开票置红冲标记(L-27)。
      */
-    @OperationLog(module = "ORDER", action = "VOID", targetId = "#id")
+    @OperationLog(module = "AD_ORDER", action = "VOID", targetId = "#id")
     public AdOrder voidOrder(String id, AdOrderVoidRequest request, String userId, String orgId) {
         AdOrder order = requireOrder(id);
         int from = order.getStatus();
@@ -386,7 +386,7 @@ public class AdOrderService {
     /**
      * 强制归档：80→90（老板执行，L-13 带坏账金额）。
      */
-    @OperationLog(module = "ORDER", action = "FORCE_ARCHIVE", targetId = "#id")
+    @OperationLog(module = "AD_ORDER", action = "FORCE_ARCHIVE", targetId = "#id")
     public AdOrder forceArchive(String id, AdOrderForceArchiveRequest request, String userId, String orgId) {
         AdOrder order = requireOrder(id);
         int from = order.getStatus();
