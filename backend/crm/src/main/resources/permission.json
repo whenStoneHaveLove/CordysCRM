@@ -491,13 +491,13 @@
         "permissions": [
           { "id": "AD_ORDER:READ" },
           { "id": "AD_ORDER:CREATE" },
-          { "id": "AD_ORDER:UPDATE" },
-          { "id": "AD_ORDER:DELETE" },
           { "id": "AD_ORDER:SUBMIT" },
           { "id": "AD_ORDER:APPROVE" },
           { "id": "AD_ORDER:REJECT" },
+          { "id": "AD_ORDER:ARCHIVE" },
+          { "id": "AD_ORDER:FORCE_ARCHIVE" },
           { "id": "AD_ORDER:VOID" },
-          { "id": "AD_ORDER:FORCE_ARCHIVE" }
+          { "id": "AD_ORDER:EXPORT" }
         ]
       },
       {

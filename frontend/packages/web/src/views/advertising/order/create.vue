@@ -428,7 +428,15 @@
   function buildFileListForType(type: number) {
     const saved = savedAttachments.value
       .filter((a) => a.type === type)
-      .map((a) => ({ id: a.id, name: a.fileName, status: 'finished', url: a.fileUrl }));
+      .map((a) => ({
+        id: a.id,
+        name: a.fileName,
+        status: 'finished',
+        url: a.fileUrl,
+        // naive-ui 内部会把缺省 file 规范化为 null，随后渲染时 isImageFile(null) 读 null.type 崩溃。
+        // 已上传附件没有真实 File 对象，这里用占位 File 避免崩溃（合同页用 show-file-list=false 故不触发此问题）。
+        file: new File([], a.fileName || 'file'),
+      }));
     const pending = pendingFiles.value
       .filter((f) => f.type === type)
       .map((f) => ({ id: f._key, name: f.file.name, status: 'finished' }));
@@ -438,13 +446,11 @@
   function handleFileSelect(type: number, opts: { file: any; onFinish: () => void; onError: () => void }) {
     const rawFile = opts.file.file as File;
     const _key = `f_${++pendingFileSeq}_${Date.now()}`;
+    // n-upload 在 custom-request + v-model:file-list 模式下已自动把选中文件加入 file-list，
+    // 手动再 push 会造成"点一个出两个"。这里只维护 pendingFiles，并把自动项的 id 设为 _key，
+    // 这样删除时能通过 removed.id === _key 精确匹配。
+    opts.file.id = _key;
     pendingFiles.value.push({ _key, type, file: rawFile });
-    // 把新文件也写回对应 fileList，保持 UI 同步
-    let targetFileList: any;
-    if (type === 10) targetFileList = fileListType10;
-    else if (type === 20) targetFileList = fileListType20;
-    else targetFileList = fileListType40;
-    targetFileList.value.push({ id: _key, name: rawFile.name, status: 'finished' });
     opts.onFinish();
   }
 
@@ -766,20 +772,20 @@
       form.rebateMode = o.rebateMode ?? null;
       form.rebateValue = o.rebateValue;
       form.mediaPayableAmount = o.mediaPayableAmount;
-      form.deliveryStartDate = o.deliveryStartDate != null ? Number(o.deliveryStartDate) : null;
-      form.deliveryEndDate = o.deliveryEndDate != null ? Number(o.deliveryEndDate) : null;
+      form.deliveryStartDate = toDateValue(o.deliveryStartDate);
+      form.deliveryEndDate = toDateValue(o.deliveryEndDate);
       form.deliveryVolume = o.deliveryVolume;
       form.receiptMethod = o.receiptMethod ?? null;
       form.receiptPrepayMode = o.receiptPrepayMode ?? null;
       form.receiptPrepayRatio = o.receiptPrepayRatio ?? null;
       form.receiptPrepayAmount = o.receiptPrepayAmount ?? null;
-      form.receiptPrepayDeadline = o.deliveryEndDate != null ? Number(o.deliveryEndDate) : null;
+      form.receiptPrepayDeadline = toDateValue(o.receiptPrepayDeadline);
       form.receiptAccountPeriodDays = o.receiptAccountPeriodDays ?? null;
       form.paymentMethod = o.paymentMethod ?? null;
       form.paymentPrepayMode = o.paymentPrepayMode ?? null;
       form.paymentPrepayRatio = o.paymentPrepayRatio ?? null;
       form.paymentPrepayAmount = o.paymentPrepayAmount ?? null;
-      form.paymentPrepayDeadline = o.paymentPrepayDeadline != null ? Number(o.paymentPrepayDeadline) : null;
+      form.paymentPrepayDeadline = toDateValue(o.paymentPrepayDeadline);
       form.paymentPostpayTrigger = o.paymentPostpayTrigger ?? null;
       form.paymentPostpayDays = o.paymentPostpayDays ?? null;
       form.currency = o.currency || 'CNY';
@@ -871,6 +877,7 @@
       // 上传附件
       if (pendingFiles.value.length > 0 && newOrderId) {
         await Promise.all(pendingFiles.value.map((f) => uploadAdOrderAttachment(newOrderId, f.type, f.file)));
+        pendingFiles.value = []; // 上传完成后清空，避免再次进入/重复上传
       }
       // 提交时调提交接口
       if (action === 'submit' && newOrderId) {

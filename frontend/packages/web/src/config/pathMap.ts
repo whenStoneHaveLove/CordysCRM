@@ -46,60 +46,60 @@ export const pathMap: PathMapItem[] = [
       },
     ],
   },
-  // 广告模块
+  // 广告模块（locale 使用 views/advertising/locale/zh-CN.ts 中实际存在的 module.advertising.* key）
   {
     key: 'AD_ORDER',
     route: AppRouteEnum.ADVERTISING_ORDER,
-    locale: 'menu.advertisingOrder',
+    locale: 'module.advertising.order',
   },
   {
     key: 'AD_ORDER_CHANGE',
     route: AppRouteEnum.ADVERTISING_ORDER,
-    locale: 'menu.advertisingOrder',
+    locale: 'module.advertising.change',
   },
   {
     key: 'AD_CONTRACT',
     route: AppRouteEnum.ADVERTISING_CONTRACT,
-    locale: 'menu.advertisingContract',
+    locale: 'module.advertising.contract',
   },
   {
     key: 'AD_CUSTOMER',
     route: AppRouteEnum.ADVERTISING_CUSTOMER,
-    locale: 'menu.advertisingCustomer',
+    locale: 'module.advertising.customer',
   },
   {
     key: 'AD_BUSINESS_ENTITY',
     route: AppRouteEnum.ADVERTISING_BUSINESS_ENTITY,
-    locale: 'menu.advertisingBusinessEntity',
+    locale: 'module.advertising.businessEntity',
   },
   {
     key: 'AD_DOWNSTREAM_MEDIA',
     route: AppRouteEnum.ADVERTISING_DOWNSTREAM_MEDIA,
-    locale: 'menu.advertisingDownstreamMedia',
+    locale: 'module.advertising.downstreamMedia',
   },
   {
     key: 'AD_UPSTREAM_AGENT',
     route: AppRouteEnum.ADVERTISING_UPSTREAM_AGENT,
-    locale: 'menu.advertisingUpstreamAgent',
+    locale: 'module.advertising.upstreamAgent',
   },
   {
     key: 'AD_PAYMENT',
     route: AppRouteEnum.ADVERTISING_PAYMENT,
-    locale: 'menu.advertisingPayment',
+    locale: 'module.advertising.payment',
   },
   {
     key: 'AD_SEAL',
     route: AppRouteEnum.ADVERTISING_SEAL,
-    locale: 'menu.advertisingSeal',
+    locale: 'module.advertising.seal',
   },
   {
     key: 'AD_SUPPORT',
     route: AppRouteEnum.ADVERTISING_WORKBENCH,
-    locale: 'menu.advertisingWorkbench',
+    locale: 'module.advertising.workbench',
   },
   {
     key: 'AD_DICT',
     route: AppRouteEnum.ADVERTISING_SYSTEM_DICT,
-    locale: 'menu.advertisingSystemDict',
+    locale: 'module.advertising.dict',
   },
 ];
