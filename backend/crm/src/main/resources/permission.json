@@ -543,6 +543,13 @@
           { "id": "AD_SEAL:REJECT" },
           { "id": "AD_SEAL:UPLOAD" }
         ]
+      },
+      {
+        "id": "AD_OPERATION_LOG",
+        "name": "permission.ad.operation_log.name",
+        "permissions": [
+          { "id": "AD_OPERATION_LOG:READ" }
+        ]
       }
     ]
   }

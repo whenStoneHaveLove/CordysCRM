@@ -302,7 +302,7 @@ const resourceManagement: AppRouteRecordRaw = {
     {
       path: 'upstream-agent/detail/:id',
       name: AdvertisingRouteEnum.ADVERTISING_UPSTREAM_AGENT_DETAIL,
-      // eslint-disable-next-line import/no-unresolved
+
       component: () => import('@/views/advertising/upstreamAgent/detail.vue'),
       meta: {
         locale: 'module.advertising.upstreamAgent',
@@ -324,7 +324,7 @@ const resourceManagement: AppRouteRecordRaw = {
     {
       path: 'downstream-media/detail/:id',
       name: AdvertisingRouteEnum.ADVERTISING_DOWNSTREAM_MEDIA_DETAIL,
-      // eslint-disable-next-line import/no-unresolved
+
       component: () => import('@/views/advertising/downstreamMedia/detail.vue'),
       meta: {
         locale: 'module.advertising.downstreamMedia',
@@ -539,6 +539,33 @@ const system: AppRouteRecordRaw = {
   ],
 };
 
+/**
+ * 操作日志（独立父模块，无子标签）
+ */
+const adLog: AppRouteRecordRaw = {
+  path: '/advertising/log',
+  name: AdvertisingRouteEnum.ADVERTISING_LOG_GROUP,
+  component: DEFAULT_LAYOUT,
+  meta: {
+    locale: 'advertising.log.title',
+    permissions: ['AD_OPERATION_LOG:READ'],
+    icon: 'iconicon_history',
+    hideChildrenInMenu: true,
+    collapsedLocale: 'advertising.log.title',
+  },
+  children: [
+    {
+      path: '',
+      name: AdvertisingRouteEnum.ADVERTISING_LOG,
+      component: () => import('@/views/advertising/log/index.vue'),
+      meta: {
+        locale: 'advertising.log.title',
+        permissions: ['AD_OPERATION_LOG:READ'],
+      },
+    },
+  ],
+};
+
 const advertising: AppRouteRecordRaw[] = [
   workbench,
   orderManagement,
@@ -547,6 +574,7 @@ const advertising: AppRouteRecordRaw[] = [
   approval,
   report,
   system,
+  adLog,
 ];
 
 export default advertising;

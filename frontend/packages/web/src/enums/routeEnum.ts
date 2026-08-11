@@ -139,6 +139,8 @@ export enum AdvertisingRouteEnum {
   ADVERTISING_SYSTEM_BE = 'advertisingSystemBe',
   ADVERTISING_SYSTEM_DICT = 'advertisingSystemDict',
   ADVERTISING_SYSTEM_SETTINGS = 'advertisingSystemSettings',
+  ADVERTISING_LOG_GROUP = 'advertisingLogGroup',
+  ADVERTISING_LOG = 'advertisingLog',
 }
 
 export const AppRouteEnum = {
