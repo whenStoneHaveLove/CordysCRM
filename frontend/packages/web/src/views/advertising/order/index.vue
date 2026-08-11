@@ -57,6 +57,7 @@
         :loading="loading"
         :pagination="pagination"
         :row-key="(row: any) => row.id"
+        :scroll-x="2200"
         remote
       />
     </n-card>
@@ -207,28 +208,28 @@
       title: t('advertising.order.column.totalAmount'),
       width: 130,
       align: 'right',
-      render: (row) => h('span', fmtAmount(row.totalAmount)),
+      render: (row) => h('span', { style: 'display: block' }, fmtAmount(row.totalAmount)),
     },
     {
       key: 'receivableAmount',
       title: t('advertising.order.column.receivable'),
       width: 130,
       align: 'right',
-      render: (row) => h('span', fmtAmount(row.receivableAmount)),
+      render: (row) => h('span', { style: 'display: block' }, fmtAmount(row.receivableAmount)),
     },
     {
       key: 'mediaPayableAmount',
       title: t('advertising.order.column.mediaPayable'),
       width: 130,
       align: 'right',
-      render: (row) => h('span', fmtAmount(row.mediaPayableAmount)),
+      render: (row) => h('span', { style: 'display: block' }, fmtAmount(row.mediaPayableAmount)),
     },
     {
       key: 'rebateAmount',
       title: t('advertising.order.column.rebate'),
       width: 110,
       align: 'right',
-      render: (row) => h('span', fmtAmount(row.rebateAmount)),
+      render: (row) => h('span', { style: 'display: block' }, fmtAmount(row.rebateAmount)),
     },
     {
       key: 'receiptMethod',
@@ -258,6 +259,7 @@
       key: 'missingContract',
       title: t('advertising.order.column.missingContract'),
       width: 90,
+      fixed: 'right' as const,
       render: (row) =>
         row.missingContract === 1
           ? h(NTag, { type: 'warning' }, { default: () => t('advertising.common.yes') })
