@@ -34,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -96,14 +97,14 @@ public class AdOrderChangeService {
     private static final String ACTION_CHANGE_EXECUTED = "CHANGE_EXECUTED";
 
     /** 允许变更的订单业务字段白名单（camelCase）。 */
-    private static final Set<String> MUTABLE_FIELDS = Set.of(
+    private static final Set<String> MUTABLE_FIELDS = new HashSet<>(Arrays.asList(
             "totalAmount", "noRebateAmount", "rebateValue", "receiptPrepayRatio", "paymentPrepayRatio",
             "rebateMode", "receiptMethod", "receiptPrepayMode", "receiptAccountPeriodDays",
             "paymentMethod", "paymentPrepayMode", "paymentPostpayTrigger", "paymentPostpayDays",
             "deliveryStartDate", "deliveryEndDate", "receiptPrepayDeadline", "paymentPrepayDeadline",
             "orderName", "deliveryVolume", "remark", "extJson", "currency",
             "signingEntity", "industryCode", "upstreamAgentId", "agentOrderNo", "customerId"
-    );
+    ));
 
     // ===================== 新建改单申请（草稿） =====================
 

@@ -46,7 +46,7 @@ public class AdDownstreamMediaService {
     private static final int STATUS_NORMAL = 10;
     private static final int STATUS_DISABLED = 20;
 
-    @OperationLog(module = "DOWNSTREAM_MEDIA", action = "CREATE")
+    @OperationLog(module = "AD_DOWNSTREAM_MEDIA", action = "CREATE")
     public AdDownstreamMedia create(AdDownstreamMediaSaveRequest request, String userId, String orgId) {
         validate(request);
         AdDownstreamMedia media = new AdDownstreamMedia();
@@ -58,7 +58,7 @@ public class AdDownstreamMediaService {
         return media;
     }
 
-    @OperationLog(module = "DOWNSTREAM_MEDIA", action = "UPDATE", targetId = "#request.id")
+    @OperationLog(module = "AD_DOWNSTREAM_MEDIA", action = "UPDATE", targetId = "#request.id")
     public AdDownstreamMedia update(AdDownstreamMediaSaveRequest request, String userId, String orgId) {
         if (request.getId() == null || request.getId().isBlank()) {
             throw new GenericException("id不能为空");
@@ -106,7 +106,7 @@ public class AdDownstreamMediaService {
         return PageUtils.setPageInfoWithOption(page, list, null);
     }
 
-    @OperationLog(module = "DOWNSTREAM_MEDIA", action = "DELETE", targetId = "#id")
+    @OperationLog(module = "AD_DOWNSTREAM_MEDIA", action = "DELETE", targetId = "#id")
     public void delete(String id, String userId, String orgId) {
         AdDownstreamMedia existing = requireMedia(id);
         existing.setDeleted(1);

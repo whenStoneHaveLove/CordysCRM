@@ -48,7 +48,7 @@ public class AdBusinessEntityService {
     /**
      * 停用业务主体（status 10→20）。
      */
-    @OperationLog(module = "BUSINESS_ENTITY", action = "DISABLE", targetId = "#id")
+    @OperationLog(module = "AD_BUSINESS_ENTITY", action = "DISABLE", targetId = "#id")
     public void disable(String id) {
         AdBusinessEntity entity = get(id);
         if (entity == null || (entity.getDeleted() != null && entity.getDeleted() == 1)) {
@@ -67,7 +67,7 @@ public class AdBusinessEntityService {
     }
 
     /** 新建业务主体（B-3）。 */
-    @OperationLog(module = "BUSINESS_ENTITY", action = "CREATE", targetId = "")
+    @OperationLog(module = "AD_BUSINESS_ENTITY", action = "CREATE", targetId = "")
     public AdBusinessEntity create(AdBusinessEntitySaveRequest request, String userId, String orgId) {
         if (request.getName() == null || request.getName().isBlank()) {
             throw new GenericException("主体名称不能为空");
@@ -93,7 +93,7 @@ public class AdBusinessEntityService {
     }
 
     /** 编辑业务主体（B-3）。 */
-    @OperationLog(module = "BUSINESS_ENTITY", action = "UPDATE", targetId = "#request.id")
+    @OperationLog(module = "AD_BUSINESS_ENTITY", action = "UPDATE", targetId = "#request.id")
     public AdBusinessEntity update(AdBusinessEntitySaveRequest request, String userId, String orgId) {
         if (request.getId() == null || request.getId().isBlank()) {
             throw new GenericException("主体id不能为空");

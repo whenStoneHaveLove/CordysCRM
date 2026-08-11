@@ -40,7 +40,7 @@ public class AdUpstreamAgentService {
     private static final int STATUS_NORMAL = 10;
     private static final int STATUS_DISABLED = 20;
 
-    @OperationLog(module = "UPSTREAM_AGENT", action = "CREATE")
+    @OperationLog(module = "AD_UPSTREAM_AGENT", action = "CREATE")
     public AdUpstreamAgent create(AdUpstreamAgentSaveRequest request, String userId, String orgId) {
         validate(request);
         AdUpstreamAgent agent = new AdUpstreamAgent();
@@ -52,7 +52,7 @@ public class AdUpstreamAgentService {
         return agent;
     }
 
-    @OperationLog(module = "UPSTREAM_AGENT", action = "UPDATE", targetId = "#request.id")
+    @OperationLog(module = "AD_UPSTREAM_AGENT", action = "UPDATE", targetId = "#request.id")
     public AdUpstreamAgent update(AdUpstreamAgentSaveRequest request, String userId, String orgId) {
         if (request.getId() == null || request.getId().isBlank()) {
             throw new GenericException("id不能为空");
@@ -90,7 +90,7 @@ public class AdUpstreamAgentService {
         return PageUtils.setPageInfoWithOption(page, list, null);
     }
 
-    @OperationLog(module = "UPSTREAM_AGENT", action = "DELETE", targetId = "#id")
+    @OperationLog(module = "AD_UPSTREAM_AGENT", action = "DELETE", targetId = "#id")
     public void delete(String id, String userId, String orgId) {
         AdUpstreamAgent existing = requireAgent(id);
         existing.setDeleted(1);
