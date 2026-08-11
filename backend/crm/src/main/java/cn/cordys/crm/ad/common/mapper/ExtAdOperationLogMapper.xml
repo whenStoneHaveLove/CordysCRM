@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.cordys.crm.ad.common.mapper.ExtAdOperationLogMapper">
+
+    <select id="list" parameterType="cn.cordys.crm.ad.common.dto.request.AdOperationLogPageRequest"
+            resultType="cn.cordys.crm.ad.common.dto.response.AdOperationLogResponse">
+        SELECT
+            t.id,
+            t.module,
+            t.action,
+            t.target_id AS targetId,
+            t.operator_id AS operatorId,
+            t.biz_type AS bizType,
+            t.ip,
+            t.create_time AS createTime,
+            t.before_value AS beforeValue,
+            t.after_value AS afterValue,
+            u.name AS operatorName
+        FROM ad_operation_log t
+        LEFT JOIN sys_user u ON u.id = t.operator_id
+        WHERE t.organization_id = #{orgId}
+        <if test="request.module != null and request.module != ''">
+            AND t.module = #{request.module}
+        </if>
+        <if test="request.action != null and request.action != ''">
+            AND t.action = #{request.action}
+        </if>
+        <if test="request.operator != null and request.operator != ''">
+            AND t.operator_id = #{request.operator}
+        </if>
+        <if test="request.startTime != null and request.endTime != null">
+            AND t.create_time BETWEEN #{request.startTime} AND #{request.endTime}
+        </if>
+        <if test="request.keyword != null and request.keyword != ''">
+            AND (t.target_id LIKE CONCAT('%', #{request.keyword}, '%')
+                 OR t.biz_type LIKE CONCAT('%', #{request.keyword}, '%'))
+        </if>
+        ORDER BY t.create_time DESC
+    </select>
+
+</mapper>

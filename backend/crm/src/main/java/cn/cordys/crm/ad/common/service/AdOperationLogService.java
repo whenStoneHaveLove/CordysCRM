@@ -1,5 +1,6 @@
 package cn.cordys.crm.ad.common.service;
 
+import cn.cordys.common.uid.IDGenerator;
 import cn.cordys.crm.ad.common.domain.AdOperationLog;
 import cn.cordys.crm.ad.common.mapper.ExtAdOperationLogMapper;
 import jakarta.annotation.Resource;
@@ -15,6 +16,9 @@ public class AdOperationLogService {
     private ExtAdOperationLogMapper operationLogMapper;
 
     public void save(AdOperationLog log) {
+        if (log.getId() == null || log.getId().isEmpty()) {
+            log.setId(IDGenerator.nextStr());
+        }
         if (log.getCreateTime() == null) {
             log.setCreateTime(System.currentTimeMillis());
         }
