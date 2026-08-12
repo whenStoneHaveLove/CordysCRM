@@ -16,7 +16,8 @@
           </n-space>
         </template>
 
-        <n-divider title-placement="left">{{ t('advertising.order.detail.tab.base') }}</n-divider>
+        <!-- 基本信息 -->
+        <n-divider title-placement="left">基本信息</n-divider>
         <n-descriptions label-placement="left" :column="3" bordered size="small">
           <n-descriptions-item label="合同编号">{{ detail.contract.contractNo || '-' }}</n-descriptions-item>
           <n-descriptions-item label="合同名称">{{ detail.contract.contractName || '-' }}</n-descriptions-item>
@@ -43,11 +44,24 @@
           <n-descriptions-item label="状态">{{ detail.statusLabel || '-' }}</n-descriptions-item>
         </n-descriptions>
 
-        <n-divider v-if="detail.contract.rebateTerms" title-placement="left">返点条款</n-divider>
-        <n-descriptions v-if="detail.contract.rebateTerms" label-placement="left" :column="1" bordered size="small">
-          <n-descriptions-item label="返点条款">{{ detail.contract.rebateTerms }}</n-descriptions-item>
+        <!-- 返点条款 -->
+        <template v-if="detail.contract.rebateTerms">
+          <n-divider title-placement="left">返点条款</n-divider>
+          <n-descriptions label-placement="left" :column="1" bordered size="small">
+            <n-descriptions-item label="返点条款">{{ detail.contract.rebateTerms }}</n-descriptions-item>
+          </n-descriptions>
+        </template>
+
+        <!-- 审计信息 -->
+        <n-divider title-placement="left">审计信息</n-divider>
+        <n-descriptions label-placement="left" :column="3" bordered size="small">
+          <n-descriptions-item label="创建人">{{ getUserName(detail.contract.createUser) }}</n-descriptions-item>
+          <n-descriptions-item label="创建时间">{{ fmtDateTime(detail.contract.createTime) }}</n-descriptions-item>
+          <n-descriptions-item label="修改人">{{ getUserName(detail.contract.updateUser) }}</n-descriptions-item>
+          <n-descriptions-item label="修改时间">{{ fmtDateTime(detail.contract.updateTime) }}</n-descriptions-item>
         </n-descriptions>
 
+        <!-- 用印记录 -->
         <n-divider title-placement="left">{{ t('advertising.contract.detail.tab.seal') }}</n-divider>
         <n-empty v-if="!detail.sealRecords || detail.sealRecords.length === 0" description="暂无用印记录" />
         <n-data-table
@@ -88,7 +102,8 @@
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
-  import { fmtAmount, fmtDate } from '../utils';
+  import useUserMap from '../useUserMap';
+  import { fmtAmount, fmtDate, fmtDateTime } from '../utils';
   import type { DataTableColumn } from 'naive-ui';
 
   const { t } = useI18n();
@@ -121,6 +136,8 @@
     return 'warning';
   }
 
+  const { loadUserMap, getUserName } = useUserMap();
+
   const sealColumns: DataTableColumn<AdSealRecordInfo>[] = [
     { key: 'sealType', title: '用印类型', width: 100, render: (row) => h('span', getAdSealTypeLabel(row.sealType)) },
     {
@@ -136,9 +153,9 @@
     },
     { key: 'appliedCopies', title: '申请份数', width: 90 },
     { key: 'actualCopies', title: '实际份数', width: 90 },
-    { key: 'applicantId', title: '申请人', width: 120 },
+    { key: 'applicantId', title: '申请人', width: 120, render: (row) => h('span', getUserName(row.applicantId)) },
     { key: 'applyRemark', title: '申请备注', width: 150, ellipsis: { tooltip: true } },
-    { key: 'approverId', title: '审批人', width: 120 },
+    { key: 'approverId', title: '审批人', width: 120, render: (row) => h('span', getUserName(row.approverId)) },
     { key: 'approveRemark', title: '审批备注', width: 150, ellipsis: { tooltip: true } },
     { key: 'approvedAt', title: '审批时间', width: 120, render: (row) => h('span', fmtDate(row.approvedAt)) },
   ];
@@ -158,7 +175,9 @@
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_CONTRACT });
   }
 
-  onMounted(fetchDetail);
+  onMounted(async () => {
+    await Promise.all([fetchDetail(), loadUserMap()]);
+  });
 </script>
 
 <style scoped>

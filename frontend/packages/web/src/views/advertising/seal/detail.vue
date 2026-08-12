@@ -13,7 +13,8 @@
           </n-space>
         </template>
 
-        <n-divider title-placement="left">{{ t('advertising.order.detail.tab.base') }}</n-divider>
+        <!-- 基本信息 -->
+        <n-divider title-placement="left">基本信息</n-divider>
         <n-descriptions label-placement="left" :column="3" bordered size="small">
           <n-descriptions-item label="合同编号">{{ detail.contractNo || '-' }}</n-descriptions-item>
           <n-descriptions-item label="业务主体">{{ detail.businessEntityName || '-' }}</n-descriptions-item>
@@ -22,11 +23,20 @@
           <n-descriptions-item label="申请份数">{{ detail.record.appliedCopies || '-' }}</n-descriptions-item>
           <n-descriptions-item label="实际盖章份数">{{ detail.record.actualCopies ?? '-' }}</n-descriptions-item>
           <n-descriptions-item label="状态">{{ detail.statusLabel || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="申请人">{{ detail.record.applicantId || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="申请人">{{ getUserName(detail.record.applicantId) }}</n-descriptions-item>
           <n-descriptions-item label="申请备注">{{ detail.record.applyRemark || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="审批人">{{ detail.record.approverId || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="审批时间">{{ fmtDate(detail.record.approvedAt) }}</n-descriptions-item>
+          <n-descriptions-item label="审批人">{{ getUserName(detail.record.approverId) }}</n-descriptions-item>
+          <n-descriptions-item label="审批时间">{{ fmtDateTime(detail.record.approvedAt) }}</n-descriptions-item>
           <n-descriptions-item label="审批备注">{{ detail.record.approveRemark || '-' }}</n-descriptions-item>
+        </n-descriptions>
+
+        <!-- 审计信息 -->
+        <n-divider title-placement="left">审计信息</n-divider>
+        <n-descriptions label-placement="left" :column="3" bordered size="small">
+          <n-descriptions-item label="创建人">{{ getUserName(detail.record.createUser) }}</n-descriptions-item>
+          <n-descriptions-item label="创建时间">{{ fmtDateTime(detail.record.createTime) }}</n-descriptions-item>
+          <n-descriptions-item label="修改人">{{ getUserName(detail.record.updateUser) }}</n-descriptions-item>
+          <n-descriptions-item label="修改时间">{{ fmtDateTime(detail.record.updateTime) }}</n-descriptions-item>
         </n-descriptions>
       </n-card>
     </n-spin>
@@ -46,7 +56,8 @@
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
-  import { fmtDate } from '../utils';
+  import useUserMap from '../useUserMap';
+  import { fmtDateTime } from '../utils';
 
   const { t } = useI18n();
   const route = useRoute();
@@ -72,7 +83,11 @@
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_SEAL });
   }
 
-  onMounted(fetchDetail);
+  const { loadUserMap, getUserName } = useUserMap();
+
+  onMounted(async () => {
+    await Promise.all([fetchDetail(), loadUserMap()]);
+  });
 </script>
 
 <style scoped>

@@ -55,7 +55,7 @@
                   placeholder="请选择行业类别"
                 />
               </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.signingEntity')">
+              <n-form-item-gi v-if="false" :span="1" :label="t('advertising.order.form.signingEntity')">
                 <n-input v-model:value="form.signingEntity" placeholder="签约主体" />
               </n-form-item-gi>
             </n-grid>
@@ -76,6 +76,16 @@
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.agentOrderNo')">
                 <n-input v-model:value="form.agentOrderNo" placeholder="代理订单号" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="2" label="下游媒体">
+                <n-select
+                  v-model:value="form.downstreamMediaIds"
+                  :options="downstreamMediaOptions"
+                  filterable
+                  multiple
+                  clearable
+                  placeholder="请选择下游媒体（至少选一个）"
+                />
               </n-form-item-gi>
             </n-grid>
 
@@ -263,23 +273,13 @@
               <span class="section-title">7. 附件与合同</span>
             </n-divider>
             <n-grid :cols="2" :x-gap="16">
-              <n-form-item-gi :span="1" label="关联合同" path="contractId">
+              <n-form-item-gi :span="2" label="关联合同" path="contractId">
                 <n-select
                   v-model:value="form.contractId"
                   :options="contractOptions"
                   filterable
                   clearable
                   :placeholder="form.orderType === 10 ? '请选择已生效的上游框架合同' : '请选择上游单笔合同（可后补）'"
-                />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" label="下游媒体">
-                <n-select
-                  v-model:value="form.downstreamMediaIds"
-                  :options="downstreamMediaOptions"
-                  filterable
-                  multiple
-                  clearable
-                  placeholder="请选择下游媒体（至少选一个）"
                 />
               </n-form-item-gi>
             </n-grid>
@@ -670,9 +670,9 @@
       const [beRes, cuRes, uaRes, dictRes, dmRes] = await Promise.all([
         getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
         getAdCustomerPage({ current: 1, pageSize: 200 }),
-        getAdUpstreamAgentPage({ current: 1, pageSize: 200 }),
+        getAdUpstreamAgentPage({ current: 1, pageSize: 200, status: 10 }),
         getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' }),
-        getAdDownstreamMediaPage({ current: 1, pageSize: 200 }),
+        getAdDownstreamMediaPage({ current: 1, pageSize: 200, status: 10 }),
       ]);
       businessEntityOptions.value = (beRes.list || []).map((it: any) => ({
         label: it.name || it.id,

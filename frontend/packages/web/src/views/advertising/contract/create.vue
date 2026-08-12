@@ -315,7 +315,7 @@
       }
     } else if (type === 20) {
       try {
-        const res = await getAdUpstreamAgentPage({ current: 1, pageSize: 200 });
+        const res = await getAdUpstreamAgentPage({ current: 1, pageSize: 200, status: 10 });
         relatedPartyOptions.value = (res.list || []).map((it: any) => ({
           label: it.name || it.id,
           value: it.id,
@@ -326,7 +326,7 @@
       }
     } else if (type === 30) {
       try {
-        const res = await getAdDownstreamMediaPage({ current: 1, pageSize: 200 });
+        const res = await getAdDownstreamMediaPage({ current: 1, pageSize: 200, status: 10 });
         relatedPartyOptions.value = (res.list || []).map((it: any) => ({
           label: it.name || it.id,
           value: it.id,

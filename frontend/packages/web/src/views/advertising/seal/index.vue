@@ -60,6 +60,7 @@
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  import useUserMap from '../useUserMap';
   import { fmtDate, fmtDateTime } from '../utils';
   import type { DataTableColumn } from 'naive-ui';
 
@@ -125,6 +126,8 @@
     return 'warning';
   }
 
+  const { loadUserMap, getUserName } = useUserMap();
+
   function openDetail(row: AdSealRecordListItem) {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_SEAL_DETAIL, params: { id: row.id } });
   }
@@ -165,8 +168,18 @@
     },
     { key: 'appliedCopies', title: t('advertising.seal.column.appliedCopies'), width: 90 },
     { key: 'actualCopies', title: t('advertising.seal.column.actualCopies'), width: 90 },
-    { key: 'applicantId', title: t('advertising.seal.column.applicant'), width: 120 },
-    { key: 'approverId', title: t('advertising.seal.column.approver'), width: 120 },
+    {
+      key: 'applicantId',
+      title: t('advertising.seal.column.applicant'),
+      width: 120,
+      render: (row) => h('span', getUserName(row.applicantId)),
+    },
+    {
+      key: 'approverId',
+      title: t('advertising.seal.column.approver'),
+      width: 120,
+      render: (row) => h('span', getUserName(row.approverId)),
+    },
     {
       key: 'approvedAt',
       title: t('advertising.seal.column.approvedAt'),
@@ -222,7 +235,10 @@
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_SEAL_APPLY });
   }
 
-  onMounted(fetchData);
+  onMounted(async () => {
+    await loadUserMap();
+    fetchData();
+  });
 </script>
 
 <style scoped>
