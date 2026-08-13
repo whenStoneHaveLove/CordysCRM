@@ -924,8 +924,17 @@ export const {
   getAdPaymentTodoPage,
 } = adPaymentApi;
 
-export const { createAdContract, updateAdContract, deleteAdContract, getAdContractDetail, getAdContractPage } =
-  adContractApi;
+export const {
+  createAdContract,
+  updateAdContract,
+  deleteAdContract,
+  getAdContractDetail,
+  getAdContractPage,
+  uploadDoubleSeal,
+  submitArchive,
+  approveArchive,
+  rejectArchive,
+} = adContractApi;
 
 export const { applyAdSeal, approveAdSeal, rejectAdSeal, uploadAdSeal, getAdSealDetail, getAdSealPage } = adSealApi;
 

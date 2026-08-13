@@ -40,11 +40,41 @@ export default function useAdContractApi(CDR: CordysAxios) {
     return CDR.post<AdContractPageResult>({ url: AdContractPageUrl, data }, { ignoreCancelToken: true });
   }
 
+  // 上传双盖附件（仅保存）
+  function uploadDoubleSeal(id: string, fileUrl: string) {
+    return CDR.put<AdContractInfo>({ url: `${AdContractUpdateUrl}/${id}/double-seal`, data: { fileUrl } });
+  }
+
+  // 提交归档审批
+  function submitArchive(id: string, fileUrl?: string) {
+    return CDR.put<AdContractInfo>({ url: `${AdContractUpdateUrl}/${id}/submit-archive`, data: { fileUrl } });
+  }
+
+  // 归档审批通过（老板）
+  function approveArchive(id: string, remark?: string) {
+    return CDR.put<AdContractInfo>({
+      url: `${AdContractUpdateUrl}/${id}/approve-archive`,
+      data: { remark },
+    });
+  }
+
+  // 归档审批驳回（老板）
+  function rejectArchive(id: string, remark?: string) {
+    return CDR.put<AdContractInfo>({
+      url: `${AdContractUpdateUrl}/${id}/reject-archive`,
+      data: { remark },
+    });
+  }
+
   return {
     createAdContract,
     updateAdContract,
     deleteAdContract,
     getAdContractDetail,
     getAdContractPage,
+    uploadDoubleSeal,
+    submitArchive,
+    approveArchive,
+    rejectArchive,
   };
 }

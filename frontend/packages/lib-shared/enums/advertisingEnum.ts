@@ -215,10 +215,14 @@ export const AdContractDirectionOptions = Object.keys(AdContractDirectionLabel).
 export enum AdContractTypeEnum {
   FRAMEWORK = 10,
   SINGLE = 20,
+  SERVICE = 30,
+  OTHER = 40,
 }
 export const AdContractTypeLabel: Record<number, string> = {
   [AdContractTypeEnum.FRAMEWORK]: '框架',
   [AdContractTypeEnum.SINGLE]: '单笔',
+  [AdContractTypeEnum.SERVICE]: '服务',
+  [AdContractTypeEnum.OTHER]: '其他',
 };
 export const AdContractTypeOptions = Object.keys(AdContractTypeLabel).map((k) => ({
   label: AdContractTypeLabel[Number(k)],
@@ -247,12 +251,18 @@ export enum AdSealStatusEnum {
   APPROVING = 10,
   SEALED = 20,
   REJECTED = 30,
+  ARCHIVE_APPROVING = 40,
+  ARCHIVE_REJECTED = 50,
+  ARCHIVED = 60,
 }
 export const AdSealStatusLabel: Record<number, string> = {
   [AdSealStatusEnum.NOT_APPLIED]: '未申请',
   [AdSealStatusEnum.APPROVING]: '审批中',
   [AdSealStatusEnum.SEALED]: '已用印',
   [AdSealStatusEnum.REJECTED]: '已驳回',
+  [AdSealStatusEnum.ARCHIVE_APPROVING]: '归档审批中',
+  [AdSealStatusEnum.ARCHIVE_REJECTED]: '归档审批驳回',
+  [AdSealStatusEnum.ARCHIVED]: '已归档',
 };
 export const AdSealStatusOptions = Object.keys(AdSealStatusLabel).map((k) => ({
   label: AdSealStatusLabel[Number(k)],

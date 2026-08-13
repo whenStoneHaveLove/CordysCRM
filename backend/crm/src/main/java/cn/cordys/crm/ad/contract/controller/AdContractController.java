@@ -14,16 +14,10 @@ import cn.cordys.security.SessionUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 广告合同控制器（M5 T-40/T-41，V3.1 §13.2）。
@@ -81,5 +75,37 @@ public class AdContractController {
     @Operation(summary = "合同分页（多筛选+关键字+主体隔离+排序）")
     public PagerWithOption<List<AdContractListResponse>> page(@RequestBody AdContractPageRequest request) {
         return adContractService.page(request, userId(), orgId());
+    }
+
+    // ===================== 归档审批 =====================
+
+    @PutMapping("/{id}/double-seal")
+    @CsPermission(PermissionConstants.AD_CONTRACT_UPDATE)
+    @Operation(summary = "上传双盖附件（仅保存，不改状态）")
+    public AdContract uploadDoubleSeal(@PathVariable("id") String id, @RequestBody Map<String, String> body) {
+        return adContractService.uploadDoubleSeal(id, body.get("fileUrl"), userId(), orgId());
+    }
+
+    @PutMapping("/{id}/submit-archive")
+    @CsPermission(PermissionConstants.AD_CONTRACT_UPDATE)
+    @Operation(summary = "提交归档审批（用印状态→归档审批中）")
+    public AdContract submitArchive(@PathVariable("id") String id, @RequestBody Map<String, String> body) {
+        return adContractService.submitArchive(id, body.get("fileUrl"), userId(), orgId());
+    }
+
+    @PutMapping("/{id}/approve-archive")
+    @CsPermission(PermissionConstants.AD_CONTRACT_UPDATE)
+    @Operation(summary = "归档审批通过（用印状态→已归档，老板操作）")
+    public AdContract approveArchive(@PathVariable("id") String id, @RequestBody(required = false) Map<String, String> body) {
+        String remark = body == null ? null : body.get("remark");
+        return adContractService.approveArchive(id, remark, userId(), orgId());
+    }
+
+    @PutMapping("/{id}/reject-archive")
+    @CsPermission(PermissionConstants.AD_CONTRACT_UPDATE)
+    @Operation(summary = "归档审批驳回（用印状态→归档审批驳回，老板操作）")
+    public AdContract rejectArchive(@PathVariable("id") String id, @RequestBody(required = false) Map<String, String> body) {
+        String remark = body == null ? null : body.get("remark");
+        return adContractService.rejectArchive(id, remark, userId(), orgId());
     }
 }

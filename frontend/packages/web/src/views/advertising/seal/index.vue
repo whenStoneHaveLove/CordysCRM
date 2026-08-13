@@ -183,8 +183,8 @@
     {
       key: 'approvedAt',
       title: t('advertising.seal.column.approvedAt'),
-      width: 120,
-      render: (row) => h('span', fmtDate(row.approvedAt)),
+      width: 160,
+      render: (row) => h('span', fmtDateTime(row.approvedAt)),
     },
     {
       key: 'createTime',

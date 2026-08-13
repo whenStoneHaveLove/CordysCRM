@@ -16,7 +16,10 @@ public enum SealStatus {
     NOT_APPLIED(0, "未申请"),
     APPROVING(10, "审批中"),
     SEALED(20, "已用印"),
-    REJECTED(30, "已驳回");
+    REJECTED(30, "已驳回"),
+    ARCHIVE_APPROVING(40, "归档审批中"),
+    ARCHIVE_REJECTED(50, "归档审批驳回"),
+    ARCHIVED(60, "已归档");
 
     private final int code;
     private final String label;

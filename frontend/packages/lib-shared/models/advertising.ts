@@ -449,12 +449,18 @@ export interface AdContractInfo {
   amount?: number;
   rebateTerms?: string;
   fileUrl?: string;
+  doubleSealFileUrl?: string;
+  archiveApproveRemark?: string;
+  archiveApproveUser?: string;
+  archiveApproveTime?: number;
   sealStatus?: number;
   status?: number;
   organizationId?: string;
   deleted?: number;
   createTime?: number;
   updateTime?: number;
+  createUser?: string;
+  updateUser?: string;
 }
 
 export interface AdContractListItem {

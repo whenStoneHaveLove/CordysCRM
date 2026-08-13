@@ -23,6 +23,7 @@
             c.valid_to          AS validTo,
             c.amount            AS amount,
             c.file_url          AS fileUrl,
+            c.double_seal_file_url AS doubleSealFileUrl,
             c.seal_status       AS sealStatus,
             c.status            AS status,
             c.organization_id   AS organizationId,

@@ -69,6 +69,7 @@ public class AdContractService {
     private BaseMapper<AdCustomer> customerMapper;
     @Resource
     private BaseMapper<AdUpstreamAgent> upstreamAgentMapper;
+    @Resource
     private BaseMapper<AdDownstreamMedia> downstreamMediaMapper;
     @Resource
     private BaseMapper<AdOrder> adOrderMapper;
@@ -159,6 +160,83 @@ public class AdContractService {
         c.setUpdateUser(userId);
         c.setUpdateTime(System.currentTimeMillis());
         contractMapper.update(c);
+    }
+
+    // ===================== 归档审批 =====================
+
+    /**
+     * 上传双盖附件（仅保存，不改状态）。
+     */
+    public AdContract uploadDoubleSeal(String id, String fileUrl, String userId, String orgId) {
+        AdContract c = requireContract(id);
+        c.setDoubleSealFileUrl(fileUrl);
+        c.setUpdateUser(userId);
+        c.setUpdateTime(System.currentTimeMillis());
+        contractMapper.update(c);
+        return c;
+    }
+
+    /**
+     * 提交归档审批：用印状态 → 归档审批中(40)。
+     * 前提：sealStatus == 20(已用印) 或 50(归档审批驳回)。
+     */
+    @OperationLog(module = "AD_CONTRACT", action = "SUBMIT_ARCHIVE", targetId = "#id")
+    public AdContract submitArchive(String id, String fileUrl, String userId, String orgId) {
+        AdContract c = requireContract(id);
+        if (c.getSealStatus() != SealStatus.SEALED.getCode()
+                && c.getSealStatus() != SealStatus.ARCHIVE_REJECTED.getCode()) {
+            throw new GenericException("仅已用印或归档审批驳回的合同可提交归档审批");
+        }
+        if (fileUrl != null && !fileUrl.isBlank()) {
+            c.setDoubleSealFileUrl(fileUrl);
+        }
+        c.setSealStatus(SealStatus.ARCHIVE_APPROVING.getCode());
+        c.setUpdateUser(userId);
+        c.setUpdateTime(System.currentTimeMillis());
+        contractMapper.update(c);
+        return c;
+    }
+
+    /**
+     * 归档审批通过：用印状态 → 已归档(60)。
+     * 前提：sealStatus == 40(归档审批中)。
+     */
+    @OperationLog(module = "AD_CONTRACT", action = "APPROVE_ARCHIVE", targetId = "#id")
+    public AdContract approveArchive(String id, String remark, String userId, String orgId) {
+        assertRole(ROLE_BOSS);
+        AdContract c = requireContract(id);
+        if (c.getSealStatus() != SealStatus.ARCHIVE_APPROVING.getCode()) {
+            throw new GenericException("仅归档审批中的合同可审批");
+        }
+        c.setSealStatus(SealStatus.ARCHIVED.getCode());
+        c.setArchiveApproveRemark(remark);
+        c.setArchiveApproveUser(userId);
+        c.setArchiveApproveTime(System.currentTimeMillis());
+        c.setUpdateUser(userId);
+        c.setUpdateTime(System.currentTimeMillis());
+        contractMapper.update(c);
+        return c;
+    }
+
+    /**
+     * 归档审批驳回：用印状态 → 归档审批驳回(50)。
+     * 前提：sealStatus == 40(归档审批中)。
+     */
+    @OperationLog(module = "AD_CONTRACT", action = "REJECT_ARCHIVE", targetId = "#id")
+    public AdContract rejectArchive(String id, String remark, String userId, String orgId) {
+        assertRole(ROLE_BOSS);
+        AdContract c = requireContract(id);
+        if (c.getSealStatus() != SealStatus.ARCHIVE_APPROVING.getCode()) {
+            throw new GenericException("仅归档审批中的合同可驳回");
+        }
+        c.setSealStatus(SealStatus.ARCHIVE_REJECTED.getCode());
+        c.setArchiveApproveRemark(remark);
+        c.setArchiveApproveUser(userId);
+        c.setArchiveApproveTime(System.currentTimeMillis());
+        c.setUpdateUser(userId);
+        c.setUpdateTime(System.currentTimeMillis());
+        contractMapper.update(c);
+        return c;
     }
 
     // ===================== 详情 / 分页 =====================

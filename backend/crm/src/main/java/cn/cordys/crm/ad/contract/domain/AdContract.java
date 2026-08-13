@@ -27,7 +27,7 @@ public class AdContract extends BaseModel {
     @Schema(description = "合同方向:10上游/20下游")
     private Integer contractDirection;
 
-    @Schema(description = "合同类型:10框架/20单笔")
+    @Schema(description = "合同类型:10框架/20单笔/30服务/40其他")
     private Integer contractType;
 
     @Schema(description = "关联方id")
@@ -57,10 +57,22 @@ public class AdContract extends BaseModel {
     @Schema(description = "返点条款")
     private String rebateTerms;
 
-    @Schema(description = "合同文件(单笔用印前可空,L-07)")
+    @Schema(description = "用印附件URL")
     private String fileUrl;
 
-    @Schema(description = "用印状态:0未申请/10审批中/20已用印/30已驳回")
+    @Schema(description = "双盖附件URL")
+    private String doubleSealFileUrl;
+
+    @Schema(description = "归档审批意见")
+    private String archiveApproveRemark;
+
+    @Schema(description = "归档审批人")
+    private String archiveApproveUser;
+
+    @Schema(description = "归档审批时间")
+    private Long archiveApproveTime;
+
+    @Schema(description = "用印状态:0未申请/10审批中/20已用印/30已驳回/40归档审批中/50归档审批驳回/60已归档")
     private Integer sealStatus = 0;
 
     @Schema(description = "状态:10生效/20失效/30已作废")

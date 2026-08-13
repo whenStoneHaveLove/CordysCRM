@@ -126,7 +126,7 @@ public class AdSealRecordService {
     }
 
     /**
-     * 用印审批通过（填实际份数）。合同若已有文件直接置已用印(20)，否则保持审批中(10)待上传。
+     * 用印审批通过（填实际份数）。合同 seal_status=已用印(20)。
      */
     @OperationLog(module = "AD_SEAL", action = "APPROVE", targetId = "#id")
     public AdSealRecord approve(String id, AdSealApproveRequest request, String userId, String orgId) {
@@ -146,13 +146,10 @@ public class AdSealRecordService {
         sealRecordMapper.update(s);
 
         AdContract contract = requireContract(s.getContractId());
-        boolean hasFile = contract.getFileUrl() != null && !contract.getFileUrl().isBlank();
-        if (hasFile) {
-            contract.setSealStatus(SealStatus.SEALED.getCode());
-            contract.setUpdateUser(userId);
-            contract.setUpdateTime(now);
-            contractMapper.update(contract);
-        }
+        contract.setSealStatus(SealStatus.SEALED.getCode());
+        contract.setUpdateUser(userId);
+        contract.setUpdateTime(now);
+        contractMapper.update(contract);
         return s;
     }
 

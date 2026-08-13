@@ -33,7 +33,7 @@ public class AdContractListResponse {
     @Schema(description = "合同方向标签")
     private String contractDirectionLabel;
 
-    @Schema(description = "合同类型:10框架/20单笔")
+    @Schema(description = "合同类型:10框架/20单笔/30服务/40其他")
     private Integer contractType;
 
     @Schema(description = "合同类型标签")
@@ -63,10 +63,13 @@ public class AdContractListResponse {
     @Schema(description = "合同金额")
     private BigDecimal amount;
 
-    @Schema(description = "合同文件")
+    @Schema(description = "用印附件URL")
     private String fileUrl;
 
-    @Schema(description = "用印状态:0未申请/10审批中/20已用印/30已驳回")
+    @Schema(description = "双盖附件URL")
+    private String doubleSealFileUrl;
+
+    @Schema(description = "用印状态:0未申请/10审批中/20已用印/30已驳回/40归档审批中/50归档审批驳回/60已归档")
     private Integer sealStatus;
 
     @Schema(description = "用印状态标签")

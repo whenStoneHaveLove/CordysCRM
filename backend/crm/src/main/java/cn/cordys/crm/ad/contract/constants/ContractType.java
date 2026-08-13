@@ -12,7 +12,9 @@ import java.util.Map;
  */
 public enum ContractType {
     FRAMEWORK(10, "框架"),
-    SINGLE(20, "单笔");
+    SINGLE(20, "单笔"),
+    SERVICE(30, "服务"),
+    OTHER(40, "其他");
 
     private final int code;
     private final String label;

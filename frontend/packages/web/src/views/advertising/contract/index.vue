@@ -141,9 +141,20 @@
         return 'success';
       case 30:
         return 'error';
+      case 40:
+        return 'info';
+      case 50:
+        return 'error';
+      case 60:
+        return 'success';
       default:
         return 'default';
     }
+  }
+
+  // 编辑按钮：仅未申请(0) 和 已驳回(30) 时显示
+  function canEdit(row: AdContractListItem): boolean {
+    return row.sealStatus === 0 || row.sealStatus === 30;
   }
 
   function openDetail(row: AdContractListItem) {
@@ -238,11 +249,13 @@
                 { size: 'small', onClick: () => openDetail(row) },
                 { default: () => t('advertising.order.detail') }
               ),
-              h(
-                NButton,
-                { size: 'small', type: 'primary', onClick: () => openEdit(row) },
-                { default: () => t('advertising.order.edit') }
-              ),
+              canEdit(row)
+                ? h(
+                    NButton,
+                    { size: 'small', type: 'primary', onClick: () => openEdit(row) },
+                    { default: () => t('advertising.order.edit') }
+                  )
+                : null,
             ],
           }
         ),
