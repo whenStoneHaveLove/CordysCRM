@@ -39,4 +39,7 @@ export const adLogActionOption = [
   { value: 'CANCEL', label: 'advertising.log.action.CANCEL' },
   { value: 'CHANGE_REFUND', label: 'advertising.log.action.CHANGE_REFUND' },
   { value: 'CHANGE_BAD_DEBT', label: 'advertising.log.action.CHANGE_BAD_DEBT' },
+  { value: 'SUBMIT_ARCHIVE', label: 'advertising.log.action.SUBMIT_ARCHIVE' },
+  { value: 'APPROVE_ARCHIVE', label: 'advertising.log.action.APPROVE_ARCHIVE' },
+  { value: 'REJECT_ARCHIVE', label: 'advertising.log.action.REJECT_ARCHIVE' },
 ];
