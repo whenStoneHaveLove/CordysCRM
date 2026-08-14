@@ -200,10 +200,6 @@ public class OperationLogAspect {
      * 约定：module 如 AD_ORDER 对应 extAdOrderMapper（首字母小写）。
      */
     private String moduleToMapperBean(String module) {
-        // 特殊映射
-        if ("AD_PAYMENT".equalsIgnoreCase(module)) {
-            return "extAdPaymentRecordMapper";
-        }
         // AD_ORDER -> ExtAdOrderMapper -> extAdOrderMapper
         String[] parts = module.toLowerCase().split("_");
         StringBuilder sb = new StringBuilder();

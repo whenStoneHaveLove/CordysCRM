@@ -99,6 +99,7 @@
             `receipt_account_period_days`, `payment_method`, `payment_prepay_mode`, `payment_prepay_ratio`,
             `payment_prepay_amount`, `payment_prepay_deadline`, `payment_postpay_trigger`,
             `payment_postpay_days`, `invoice_status`, `receipt_status`, `media_payment_status`,
+            `receipt_done`, `payment_done`,
             `invoiced_amount`, `received_amount`, `media_paid_amount`, `bad_debt_amount`,
             `needs_red_invoice`, `account_period_start_date`, `account_period_end_date`,
             `execution_completed_at`, `archived_at`, `voided_at`, `void_reason`, `ext_json`,
@@ -108,6 +109,29 @@
         WHERE status = 50
           AND deleted = 0
           AND `delivery_end_date` &lt; #{now}
+    </select>
+
+    <!-- 结算中的订单（自动归档扫描 80→90） -->
+    <select id="selectSettlement" resultType="cn.cordys.crm.ad.order.domain.AdOrder">
+        SELECT
+            `id`, `order_no`, `order_name`, `business_entity_id`, `customer_id`, `industry_code`,
+            `signing_entity`, `order_type`, `upstream_agent_id`, `agent_order_no`, `creator_id`,
+            `status`, `total_amount`, `rebate_mode`, `rebate_value`, `no_rebate_amount`,
+            `rebate_amount`, `receivable_amount`, `media_payable_amount`, `delivery_start_date`,
+            `delivery_end_date`, `delivery_volume`, `remark`, `receipt_method`, `receipt_prepay_mode`,
+            `receipt_prepay_ratio`, `receipt_prepay_amount`, `receipt_prepay_deadline`,
+            `receipt_account_period_days`, `payment_method`, `payment_prepay_mode`, `payment_prepay_ratio`,
+            `payment_prepay_amount`, `payment_prepay_deadline`, `payment_postpay_trigger`,
+            `payment_postpay_days`, `invoice_status`, `receipt_status`, `media_payment_status`,
+            `receipt_done`, `payment_done`,
+            `invoiced_amount`, `received_amount`, `media_paid_amount`, `bad_debt_amount`,
+            `needs_red_invoice`, `account_period_start_date`, `account_period_end_date`,
+            `execution_completed_at`, `archived_at`, `voided_at`, `void_reason`, `ext_json`,
+            `currency`, `tenant_id`, `organization_id`, `create_time`, `update_time`,
+            `create_user`, `update_user`, `deleted`
+        FROM ad_order
+        WHERE status = 80
+          AND deleted = 0
     </select>
 
     <!-- 统计客户关联订单数 -->

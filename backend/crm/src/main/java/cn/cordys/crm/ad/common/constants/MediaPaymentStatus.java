@@ -8,11 +8,9 @@ import java.math.BigDecimal;
  * 媒体付款进度枚举（V3.1 §6.3/§13.4，0未付/10部分/20全额）。
  *
  * <p>对应 {@code ad_order.media_payment_status} 字段，与 {@link InvoiceStatus} 同源的 0/10/20 进度语义。
- * 退票/退款不作为状态值，而是以 {@code ad_payment_record.type=50(退款)/60(坏账)} 明细行表达
- * （见 {@code cn.cordys.crm.ad.payment.constants.PaymentType}）。</p>
+ * 退票/退款不作为状态值，而是以收款/付款单的类型字段表达。</p>
  *
- * <p>状态推导：{@link #compute(BigDecimal, BigDecimal)} 由「累计已付」与「媒体应付」计算 0/10/20，
- * 与上游开票/收款进度推导共用同一数学口径（见 {@code AdPaymentRecordService}）。</p>
+ * <p>状态推导：{@link #compute(BigDecimal, BigDecimal)} 由「累计已付」与「媒体应付」计算 0/10/20。</p>
  */
 @Getter
 public enum MediaPaymentStatus {

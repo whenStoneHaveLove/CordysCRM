@@ -9,7 +9,6 @@ import cn.cordys.crm.ad.order.dto.request.AdOrderPageRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderSaveRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderVoidRequest;
 import cn.cordys.crm.ad.order.dto.response.AdOrderDetailResponse;
-import cn.cordys.crm.ad.order.dto.response.AdOrderFinancialPlan;
 import cn.cordys.crm.ad.order.dto.response.AdOrderListResponse;
 import cn.cordys.crm.ad.order.domain.AdOrder;
 import cn.cordys.crm.ad.order.service.AdOrderService;
@@ -86,25 +85,11 @@ public class AdOrderController {
         return adOrderService.approve(id, request, userId(), orgId());
     }
 
-    @PostMapping("/{id}/financial-pre-action")
-    @CsPermission(PermissionConstants.AD_ORDER_READ)
-    @Operation(summary = "财务前置动作（L-05 矩阵：推导 30/40/50 与财务步骤）")
-    public AdOrderFinancialPlan financialPreAction(@PathVariable("id") String id) {
-        return adOrderService.financialPreAction(id, userId(), orgId());
-    }
-
     @PostMapping("/{id}/confirm-execute")
     @CsPermission(PermissionConstants.AD_ORDER_READ)
-    @Operation(summary = "确认执行（20/30/40→50）")
+    @Operation(summary = "确认执行（45→50）")
     public AdOrder confirmExecute(@PathVariable("id") String id) {
         return adOrderService.confirmExecute(id, userId(), orgId());
-    }
-
-    @PostMapping("/{id}/complete-execute")
-    @CsPermission(PermissionConstants.AD_ORDER_READ)
-    @Operation(summary = "执行完成（50→70；需 ≥1 合同，L-26）")
-    public AdOrder completeExecute(@PathVariable("id") String id) {
-        return adOrderService.completeExecute(id, userId(), orgId());
     }
 
     @PostMapping("/{id}/void")

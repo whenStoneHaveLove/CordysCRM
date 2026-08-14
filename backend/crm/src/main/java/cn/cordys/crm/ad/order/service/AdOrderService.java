@@ -29,7 +29,6 @@ import cn.cordys.crm.ad.order.dto.request.AdOrderSaveRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderVoidRequest;
 import cn.cordys.crm.ad.order.dto.response.AdOrderAllowedAction;
 import cn.cordys.crm.ad.order.dto.response.AdOrderDetailResponse;
-import cn.cordys.crm.ad.order.dto.response.AdOrderFinancialPlan;
 import cn.cordys.crm.ad.order.dto.response.AdOrderListResponse;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderChangeMapper;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderContractMapper;
@@ -222,12 +221,12 @@ public class AdOrderService {
     // ===================== 状态流转 =====================
 
     /**
-     * 提交：0→10（或 L-14 开关关闭时 0→20）。守卫 §6.2 附件/合同齐备。
+     * 提交：0→10（或 L-14 开关关闭时 0→45 待执行）。守卫 §6.2 附件/合同齐备。
      */
     @OperationLog(module = "AD_ORDER", action = "SUBMIT", targetId = "#id")
     public AdOrder submit(String id, String userId, String orgId) {
         AdOrder order = requireOrder(id);
-        int to = approvalEnabled ? OrderStateMachine.PENDING_BOSS_APPROVAL : OrderStateMachine.APPROVED;
+        int to = approvalEnabled ? OrderStateMachine.PENDING_BOSS_APPROVAL : OrderStateMachine.PENDING_EXECUTE;
         assertTransition(order.getStatus(), to);
         // §6.2 提交守卫
         requireAttachment(order.getId(), 10, "提交前需上传【盖章排期】附件(类型10)");
@@ -246,13 +245,13 @@ public class AdOrderService {
     }
 
     /**
-     * 老板审核：通过 10→20；驳回 10→0（保留附件 L-21）。
+     * 老板审核：通过 10→45（待执行）；驳回 10→0（保留附件 L-21）。
      */
     @OperationLog(module = "AD_ORDER", action = "APPROVE", targetId = "#id")
     public AdOrder approve(String id, AdOrderApproveRequest request, String userId, String orgId) {
         AdOrder order = requireOrder(id);
         boolean reject = "REJECT".equalsIgnoreCase(request.getAction());
-        int to = reject ? OrderStateMachine.DRAFT : OrderStateMachine.APPROVED;
+        int to = reject ? OrderStateMachine.DRAFT : OrderStateMachine.PENDING_EXECUTE;
         assertTransition(OrderStateMachine.PENDING_BOSS_APPROVAL, to);
         order.setUpdateUser(userId);
         order.setUpdateTime(System.currentTimeMillis());
@@ -278,34 +277,7 @@ public class AdOrderService {
     }
 
     /**
-     * 财务前置动作（L-05 矩阵）。仅审核通过(20) 可触发，推导 30/40/50 与所需财务步骤。
-     * 仅做订单侧状态流转；ad_payment_record 明细由 M4 负责（本方法不阻塞）。
-     */
-    @OperationLog(module = "AD_ORDER", action = "FINANCIAL_PRE_ACTION", targetId = "#id")
-    public AdOrderFinancialPlan financialPreAction(String id, String userId, String orgId) {
-        AdOrder order = requireOrder(id);
-        if (order.getStatus() != OrderStateMachine.APPROVED) {
-            throw new GenericException("仅【审核通过】状态可执行财务前置");
-        }
-        AdOrderFinancialPlan plan = amountCalculator.buildFinancialPlan(order);
-        int to = plan.getToStatus();
-        if (!OrderStateMachine.canTransit(OrderStateMachine.APPROVED, to, approvalEnabled)) {
-            throw new GenericException("财务前置流转不合法: 20 -> " + to);
-        }
-        assertRole(OrderStateMachine.requiredRoleFor(OrderStateMachine.APPROVED, to));
-        order.setReceiptPrepayAmount(plan.getReceiptPrepayAmount());
-        order.setPaymentPrepayAmount(plan.getPaymentPrepayAmount());
-        order.setUpdateUser(userId);
-        order.setUpdateTime(System.currentTimeMillis());
-        int from = order.getStatus();
-        order.setStatus(to);
-        adOrderMapper.update(order);
-        recordLog(order, OrderStateMachine.TRIGGER_AUTO_PREPAY, from, to, userId, orgId);
-        return plan;
-    }
-
-    /**
-     * 确认执行：20/30/40 → 50（执行中）。
+     * 确认执行：45（待执行）→ 50（执行中）。
      */
     @OperationLog(module = "AD_ORDER", action = "CONFIRM_EXECUTE", targetId = "#id")
     public AdOrder confirmExecute(String id, String userId, String orgId) {
@@ -317,48 +289,12 @@ public class AdOrderService {
         order.setUpdateTime(System.currentTimeMillis());
         order.setStatus(to);
         adOrderMapper.update(order);
-        recordLog(order, OrderStateMachine.TRIGGER_AUTO_EXECUTE, from, to, userId, orgId);
+        recordLog(order, OrderStateMachine.TRIGGER_CONFIRM_EXECUTE, from, to, userId, orgId);
         return order;
     }
 
     /**
-     * 执行完成：50→70。
-     * 守卫：框架订单必须关联合同（L-26），单笔订单可后补但关联后必须有附件；并按 L-09 起算账期。
-     */
-    @OperationLog(module = "AD_ORDER", action = "COMPLETE_EXECUTE", targetId = "#id")
-    public AdOrder completeExecute(String id, String userId, String orgId) {
-        AdOrder order = requireOrder(id);
-        int from = order.getStatus();
-        int to = OrderStateMachine.EXECUTION_COMPLETED;
-        assertTransition(from, to);
-        // 框架订单强制要求关联合同；单笔订单可后补（没关联则不校验）
-        if (order.getOrderType() != null && order.getOrderType() == OrderType.FRAMEWORK.getCode()) {
-            requireContract(order.getId(), "执行完成前需至少关联一份合同(L-26)");
-        }
-        // 单笔合同订单：执行完成前必须上传合同附件
-        requireSingleContractUploaded(order);
-        order.setExecutionCompletedAt(new Date());
-        // L-09 账期起算（账期收款方式）
-        if (order.getReceiptMethod() != null
-                && order.getReceiptMethod() == 20
-                && order.getReceiptAccountPeriodDays() != null) {
-            Date start = new Date();
-            order.setAccountPeriodStartDate(start);
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(start);
-            cal.add(Calendar.DAY_OF_MONTH, order.getReceiptAccountPeriodDays());
-            order.setAccountPeriodEndDate(cal.getTime());
-        }
-        order.setUpdateUser(userId);
-        order.setUpdateTime(System.currentTimeMillis());
-        order.setStatus(to);
-        adOrderMapper.update(order);
-        recordLog(order, OrderStateMachine.TRIGGER_COMPLETE_EXECUTION, from, to, userId, orgId);
-        return order;
-    }
-
-    /**
-     * 作废：→100（允许自 0/10/50/60/70/80）。保留附件(L-21)；已开票置红冲标记(L-27)。
+     * 作废：→100（允许自除已归档外的任意状态）。保留附件(L-21)；已开票置红冲标记(L-27)。
      */
     @OperationLog(module = "AD_ORDER", action = "VOID", targetId = "#id")
     public AdOrder voidOrder(String id, AdOrderVoidRequest request, String userId, String orgId) {
@@ -425,6 +361,45 @@ public class AdOrderService {
             order.setUpdateTime(System.currentTimeMillis());
             adOrderMapper.update(order);
             recordLog(order, ACTION_OVERDUE, from, OrderStateMachine.SETTLEMENT,
+                    SessionUtils.getUserId(), order.getOrganizationId());
+            count++;
+        }
+        return count;
+    }
+
+    // ===================== 自动归档（由 guarded job 触发） =====================
+
+    /**
+     * 扫描结算中(80)订单，满足「有关联合同 + 收款已收 + 付款已付」后自动归档到已归档(90)。
+     * 由 {@code AdOrderOverdueJob} 每分钟调用。
+     */
+    public int checkArchive() {
+        List<AdOrder> settlement = extAdOrderMapper.selectSettlement();
+        if (settlement == null || settlement.isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        for (AdOrder order : settlement) {
+            // 1) 必须关联合同
+            List<AdOrderContract> contracts = orderContractMapper.selectByOrderId(order.getId());
+            if (contracts == null || contracts.isEmpty()) {
+                continue;
+            }
+            // 2) 收款已收 + 付款已付
+            boolean receiptDone = order.getReceiptDone() != null && order.getReceiptDone() == 1;
+            boolean paymentDone = order.getPaymentDone() != null && order.getPaymentDone() == 1;
+            if (!receiptDone || !paymentDone) {
+                continue;
+            }
+            if (!OrderStateMachine.canTransit(order.getStatus(), OrderStateMachine.ARCHIVED, approvalEnabled)) {
+                continue;
+            }
+            int from = order.getStatus();
+            order.setArchivedAt(new Date());
+            order.setStatus(OrderStateMachine.ARCHIVED);
+            order.setUpdateTime(System.currentTimeMillis());
+            adOrderMapper.update(order);
+            recordLog(order, OrderStateMachine.TRIGGER_AUTO_ARCHIVE, from, OrderStateMachine.ARCHIVED,
                     SessionUtils.getUserId(), order.getOrganizationId());
             count++;
         }
@@ -502,19 +477,6 @@ public class AdOrderService {
         long cnt = attachmentMapper.selectByOrderIdAndType(orderId, type).size();
         if (cnt == 0) {
             throw new GenericException(message);
-        }
-    }
-
-    /**
-     * 单笔合同订单执行完成前必须先关联单笔合同（附件统一在合同管理页面上传）。
-     */
-    private void requireSingleContractUploaded(AdOrder order) {
-        if (order.getOrderType() == null || order.getOrderType() != OrderType.SINGLE.getCode()) {
-            return;
-        }
-        List<AdOrderContract> contracts = orderContractMapper.selectByOrderId(order.getId());
-        if (contracts.isEmpty()) {
-            throw new GenericException("单笔合同订单执行完成前必须先关联单笔合同");
         }
     }
 

@@ -135,6 +135,12 @@ public class AdOrder extends BaseModel {
     @Schema(description = "媒体付款进度:0未付/10部分/20全额")
     private Integer mediaPaymentStatus = 0;
 
+    @Schema(description = "收款状态:0待收/1已收")
+    private Integer receiptDone = 0;
+
+    @Schema(description = "付款状态:0待付/1已付")
+    private Integer paymentDone = 0;
+
     @Schema(description = "已开票累计")
     private BigDecimal invoicedAmount = BigDecimal.ZERO;
 

@@ -44,6 +44,12 @@ public interface ExtAdOrderMapper extends BaseMapper<AdOrder> {
     List<AdOrder> selectOverdue(@Param("now") Date now);
 
     /**
+     * 查询结算中的订单（自动归档扫描 80→90）。
+     * 条件：status=80(SETTLEMENT) 且 deleted=0。
+     */
+    List<AdOrder> selectSettlement();
+
+    /**
      * 统计某客户关联的订单数。
      */
     long countByCustomerId(@Param("customerId") String customerId, @Param("orgId") String orgId);
