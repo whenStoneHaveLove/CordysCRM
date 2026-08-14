@@ -289,15 +289,21 @@ public class PermissionConstants {
     public static final String AD_ORDER_CHANGE_REJECT = "AD_ORDER_CHANGE:REJECT";
     /*------ end: AD_ORDER_CHANGE ------*/
 
-    /*------ start: AD_PAYMENT（§3.3 / §9.2） ------*/
-    public static final String AD_PAYMENT_READ = "AD_PAYMENT:READ";
-    public static final String AD_PAYMENT_CONFIRM_PREPAY = "AD_PAYMENT:CONFIRM_PREPAY";
-    public static final String AD_PAYMENT_PAY_MEDIA_PREPAY = "AD_PAYMENT:PAY_MEDIA_PREPAY";
-    public static final String AD_PAYMENT_INVOICE = "AD_PAYMENT:INVOICE";
-    public static final String AD_PAYMENT_RECEIVE = "AD_PAYMENT:RECEIVE";
-    public static final String AD_PAYMENT_PAY_MEDIA_POSTPAY = "AD_PAYMENT:PAY_MEDIA_POSTPAY";
-    public static final String AD_PAYMENT_RED_INVOICE_CLEAR = "AD_PAYMENT:RED_INVOICE_CLEAR";
-    /*------ end: AD_PAYMENT ------*/
+    /*------ start: AD_RECEIPT（收款单） ------*/
+    public static final String AD_RECEIPT_READ = "AD_RECEIPT:READ";
+    public static final String AD_RECEIPT_CREATE = "AD_RECEIPT:CREATE";
+    public static final String AD_RECEIPT_UPDATE = "AD_RECEIPT:UPDATE";
+    public static final String AD_RECEIPT_DELETE = "AD_RECEIPT:DELETE";
+    public static final String AD_RECEIPT_APPROVE = "AD_RECEIPT:APPROVE";
+    /*------ end: AD_RECEIPT ------*/
+
+    /*------ start: AD_PAYOUT（付款单） ------*/
+    public static final String AD_PAYOUT_READ = "AD_PAYOUT:READ";
+    public static final String AD_PAYOUT_CREATE = "AD_PAYOUT:CREATE";
+    public static final String AD_PAYOUT_UPDATE = "AD_PAYOUT:UPDATE";
+    public static final String AD_PAYOUT_DELETE = "AD_PAYOUT:DELETE";
+    public static final String AD_PAYOUT_APPROVE = "AD_PAYOUT:APPROVE";
+    /*------ end: AD_PAYOUT ------*/
 
     /*------ start: AD_CONTRACT（§3.3 / §9.3） ------*/
     public static final String AD_CONTRACT_READ = "AD_CONTRACT:READ";

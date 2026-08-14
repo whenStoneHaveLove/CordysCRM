@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.cordys.crm.ad.receipt.mapper.ExtAdReceiptMapper">
+
+    <!-- 收款单分页列表：多筛选 + 关键字(单号/订单号) + 排序 -->
+    <select id="pageList" resultType="cn.cordys.crm.ad.receipt.dto.response.AdReceiptListResponse">
+        SELECT
+            r.id              AS id,
+            r.receipt_no      AS receiptNo,
+            r.order_id        AS orderId,
+            o.order_name      AS orderName,
+            r.amount          AS amount,
+            r.receipt_time    AS receiptTime,
+            r.type            AS type,
+            r.status          AS status,
+            r.remark          AS remark,
+            r.create_time     AS createTime
+        FROM ad_receipt r
+        LEFT JOIN ad_order o ON o.id = r.order_id AND o.deleted = 0
+        WHERE r.organization_id = #{request.organizationId}
+          AND r.deleted = 0
+        <if test="request.orderId != null and request.orderId != ''">
+            AND r.order_id = #{request.orderId}
+        </if>
+        <if test="request.status != null">
+            AND r.status = #{request.status}
+        </if>
+        <if test="request.type != null">
+            AND r.type = #{request.type}
+        </if>
+        <if test="request.keyword != null and request.keyword != ''">
+            AND (r.receipt_no LIKE CONCAT('%', #{request.keyword}, '%')
+                 OR o.order_no LIKE CONCAT('%', #{request.keyword}, '%'))
+        </if>
+        <include refid="cn.cordys.common.mapper.CommonMapper.sort">
+            <property name="sort" value="request.sort"/>
+            <property name="prefix" value="r"/>
+            <property name="defaultSort" value="create_time DESC"/>
+        </include>
+    </select>
+
+    <!-- 按订单查询收款单（一个订单一个收款单） -->
+    <select id="selectByOrderId" resultType="cn.cordys.crm.ad.receipt.domain.AdReceipt">
+        SELECT * FROM ad_receipt
+        WHERE order_id = #{orderId} AND deleted = 0
+        LIMIT 1
+    </select>
+
+</mapper>
