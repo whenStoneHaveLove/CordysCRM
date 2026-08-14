@@ -550,6 +550,8 @@ export interface AdSealRecordInfo {
   approveRemark?: string;
   organizationId?: string;
   deleted?: number;
+  createUser?: string;
+  updateUser?: string;
   createTime?: number;
   updateTime?: number;
 }

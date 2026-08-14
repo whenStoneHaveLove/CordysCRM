@@ -275,7 +275,14 @@
   async function searchData() {
     const { time, ...otherForm } = form.value;
     if (activeTab.value === 'operation') {
-      setLoadListParams({ ...otherForm, startTime: time[0], endTime: time[1] });
+      setLoadListParams({
+        action: otherForm.action ?? undefined,
+        module: otherForm.module ?? undefined,
+        operator: otherForm.operator ?? undefined,
+        keyword: otherForm.keyword ?? undefined,
+        startTime: time[0],
+        endTime: time[1],
+      });
       await loadList();
       crmTableRef.value?.scrollTo({ top: 0 });
     } else {
