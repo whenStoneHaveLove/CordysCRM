@@ -94,6 +94,8 @@ export interface AdOrderListItem {
   creatorId?: string;
   createTime?: number;
   missingContract?: number;
+  receiptDone?: number;
+  paymentDone?: number;
 }
 
 export interface AdOrderAttachment {
@@ -203,18 +205,6 @@ export interface AdOrderDetail {
   allowedActions: AdOrderAllowedAction[];
 }
 
-export interface AdFinancialStep {
-  action?: string;
-  amount?: number;
-  description?: string;
-}
-export interface AdOrderFinancialPlan {
-  toStatus?: number;
-  receiptPrepayAmount?: number;
-  paymentPrepayAmount?: number;
-  steps?: AdFinancialStep[];
-}
-
 export type AdOrderPageResult = CommonList<AdOrderListItem>;
 
 /* ----------------------------- 改单 ----------------------------- */
@@ -261,137 +251,6 @@ export interface AdOrderChangeDetail {
 }
 
 export type AdOrderChangePageResult = CommonList<AdOrderChangeListItem>;
-
-/* ----------------------------- 收付款 ----------------------------- */
-
-export interface AdPaymentRecordPageParams {
-  current?: number;
-  pageSize?: number;
-  sort?: { name?: string; type?: string };
-  keyword?: string;
-  orderId?: string | null;
-  businessEntityId?: string | null;
-  direction?: number | null;
-  type?: number | null;
-  occurDateFrom?: number | null;
-  occurDateTo?: number | null;
-  [key: string]: any;
-}
-
-export interface AdPaymentRecordCreateParams {
-  orderId?: string;
-  direction?: number;
-  type?: number;
-  amount?: number;
-  occurDate?: number | null;
-  invoiceNo?: string;
-  resourceId?: string;
-  remark?: string;
-  settleType?: string;
-}
-export interface AdPaymentCancelParams {
-  id?: string;
-  reason?: string;
-}
-export interface AdPaymentConfirmPrepayParams {
-  orderId?: string;
-  amount?: number;
-  occurDate?: number | null;
-  remark?: string;
-}
-export interface AdPaymentInvoiceParams {
-  orderId?: string;
-  amount?: number;
-  invoiceNo?: string;
-  occurDate?: number | null;
-  remark?: string;
-}
-export interface AdPaymentReceiveParams {
-  orderId?: string;
-  amount?: number;
-  occurDate?: number | null;
-  remark?: string;
-}
-export interface AdPaymentMediaPrepayParams {
-  orderId?: string;
-  amount?: number;
-  occurDate?: number | null;
-  resourceId?: string;
-  remark?: string;
-  force?: boolean;
-}
-export interface AdPaymentRedInvoiceClearParams {
-  orderId?: string;
-}
-
-export interface AdPaymentRecordInfo {
-  id: string;
-  orderId?: string;
-  businessEntityId?: string;
-  resourceId?: string;
-  direction?: number;
-  type?: number;
-  amount?: number;
-  occurDate?: number | string | null;
-  voucherUrl?: string;
-  invoiceNo?: string;
-  remark?: string;
-  operatorId?: string;
-  createTime?: number;
-}
-
-export interface AdPaymentRecordListItem {
-  id: string;
-  orderId?: string;
-  orderNo?: string;
-  businessEntityId?: string;
-  businessEntityName?: string;
-  customerName?: string;
-  resourceName?: string;
-  direction?: number;
-  directionLabel?: string;
-  type?: number;
-  typeLabel?: string;
-  amount?: number;
-  occurDate?: number | string | null;
-  invoiceNo?: string;
-  operatorId?: string;
-  remark?: string;
-  createTime?: number;
-}
-
-export interface AdPaymentRecordDetail {
-  record: AdPaymentRecordInfo;
-  orderNo?: string;
-  directionLabel?: string;
-  typeLabel?: string;
-}
-
-export interface AdPaymentTodoParams {
-  current?: number;
-  pageSize?: number;
-  sort?: { name?: string; type?: string };
-  keyword?: string;
-  businessEntityId?: string | null;
-  todoType?: string | null;
-  [key: string]: any;
-}
-
-export interface AdPaymentTodoItem {
-  todoType?: string;
-  todoLabel?: string;
-  orderId?: string;
-  orderNo?: string;
-  businessEntityId?: string;
-  customerId?: string;
-  status?: number;
-  amount?: number;
-  dueDate?: number | string | null;
-  createTime?: number;
-}
-
-export type AdPaymentRecordPageResult = CommonList<AdPaymentRecordListItem>;
-export type AdPaymentTodoResult = CommonList<AdPaymentTodoItem>;
 
 /* ----------------------------- 合同 ----------------------------- */
 
@@ -993,3 +852,103 @@ export interface AdCustomerListItem {
 }
 
 export type AdCustomerPageResult = CommonList<AdCustomerListItem>;
+
+/* ==================== 收款单 ==================== */
+
+export interface AdReceiptSaveParams {
+  id?: string;
+  orderId?: string;
+  amount?: number;
+  receiptTime?: number | string | null;
+  type?: number;
+  voucherUrl?: string;
+  remark?: string;
+}
+
+export interface AdReceiptApproveParams {
+  action?: string;
+  remark?: string;
+}
+
+export interface AdReceiptPageParams {
+  current?: number;
+  pageSize?: number;
+  sort?: { name?: string; type?: string };
+  keyword?: string;
+  orderId?: string;
+  status?: number | null;
+  type?: number | null;
+  [key: string]: any;
+}
+
+export interface AdReceiptInfo {
+  id?: string;
+  receiptNo?: string;
+  orderId?: string;
+  orderName?: string;
+  amount?: number;
+  receiptTime?: number | string | null;
+  type?: number;
+  typeLabel?: string;
+  status?: number;
+  statusLabel?: string;
+  voucherUrl?: string;
+  approveUser?: string;
+  approveTime?: number;
+  approveRemark?: string;
+  remark?: string;
+  createTime?: number;
+}
+
+export type AdReceiptPageResult = CommonList<AdReceiptInfo>;
+
+/* ==================== 付款单 ==================== */
+
+export interface AdPayoutSaveParams {
+  id?: string;
+  orderId?: string;
+  amount?: number;
+  paymentTime?: number | string | null;
+  type?: number;
+  mediaIds?: string[];
+  voucherUrl?: string;
+  remark?: string;
+}
+
+export interface AdPayoutApproveParams {
+  action?: string;
+  remark?: string;
+}
+
+export interface AdPayoutPageParams {
+  current?: number;
+  pageSize?: number;
+  sort?: { name?: string; type?: string };
+  keyword?: string;
+  orderId?: string;
+  status?: number | null;
+  type?: number | null;
+  [key: string]: any;
+}
+
+export interface AdPayoutInfo {
+  id?: string;
+  paymentNo?: string;
+  orderId?: string;
+  orderName?: string;
+  amount?: number;
+  paymentTime?: number | string | null;
+  type?: number;
+  typeLabel?: string;
+  status?: number;
+  statusLabel?: string;
+  mediaIds?: string;
+  voucherUrl?: string;
+  approveUser?: string;
+  approveTime?: number;
+  approveRemark?: string;
+  remark?: string;
+  createTime?: number;
+}
+
+export type AdPayoutPageResult = CommonList<AdPayoutInfo>;

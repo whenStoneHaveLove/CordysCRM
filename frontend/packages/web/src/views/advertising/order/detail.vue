@@ -16,13 +16,11 @@
             <n-button v-if="detail.order.status === 0" type="primary" @click="handleSubmit">提交</n-button>
             <n-button v-if="detail.order.status === 10" type="primary" @click="openModal('approve')">审核通过</n-button>
             <n-button v-if="detail.order.status === 10" @click="openModal('reject')">驳回</n-button>
-            <n-button v-if="[20, 30, 40].includes(detail.order.status || 0)" @click="handleConfirmExecute"
+            <n-button v-if="detail.order.status === 45" type="primary" @click="handleConfirmExecute"
               >确认执行</n-button
             >
-            <n-button v-if="detail.order.status === 50" @click="handleCompleteExecute">执行完成</n-button>
-            <n-button v-if="detail.order.status === 20" @click="handleFinancialPreAction">财务前置</n-button>
             <n-button
-              v-if="[0, 10, 50, 60, 70, 80].includes(detail.order.status || 0)"
+              v-if="detail.order.status !== 90 && detail.order.status !== 100"
               type="warning"
               @click="openModal('void')"
             >
@@ -241,10 +239,8 @@
 
   import {
     approveAdOrder,
-    completeExecuteAdOrder,
     confirmExecuteAdOrder,
     deleteAdOrderAttachment,
-    financialPreActionAdOrder,
     forceArchiveAdOrder,
     getAdBusinessEntityPage,
     getAdCustomerPage,
@@ -307,10 +303,11 @@ const { loadUserMap, getUserName } = useUserMap();
         return 'default';
       case 10:
         return 'warning';
-      case 20:
+      case 45:
       case 50:
+      case 60:
         return 'info';
-      case 70:
+      case 80:
       case 90:
         return 'success';
       case 100:
@@ -560,29 +557,6 @@ const { loadUserMap, getUserName } = useUserMap();
       await confirmExecuteAdOrder(orderId);
       message.success(t('advertising.common.operateSuccess'));
       await fetchDetail();
-    } catch (e) {
-      message.error((e as Error).message || '操作失败');
-    }
-  }
-  async function handleCompleteExecute() {
-    try {
-      await completeExecuteAdOrder(orderId);
-      message.success(t('advertising.common.operateSuccess'));
-      await fetchDetail();
-    } catch (e) {
-      message.error((e as Error).message || '操作失败');
-    }
-  }
-  async function handleFinancialPreAction() {
-    try {
-      const plan = await financialPreActionAdOrder(orderId);
-      const lines = (plan.steps || []).map((s) => `${s.description || s.action}: ${fmtAmount(s.amount)}`).join('\n');
-      dialog.info({
-        title: '财务前置动作矩阵',
-        content: `推导状态: ${plan.toStatus}\n预收金额: ${fmtAmount(
-          plan.receiptPrepayAmount
-        )}\n媒体预付金额: ${fmtAmount(plan.paymentPrepayAmount)}\n${lines}`,
-      });
     } catch (e) {
       message.error((e as Error).message || '操作失败');
     }

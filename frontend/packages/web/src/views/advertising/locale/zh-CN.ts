@@ -6,6 +6,8 @@ export default {
   // 顶部子标签（去掉"广告"前缀）
   'module.advertising.order': '下单',
   'module.advertising.change': '改单',
+  'module.advertising.receipt': '收款',
+  'module.advertising.payout': '付款',
   'module.advertising.payment': '收付款',
   'module.advertising.payment.media': '媒体付款',
 
@@ -33,6 +35,8 @@ export default {
   'advertising.order.column.deliveryStart': '投放起始',
   'advertising.order.column.createTime': '创建时间',
   'advertising.order.column.missingContract': '缺合同',
+  'advertising.order.column.receiptDone': '收款状态',
+  'advertising.order.column.paymentDone': '付款状态',
   'advertising.order.detail': '详情',
   'advertising.order.edit': '编辑',
   'advertising.order.submit': '提交',
@@ -40,9 +44,7 @@ export default {
   'advertising.order.reject': '驳回',
   'advertising.order.void': '作废',
   'advertising.order.confirmExecute': '确认执行',
-  'advertising.order.completeExecute': '执行完成',
   'advertising.order.forceArchive': '强制归档',
-  'advertising.order.financialPreAction': '财务前置',
 
   // 订单详情
   'advertising.order.detail.tab.base': '订单信息',
@@ -178,6 +180,10 @@ export default {
   'advertising.common.amount': '金额',
   'advertising.common.yes': '是',
   'advertising.common.no': '否',
+  'advertising.common.received': '已收',
+  'advertising.common.pendingReceipt': '待收',
+  'advertising.common.paid': '已付',
+  'advertising.common.pendingPayment': '待付',
   'advertising.common.saveSuccess': '保存成功',
   'advertising.common.submitSuccess': '提交成功',
   'advertising.common.operateSuccess': '操作成功',

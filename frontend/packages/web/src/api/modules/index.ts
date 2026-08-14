@@ -8,7 +8,8 @@ import useAdDownstreamMediaApi from '@lib/shared/api/modules/adDownstreamMedia';
 import useAdOrderApi from '@lib/shared/api/modules/adOrder';
 import useAdOrderAttachmentApi from '@lib/shared/api/modules/adOrderAttachment';
 import useAdOrderChangeApi from '@lib/shared/api/modules/adOrderChange';
-import useAdPaymentApi from '@lib/shared/api/modules/adPayment';
+import useAdPayoutApi from '@lib/shared/api/modules/adPayout';
+import useAdReceiptApi from '@lib/shared/api/modules/adReceipt';
 import useAdReportApi from '@lib/shared/api/modules/adReport';
 import useAdSealApi from '@lib/shared/api/modules/adSeal';
 import useAdSettingApi from '@lib/shared/api/modules/adSetting';
@@ -68,7 +69,8 @@ const customFormApi = useCustomFormApi(CDR);
 const processApi = useProcessApi(CDR);
 const adOrderApi = useAdOrderApi(CDR);
 const adOrderChangeApi = useAdOrderChangeApi(CDR);
-const adPaymentApi = useAdPaymentApi(CDR);
+const adReceiptApi = useAdReceiptApi(CDR);
+const adPayoutApi = useAdPayoutApi(CDR);
 const adContractApi = useAdContractApi(CDR);
 const adSealApi = useAdSealApi(CDR);
 const adBusinessEntityApi = useAdBusinessEntityApi(CDR);
@@ -892,9 +894,7 @@ export const {
   submitAdOrder,
   approveAdOrder,
   rejectAdOrder,
-  financialPreActionAdOrder,
   confirmExecuteAdOrder,
-  completeExecuteAdOrder,
   voidAdOrder,
   forceArchiveAdOrder,
 } = adOrderApi;
@@ -910,19 +910,27 @@ export const {
 } = adOrderChangeApi;
 
 export const {
-  createAdPayment,
-  cancelAdPayment,
-  getAdPaymentPage,
-  getAdPaymentDetail,
-  confirmPrepayAdPayment,
-  payMediaPrepayAdPayment,
-  invoiceAdPayment,
-  receiveAdPayment,
-  payMediaPostpayAdPayment,
-  payMediaPostpayForceAdPayment,
-  clearRedInvoiceAdPayment,
-  getAdPaymentTodoPage,
-} = adPaymentApi;
+  createAdReceipt,
+  updateAdReceipt,
+  submitAdReceipt,
+  approveAdReceipt,
+  getAdReceiptDetail,
+  getAdReceiptRemaining,
+  getAdReceiptPage,
+  deleteAdReceipt,
+} = adReceiptApi;
+
+export const {
+  createAdPayout,
+  updateAdPayout,
+  submitAdPayout,
+  approveAdPayout,
+  getAdPayoutDetail,
+  getAdPayoutRemaining,
+  getAdPayoutMedia,
+  getAdPayoutPage,
+  deleteAdPayout,
+} = adPayoutApi;
 
 export const {
   createAdContract,

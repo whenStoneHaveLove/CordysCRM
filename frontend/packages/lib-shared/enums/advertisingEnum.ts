@@ -3,16 +3,13 @@
  * 状态码与后端严格一致，前端用于下拉选项与标签渲染。
  */
 
-/** 订单主状态（10 倍数编码，V3.1 §6.1）。 */
+/** 订单主状态（10 倍数编码，V3.1 §6.1 简化版）。 */
 export enum AdOrderStatusEnum {
   DRAFT = 0,
   PENDING_BOSS_APPROVAL = 10,
-  APPROVED = 20,
-  PENDING_PREPAY_CONFIRM = 30,
-  PENDING_MEDIA_PREPAY = 40,
+  PENDING_EXECUTE = 45,
   EXECUTING = 50,
   CHANGE_APPROVING = 60,
-  EXECUTION_COMPLETED = 70,
   SETTLEMENT = 80,
   ARCHIVED = 90,
   VOIDED = 100,
@@ -20,13 +17,10 @@ export enum AdOrderStatusEnum {
 
 export const AdOrderStatusLabel: Record<number, string> = {
   [AdOrderStatusEnum.DRAFT]: '草稿',
-  [AdOrderStatusEnum.PENDING_BOSS_APPROVAL]: '待老板审核',
-  [AdOrderStatusEnum.APPROVED]: '审核通过',
-  [AdOrderStatusEnum.PENDING_PREPAY_CONFIRM]: '待确认预收款',
-  [AdOrderStatusEnum.PENDING_MEDIA_PREPAY]: '待付媒体预付款',
+  [AdOrderStatusEnum.PENDING_BOSS_APPROVAL]: '审批中',
+  [AdOrderStatusEnum.PENDING_EXECUTE]: '待执行',
   [AdOrderStatusEnum.EXECUTING]: '执行中',
-  [AdOrderStatusEnum.CHANGE_APPROVING]: '变更审核中',
-  [AdOrderStatusEnum.EXECUTION_COMPLETED]: '执行完成',
+  [AdOrderStatusEnum.CHANGE_APPROVING]: '改单审核中',
   [AdOrderStatusEnum.SETTLEMENT]: '结算中',
   [AdOrderStatusEnum.ARCHIVED]: '已归档',
   [AdOrderStatusEnum.VOIDED]: '已作废',
@@ -129,39 +123,67 @@ export const AdModeOptions = Object.keys(AdModeLabel).map((k) => ({
   value: Number(k),
 }));
 
-/** 收付款方向。 */
-export enum AdPaymentDirectionEnum {
-  UPSTREAM = 10,
-  DOWNSTREAM = 20,
+/** 收款单状态。 */
+export enum AdReceiptStatusEnum {
+  DRAFT = 0,
+  PENDING_APPROVAL = 10,
+  APPROVED = 20,
+  REJECTED = 30,
 }
-export const AdPaymentDirectionLabel: Record<number, string> = {
-  [AdPaymentDirectionEnum.UPSTREAM]: '上游收款',
-  [AdPaymentDirectionEnum.DOWNSTREAM]: '下游付款',
+export const AdReceiptStatusLabel: Record<number, string> = {
+  [AdReceiptStatusEnum.DRAFT]: '草稿',
+  [AdReceiptStatusEnum.PENDING_APPROVAL]: '待审核',
+  [AdReceiptStatusEnum.APPROVED]: '审核通过',
+  [AdReceiptStatusEnum.REJECTED]: '驳回',
 };
-export const AdPaymentDirectionOptions = Object.keys(AdPaymentDirectionLabel).map((k) => ({
-  label: AdPaymentDirectionLabel[Number(k)],
+export const AdReceiptStatusOptions = Object.keys(AdReceiptStatusLabel).map((k) => ({
+  label: AdReceiptStatusLabel[Number(k)],
   value: Number(k),
 }));
 
-/** 收付款类型。 */
-export enum AdPaymentTypeEnum {
-  PRE_RECEIPT = 10,
-  PRE_PAY = 20,
-  INVOICE_RECEIPT = 30,
-  MEDIA_POSTPAY = 40,
-  REFUND = 50,
-  BAD_DEBT = 60,
+/** 收款单类型。 */
+export enum AdReceiptTypeEnum {
+  NORMAL = 10,
+  REFUND = 20,
 }
-export const AdPaymentTypeLabel: Record<number, string> = {
-  [AdPaymentTypeEnum.PRE_RECEIPT]: '预收',
-  [AdPaymentTypeEnum.PRE_PAY]: '预付',
-  [AdPaymentTypeEnum.INVOICE_RECEIPT]: '开票收款',
-  [AdPaymentTypeEnum.MEDIA_POSTPAY]: '媒体尾款',
-  [AdPaymentTypeEnum.REFUND]: '退款',
-  [AdPaymentTypeEnum.BAD_DEBT]: '坏账',
+export const AdReceiptTypeLabel: Record<number, string> = {
+  [AdReceiptTypeEnum.NORMAL]: '普通收款',
+  [AdReceiptTypeEnum.REFUND]: '退款',
 };
-export const AdPaymentTypeOptions = Object.keys(AdPaymentTypeLabel).map((k) => ({
-  label: AdPaymentTypeLabel[Number(k)],
+export const AdReceiptTypeOptions = Object.keys(AdReceiptTypeLabel).map((k) => ({
+  label: AdReceiptTypeLabel[Number(k)],
+  value: Number(k),
+}));
+
+/** 付款单状态。 */
+export enum AdPayoutStatusEnum {
+  DRAFT = 0,
+  PENDING_APPROVAL = 10,
+  APPROVED = 20,
+  REJECTED = 30,
+}
+export const AdPayoutStatusLabel: Record<number, string> = {
+  [AdPayoutStatusEnum.DRAFT]: '草稿',
+  [AdPayoutStatusEnum.PENDING_APPROVAL]: '待审核',
+  [AdPayoutStatusEnum.APPROVED]: '审核通过',
+  [AdPayoutStatusEnum.REJECTED]: '驳回',
+};
+export const AdPayoutStatusOptions = Object.keys(AdPayoutStatusLabel).map((k) => ({
+  label: AdPayoutStatusLabel[Number(k)],
+  value: Number(k),
+}));
+
+/** 付款单类型。 */
+export enum AdPayoutTypeEnum {
+  NORMAL = 10,
+  BAD_DEBT = 20,
+}
+export const AdPayoutTypeLabel: Record<number, string> = {
+  [AdPayoutTypeEnum.NORMAL]: '普通付款',
+  [AdPayoutTypeEnum.BAD_DEBT]: '坏账',
+};
+export const AdPayoutTypeOptions = Object.keys(AdPayoutTypeLabel).map((k) => ({
+  label: AdPayoutTypeLabel[Number(k)],
   value: Number(k),
 }));
 
@@ -186,13 +208,21 @@ export function getAdPaymentMethodLabel(value?: number | null): string {
   if (value == null) return '-';
   return AdPaymentMethodLabel[value] ?? String(value);
 }
-export function getAdPaymentDirectionLabel(value?: number | null): string {
+export function getAdReceiptStatusLabel(value?: number | null): string {
   if (value == null) return '-';
-  return AdPaymentDirectionLabel[value] ?? String(value);
+  return AdReceiptStatusLabel[value] ?? String(value);
 }
-export function getAdPaymentTypeLabel(value?: number | null): string {
+export function getAdReceiptTypeLabel(value?: number | null): string {
   if (value == null) return '-';
-  return AdPaymentTypeLabel[value] ?? String(value);
+  return AdReceiptTypeLabel[value] ?? String(value);
+}
+export function getAdPayoutStatusLabel(value?: number | null): string {
+  if (value == null) return '-';
+  return AdPayoutStatusLabel[value] ?? String(value);
+}
+export function getAdPayoutTypeLabel(value?: number | null): string {
+  if (value == null) return '-';
+  return AdPayoutTypeLabel[value] ?? String(value);
 }
 
 /* ----------------------------- 合同 ----------------------------- */

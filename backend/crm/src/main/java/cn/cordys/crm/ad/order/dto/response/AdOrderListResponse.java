@@ -82,6 +82,12 @@ public class AdOrderListResponse {
     @Schema(description = "创建时间")
     private Long createTime;
 
+    @Schema(description = "收款状态:0待收/1已收")
+    private Integer receiptDone;
+
+    @Schema(description = "付款状态:0待付/1已付")
+    private Integer paymentDone;
+
     @Schema(description = "缺合同标记:0否/1是（LEFT JOIN ad_order_contract 计数）")
     private Integer missingContract;
 }

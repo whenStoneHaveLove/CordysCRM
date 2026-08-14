@@ -6,6 +6,8 @@ export default {
   // Top tabs (prefix removed)
   'module.advertising.order': 'Order',
   'module.advertising.change': 'Change Order',
+  'module.advertising.receipt': 'Receipt',
+  'module.advertising.payout': 'Payout',
   'module.advertising.payment': 'Payment',
   'module.advertising.payment.media': 'Media Payment',
 
@@ -32,6 +34,8 @@ export default {
   'advertising.order.column.deliveryStart': 'Delivery Start',
   'advertising.order.column.createTime': 'Create Time',
   'advertising.order.column.missingContract': 'Missing Contract',
+  'advertising.order.column.receiptDone': 'Receipt Status',
+  'advertising.order.column.paymentDone': 'Payment Status',
   'advertising.order.detail': 'Detail',
   'advertising.order.edit': 'Edit',
   'advertising.order.submit': 'Submit',
@@ -39,9 +43,7 @@ export default {
   'advertising.order.reject': 'Reject',
   'advertising.order.void': 'Void',
   'advertising.order.confirmExecute': 'Confirm Execute',
-  'advertising.order.completeExecute': 'Complete Execute',
   'advertising.order.forceArchive': 'Force Archive',
-  'advertising.order.financialPreAction': 'Financial Pre-Action',
 
   'advertising.order.detail.tab.base': 'Order Info',
   'advertising.order.detail.tab.attachment': 'Attachments',
@@ -172,6 +174,10 @@ export default {
   'advertising.common.amount': 'Amount',
   'advertising.common.yes': 'Yes',
   'advertising.common.no': 'No',
+  'advertising.common.received': 'Received',
+  'advertising.common.pendingReceipt': 'Pending Receipt',
+  'advertising.common.paid': 'Paid',
+  'advertising.common.pendingPayment': 'Pending Payment',
   'advertising.common.saveSuccess': 'Saved',
   'advertising.common.submitSuccess': 'Submitted',
   'advertising.common.operateSuccess': 'Operation succeeded',

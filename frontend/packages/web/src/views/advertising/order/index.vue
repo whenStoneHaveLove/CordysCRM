@@ -160,10 +160,11 @@
         return 'default';
       case 10:
         return 'warning';
-      case 20:
+      case 45:
       case 50:
+      case 60:
         return 'info';
-      case 70:
+      case 80:
       case 90:
         return 'success';
       case 100:
@@ -254,6 +255,30 @@
       title: t('advertising.order.column.createTime'),
       width: 160,
       render: (row) => h('span', fmtDateTime(row.createTime)),
+    },
+    {
+      key: 'receiptDone',
+      title: t('advertising.order.column.receiptDone'),
+      width: 90,
+      fixed: 'right' as const,
+      render: (row) =>
+        h(
+          NTag,
+          { type: row.receiptDone === 1 ? 'success' : 'warning' },
+          { default: () => (row.receiptDone === 1 ? t('advertising.common.received') : t('advertising.common.pendingReceipt')) }
+        ),
+    },
+    {
+      key: 'paymentDone',
+      title: t('advertising.order.column.paymentDone'),
+      width: 90,
+      fixed: 'right' as const,
+      render: (row) =>
+        h(
+          NTag,
+          { type: row.paymentDone === 1 ? 'success' : 'warning' },
+          { default: () => (row.paymentDone === 1 ? t('advertising.common.paid') : t('advertising.common.pendingPayment')) }
+        ),
     },
     {
       key: 'missingContract',

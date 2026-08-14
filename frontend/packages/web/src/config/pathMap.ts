@@ -83,9 +83,14 @@ export const pathMap: PathMapItem[] = [
     locale: 'module.advertising.upstreamAgent',
   },
   {
-    key: 'AD_PAYMENT',
-    route: AppRouteEnum.ADVERTISING_PAYMENT,
-    locale: 'module.advertising.payment',
+    key: 'AD_RECEIPT',
+    route: AppRouteEnum.ADVERTISING_RECEIPT,
+    locale: 'module.advertising.receipt',
+  },
+  {
+    key: 'AD_PAYOUT',
+    route: AppRouteEnum.ADVERTISING_PAYOUT,
+    locale: 'module.advertising.payout',
   },
   {
     key: 'AD_SEAL',

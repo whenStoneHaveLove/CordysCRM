@@ -27,6 +27,8 @@
             o.delivery_end_date AS deliveryEndDate,
             o.creator_id AS creatorId,
             o.create_time AS createTime,
+            o.receipt_done AS receiptDone,
+            o.payment_done AS paymentDone,
             CASE WHEN COUNT(oc.id) = 0 THEN 1 ELSE 0 END AS missingContract
         FROM ad_order o
         LEFT JOIN ad_business_entity be ON be.id = o.business_entity_id AND be.deleted = 0

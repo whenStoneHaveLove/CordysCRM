@@ -7,9 +7,7 @@ import {
   AdOrderSubmitUrl,
   AdOrderApproveUrl,
   AdOrderRejectUrl,
-  AdOrderFinancialPreActionUrl,
   AdOrderConfirmExecuteUrl,
-  AdOrderCompleteExecuteUrl,
   AdOrderVoidUrl,
   AdOrderForceArchiveUrl,
 } from '@lib/shared/api/requrls/adOrder';
@@ -19,7 +17,6 @@ import type {
   AdOrderPageResult,
   AdOrderDetail,
   AdOrderInfo,
-  AdOrderFinancialPlan,
   AdOrderApproveParams,
   AdOrderVoidParams,
   AdOrderForceArchiveParams,
@@ -61,19 +58,9 @@ export default function useAdOrderApi(CDR: CordysAxios) {
     return CDR.post<AdOrderInfo>({ url: `${AdOrderRejectUrl}/${id}/reject`, data });
   }
 
-  // 财务前置动作（推导 30/40/50 与财务步骤）
-  function financialPreActionAdOrder(id: string) {
-    return CDR.post<AdOrderFinancialPlan>({ url: `${AdOrderFinancialPreActionUrl}/${id}/financial-pre-action` });
-  }
-
-  // 确认执行（20/30/40→50）
+  // 确认执行（45→50）
   function confirmExecuteAdOrder(id: string) {
     return CDR.post<AdOrderInfo>({ url: `${AdOrderConfirmExecuteUrl}/${id}/confirm-execute` });
-  }
-
-  // 执行完成（50→70）
-  function completeExecuteAdOrder(id: string) {
-    return CDR.post<AdOrderInfo>({ url: `${AdOrderCompleteExecuteUrl}/${id}/complete-execute` });
   }
 
   // 作废（→100）
@@ -94,9 +81,7 @@ export default function useAdOrderApi(CDR: CordysAxios) {
     submitAdOrder,
     approveAdOrder,
     rejectAdOrder,
-    financialPreActionAdOrder,
     confirmExecuteAdOrder,
-    completeExecuteAdOrder,
     voidAdOrder,
     forceArchiveAdOrder,
   };
