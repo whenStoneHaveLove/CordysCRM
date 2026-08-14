@@ -15,13 +15,13 @@
         GROUP BY o.status
     </select>
 
-    <!-- 付款汇总：已付/未付/逾期金额（M6） -->
+    <!-- 付款汇总：已付/未付金额（M6，基于付款单 ad_payment） -->
     <select id="paymentSummary" resultType="java.util.HashMap">
         SELECT
-            IFNULL(SUM(CASE WHEN p.status = 10 THEN p.amount ELSE 0 END), 0) AS paidAmount,
-            IFNULL(SUM(CASE WHEN p.status = 0 THEN p.amount ELSE 0 END), 0)  AS unpaidAmount,
-            IFNULL(SUM(CASE WHEN p.status = 20 THEN p.amount ELSE 0 END), 0) AS overdueAmount
-        FROM ad_payment_record p
+            IFNULL(SUM(CASE WHEN p.status = 20 THEN p.amount ELSE 0 END), 0) AS paidAmount,
+            IFNULL(SUM(CASE WHEN p.status IN (0, 10) THEN p.amount ELSE 0 END), 0) AS unpaidAmount,
+            0 AS overdueAmount
+        FROM ad_payment p
         WHERE p.organization_id = #{organizationId}
           AND p.deleted = 0
     </select>
