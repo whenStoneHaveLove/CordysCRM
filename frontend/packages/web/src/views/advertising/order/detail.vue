@@ -13,7 +13,11 @@
         </template>
         <template #header-extra>
           <n-space>
-            <n-button v-if="detail.order.status === 0" v-permission="['AD_ORDER:SUBMIT']" type="primary" @click="handleSubmit"
+            <n-button
+              v-if="detail.order.status === 0"
+              v-permission="['AD_ORDER:SUBMIT']"
+              type="primary"
+              @click="handleSubmit"
               >提交</n-button
             >
             <n-button
@@ -56,8 +60,12 @@
         <n-descriptions label-placement="left" :column="3" bordered size="small">
           <n-descriptions-item label="订单编号">{{ detail.order.orderNo || '-' }}</n-descriptions-item>
           <n-descriptions-item label="订单名称">{{ detail.order.orderName || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="业务主体">{{ getEntityName('entity', detail.order.businessEntityId) || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="客户名称">{{ getEntityName('customer', detail.order.customerId) || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="业务主体">{{
+            getEntityName('entity', detail.order.businessEntityId) || '-'
+          }}</n-descriptions-item>
+          <n-descriptions-item label="客户名称">{{
+            getEntityName('customer', detail.order.customerId) || '-'
+          }}</n-descriptions-item>
           <n-descriptions-item label="行业类别">{{ detail.order.industryCode || '-' }}</n-descriptions-item>
           <n-descriptions-item label="签约主体">{{ detail.order.signingEntity || '-' }}</n-descriptions-item>
           <n-descriptions-item label="下游媒体">{{ downstreamMediaNames || '-' }}</n-descriptions-item>
@@ -141,16 +149,34 @@
         </n-space>
 
         <n-divider title-placement="left">{{ t('advertising.order.detail.tab.change') }}</n-divider>
-        <n-empty v-if="!detail.changes || detail.changes.length === 0" description="暂无改单记录" />
+        <n-empty v-if="!executedChanges.length" description="暂无已执行的改单记录" />
         <n-space v-else vertical>
-          <n-card v-for="ch in detail.changes" :key="ch.id" size="small">
-            <n-space align="center">
+          <n-card v-for="ch in executedChanges" :key="ch.id" size="small">
+            <n-space align="center" wrap>
               <span>改单ID: {{ ch.id }}</span>
-              <n-tag>{{ getAdOrderChangeStatusLabel(ch.status) }}</n-tag>
-              <span>审批人: {{ ch.approverId || '-' }}</span>
+              <n-tag type="success">{{ getAdOrderChangeStatusLabel(ch.status) }}</n-tag>
+              <span>审批人: {{ getUserName(ch.approverId) }}</span>
+              <span>审批时间: {{ fmtDateTime(ch.approvedAt) }}</span>
+              <span>创建人: {{ getUserName(ch.createUser) }}</span>
+              <span>创建时间: {{ fmtDateTime(ch.createTime) }}</span>
             </n-space>
-            <div>原因: {{ ch.reason || '-' }}</div>
-            <div>变更字段: {{ ch.changeFields || '-' }}</div>
+            <div style="margin-top: 6px">原因: {{ ch.reason || '-' }}</div>
+            <n-table :bordered="true" size="small" :single-line="false" style="margin-top: 8px">
+              <thead>
+                <tr>
+                  <th style="width: 160px">变更字段</th>
+                  <th>原值（改前）</th>
+                  <th>新值（改后）</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(row, idx) in changeCompareRows(ch)" :key="idx">
+                  <td>{{ row.label }}</td>
+                  <td class="before-value">{{ row.before }}</td>
+                  <td class="after-value">{{ row.after }}</td>
+                </tr>
+              </tbody>
+            </n-table>
           </n-card>
         </n-space>
 
@@ -168,11 +194,7 @@
         <n-divider title-placement="left">{{ t('advertising.order.detail.tab.log') }}</n-divider>
         <n-empty v-if="!detail.logs || detail.logs.length === 0" description="暂无操作记录" />
         <n-timeline v-else>
-          <n-timeline-item
-            v-for="log in detail.logs"
-            :key="log.id"
-            :time="fmtDateTime(log.createTime)"
-          >
+          <n-timeline-item v-for="log in detail.logs" :key="log.id" :time="fmtDateTime(log.createTime)">
             <template #header>
               <span class="log-header">{{ getLogActionLabel(log.action) }}</span>
               <span class="log-operator">操作人：{{ getUserName(log.operatorId) }}</span>
@@ -183,12 +205,7 @@
       </n-card>
     </n-spin>
 
-    <n-modal
-      v-model:show="actionModal.show"
-      :title="actionModalTitle"
-      preset="card"
-      style="width: 480px"
-    >
+    <n-modal v-model:show="actionModal.show" :title="actionModalTitle" preset="card" style="width: 480px">
       <n-space vertical>
         <div v-if="actionModal.type !== 'forceArchive'">
           <div class="action-modal-label">
@@ -238,6 +255,7 @@
     NModal,
     NSpace,
     NSpin,
+    NTable,
     NTag,
     NTimeline,
     NTimelineItem,
@@ -247,6 +265,12 @@
   } from 'naive-ui';
 
   import {
+    AD_ORDER_CHANGE_FIELD_META,
+    AdModeOptions,
+    AdOrderTypeOptions,
+    AdPaymentMethodOptions,
+    AdPostpayTriggerOptions,
+    AdReceiptMethodOptions,
     getAdOrderChangeStatusLabel,
     getAdOrderStatusLabel,
     getAdOrderTypeLabel,
@@ -254,7 +278,7 @@
     getAdReceiptMethodLabel,
   } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
-  import type { AdOrderDetail } from '@lib/shared/models/advertising';
+  import type { AdOrderChange, AdOrderDetail } from '@lib/shared/models/advertising';
 
   import {
     approveAdOrder,
@@ -276,10 +300,10 @@
   import useUserMap from '../useUserMap';
   import { fmtAmount, fmtDate, fmtDateTime } from '../utils';
 
-const { t } = useI18n();
-const route = useRoute();
-const router = useRouter();
-const { loadUserMap, getUserName } = useUserMap();
+  const { t } = useI18n();
+  const route = useRoute();
+  const router = useRouter();
+  const { loadUserMap, getUserName } = useUserMap();
   const message = useMessage();
   const dialog = useDialog();
   const userStore = useUserStore();
@@ -403,15 +427,119 @@ const { loadUserMap, getUserName } = useUserMap();
       SUBMIT: '提交审核',
       APPROVE: '审核通过',
       REJECT: '驳回',
-      CHANGE: '变更',
+      CHANGE: '提交改单',
+      APPLY_CHANGE: '申请改单',
+      CHANGE_APPROVED: '改单通过',
+      CHANGE_REJECTED: '改单驳回',
+      CHANGE_EXECUTED: '改单执行',
+      CHANGE_MONEY_SIDE: '金额差异',
+      CONFIRM_EXECUTE: '确认执行',
+      AUTO_OVERDUE: '到期自动结算',
+      AUTO_ARCHIVE: '自动归档',
       AUTO_PREPAY: '自动推算预付',
       AUTO_EXECUTE: '自动进入执行',
       COMPLETE_EXECUTE: '完成执行',
       ARCHIVE: '归档',
       FORCE_ARCHIVE: '强制归档',
+      SUBMIT_ARCHIVE: '提交归档',
+      APPROVE_ARCHIVE: '归档通过',
+      REJECT_ARCHIVE: '归档驳回',
+      UPLOAD_DOUBLE_SEAL: '上传双盖',
       VOID: '作废',
     };
     return action && map[action] ? map[action] : action || '-';
+  }
+
+  /** 改单变更字段：把英文 key 转中文 label（用 AD_ORDER_CHANGE_FIELD_META 映射） */
+  function formatChangeFields(value?: string | null): string {
+    if (!value) return '-';
+    let fields: string[] = [];
+    if (value.trim().startsWith('[')) {
+      try {
+        const arr = JSON.parse(value);
+        if (Array.isArray(arr)) fields = arr;
+      } catch {
+        // ignore
+      }
+    } else {
+      fields = value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+    if (!fields.length) return '-';
+    return fields.map((f) => AD_ORDER_CHANGE_FIELD_META.find((m) => m.field === f)?.label || f).join('、');
+  }
+
+  /** 只展示已执行(40)的改单记录 */
+  const executedChanges = computed(() => {
+    const changes = detail.value?.changes;
+    if (!changes || !changes.length) return [];
+    return changes.filter((c) => c.status === 40);
+  });
+
+  /** 枚举 Options 映射（用于改单字段前后值转名称） */
+  const enumOptionsMap: Record<string, { label: string; value: number }[]> = {
+    'enum-orderType': AdOrderTypeOptions as { label: string; value: number }[],
+    'enum-rebateMode': AdModeOptions as { label: string; value: number }[],
+    'enum-receiptMethod': AdReceiptMethodOptions as { label: string; value: number }[],
+    'enum-paymentMethod': AdPaymentMethodOptions as { label: string; value: number }[],
+    'enum-prepayMode': AdModeOptions as { label: string; value: number }[],
+    'enum-postpayTrigger': AdPostpayTriggerOptions as { label: string; value: number }[],
+  };
+
+  function changeValLabel(field: string, v: any): string {
+    if (v === null || v === undefined || v === '') return '-';
+    const meta = AD_ORDER_CHANGE_FIELD_META.find((m) => m.field === field);
+    if (!meta) return String(v);
+    if (meta.type === 'date') return String(v).slice(0, 10);
+    if (meta.control === 'select-customer') return entityNameCache[`customer-${v}`] || String(v);
+    if (meta.control === 'select-businessEntity') return entityNameCache[`entity-${v}`] || String(v);
+    if (meta.control && enumOptionsMap[meta.control]) {
+      const found = enumOptionsMap[meta.control].find((o) => String(o.value) === String(v));
+      return found ? found.label : String(v);
+    }
+    return String(v);
+  }
+
+  function parseChangeFields(value?: string | null): string[] {
+    if (!value) return [];
+    if (value.trim().startsWith('[')) {
+      try {
+        const arr = JSON.parse(value);
+        return Array.isArray(arr) ? arr : [];
+      } catch {
+        // ignore
+      }
+    }
+    return value
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  function parseSnapshotJson(value?: string | null): Record<string, any> {
+    if (!value) return {};
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {};
+    }
+  }
+
+  /** 单个改单的字段前后值对比行 */
+  function changeCompareRows(ch: AdOrderChange): { label: string; before: string; after: string }[] {
+    const before = parseSnapshotJson(ch.snapshotBefore);
+    const after = parseSnapshotJson(ch.snapshotAfter);
+    const fields = parseChangeFields(ch.changeFields);
+    return fields.map((field) => {
+      const meta = AD_ORDER_CHANGE_FIELD_META.find((m) => m.field === field);
+      return {
+        label: meta?.label || field,
+        before: changeValLabel(field, before[field]),
+        after: changeValLabel(field, after[field]),
+      };
+    });
   }
 
   /** 解析 before/after JSON 中的 status 字段为可读文字 */
@@ -431,11 +559,11 @@ const { loadUserMap, getUserName } = useUserMap();
     const before = getStatusLabelFromJson(log.beforeValue);
     const after = getStatusLabelFromJson(log.afterValue);
     let text = '';
-    if (before && after) {
+    if (before && after && before !== after) {
       text = `${before} → ${after}`;
-    } else if (after) {
+    } else if (after && before !== after) {
       text = `→ ${after}`;
-    } else if (before) {
+    } else if (before && before !== after) {
       text = before;
     }
     // 驳回原因（写入 afterValue.remark）
@@ -592,7 +720,16 @@ const { loadUserMap, getUserName } = useUserMap();
     height: calc(100vh - 64px);
     overflow-y: auto;
   }
+  .before-value {
+    color: #999;
+    word-break: break-all;
+  }
+  .after-value {
+    color: #18a058;
+    word-break: break-all;
+  }
 </style>
+
 <style scoped>
   .action-modal-label {
     margin-bottom: 4px;

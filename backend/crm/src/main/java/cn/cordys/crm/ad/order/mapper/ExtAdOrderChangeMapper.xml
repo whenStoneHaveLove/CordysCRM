@@ -32,7 +32,8 @@
         </if>
         <if test="request.keyword != null and request.keyword != ''">
             AND (c.reason LIKE CONCAT('%', #{request.keyword}, '%')
-                 OR o.order_no LIKE CONCAT('%', #{request.keyword}, '%'))
+                 OR o.order_no LIKE CONCAT('%', #{request.keyword}, '%')
+                 OR c.id LIKE CONCAT('%', #{request.keyword}, '%'))
         </if>
         <if test="request.entityIds != null and request.entityIds.size() > 0">
             AND o.business_entity_id IN

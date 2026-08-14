@@ -404,33 +404,44 @@ export interface AdChangeFieldMeta {
   field: string;
   label: string;
   type: 'number' | 'date' | 'text';
+  /** 控件类型：默认按 type 渲染，特殊字段指定下拉/枚举 */
+  control?:
+    | 'select-customer'
+    | 'select-upstream'
+    | 'select-industry'
+    | 'select-businessEntity'
+    | 'enum-orderType'
+    | 'enum-rebateMode'
+    | 'enum-receiptMethod'
+    | 'enum-paymentMethod'
+    | 'enum-prepayMode'
+    | 'enum-postpayTrigger';
 }
 
 export const AD_ORDER_CHANGE_FIELD_META: AdChangeFieldMeta[] = [
   { field: 'orderName', label: '订单名称', type: 'text' },
-  { field: 'customerId', label: '客户ID', type: 'text' },
-  { field: 'industryCode', label: '行业类别', type: 'text' },
-  { field: 'signingEntity', label: '签约主体', type: 'text' },
+  { field: 'customerId', label: '客户', type: 'text', control: 'select-customer' },
+  { field: 'industryCode', label: '行业类别', type: 'text', control: 'select-industry' },
   { field: 'totalAmount', label: '订单总金额', type: 'number' },
   { field: 'noRebateAmount', label: '不记返金额', type: 'number' },
   { field: 'rebateValue', label: '返点值', type: 'number' },
-  { field: 'rebateMode', label: '返点方式', type: 'number' },
-  { field: 'receiptMethod', label: '收款方式', type: 'number' },
-  { field: 'receiptPrepayMode', label: '预收模式', type: 'number' },
+  { field: 'rebateMode', label: '返点方式', type: 'number', control: 'enum-rebateMode' },
+  { field: 'receiptMethod', label: '收款方式', type: 'number', control: 'enum-receiptMethod' },
+  { field: 'receiptPrepayMode', label: '预收模式', type: 'number', control: 'enum-prepayMode' },
   { field: 'receiptPrepayRatio', label: '预收比例%', type: 'number' },
   { field: 'receiptPrepayDeadline', label: '预收截止日', type: 'date' },
   { field: 'receiptAccountPeriodDays', label: '账期天数', type: 'number' },
-  { field: 'paymentMethod', label: '付款方式', type: 'number' },
-  { field: 'paymentPrepayMode', label: '媒体预付模式', type: 'number' },
+  { field: 'paymentMethod', label: '付款方式', type: 'number', control: 'enum-paymentMethod' },
+  { field: 'paymentPrepayMode', label: '媒体预付模式', type: 'number', control: 'enum-prepayMode' },
   { field: 'paymentPrepayRatio', label: '媒体预付比例%', type: 'number' },
   { field: 'paymentPrepayDeadline', label: '媒体预付截止日', type: 'date' },
-  { field: 'paymentPostpayTrigger', label: '后付触发', type: 'number' },
+  { field: 'paymentPostpayTrigger', label: '后付触发', type: 'number', control: 'enum-postpayTrigger' },
   { field: 'paymentPostpayDays', label: '后付天数', type: 'number' },
   { field: 'deliveryStartDate', label: '投放起始日', type: 'date' },
   { field: 'deliveryEndDate', label: '投放结束日', type: 'date' },
   { field: 'deliveryVolume', label: '投放量+单位', type: 'text' },
   { field: 'currency', label: '币种', type: 'text' },
-  { field: 'upstreamAgentId', label: '上游代理', type: 'text' },
+  { field: 'upstreamAgentId', label: '上游代理', type: 'text', control: 'select-upstream' },
   { field: 'agentOrderNo', label: '代理订单号', type: 'text' },
   { field: 'remark', label: '备注', type: 'text' },
   { field: 'extJson', label: '扩展字段', type: 'text' },

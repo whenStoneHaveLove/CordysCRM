@@ -48,12 +48,14 @@
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  import useUserMap from '../useUserMap';
   import { fmtDateTime } from '../utils';
   import type { DataTableColumn } from 'naive-ui';
 
   const { t } = useI18n();
   const router = useRouter();
   const message = useMessage();
+  const { loadUserMap, getUserName } = useUserMap();
 
   const statusOptions = AdOrderChangeStatusOptions;
 
@@ -118,6 +120,7 @@
   }
 
   const columns: DataTableColumn<AdOrderChangeListItem>[] = [
+    { key: 'id', title: '改单ID', width: 180, ellipsis: { tooltip: true } },
     { key: 'orderNo', title: t('advertising.change.column.orderNo'), width: 150, ellipsis: { tooltip: true } },
     { key: 'orderName', title: t('advertising.change.column.orderName'), width: 160, ellipsis: { tooltip: true } },
     {
@@ -133,7 +136,24 @@
       width: 100,
       render: (row) => h(NTag, {}, { default: () => getAdOrderChangeStatusLabel(row.status) }),
     },
-    { key: 'approverId', title: t('advertising.change.column.approver'), width: 120 },
+    {
+      key: 'approverId',
+      title: t('advertising.change.column.approver'),
+      width: 120,
+      render: (row) => h('span', getUserName(row.approverId)),
+    },
+    {
+      key: 'approvedAt',
+      title: '审批时间',
+      width: 160,
+      render: (row) => h('span', fmtDateTime(row.approvedAt)),
+    },
+    {
+      key: 'creatorId',
+      title: '创建人',
+      width: 120,
+      render: (row) => h('span', getUserName(row.creatorId)),
+    },
     {
       key: 'createTime',
       title: t('advertising.change.column.createTime'),
@@ -182,7 +202,10 @@
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_CHANGE_CREATE });
   }
 
-  onMounted(fetchData);
+  onMounted(() => {
+    loadUserMap();
+    fetchData();
+  });
 </script>
 
 <style scoped>

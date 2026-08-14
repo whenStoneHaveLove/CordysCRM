@@ -117,6 +117,10 @@ export interface AdOrderChange {
   approverId?: string;
   approvedAt?: number | string | null;
   approveRemark?: string;
+  createUser?: string;
+  createTime?: number;
+  updateUser?: string;
+  updateTime?: number;
 }
 
 export interface AdOrderLog {

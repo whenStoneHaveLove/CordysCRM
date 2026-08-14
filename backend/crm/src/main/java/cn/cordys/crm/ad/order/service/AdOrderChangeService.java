@@ -91,8 +91,6 @@ public class AdOrderChangeService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    /** 改单资金侧处理动作（写入 ad_order_log.action）。 */
-    private static final String ACTION_CHANGE_MONEY_SIDE = "CHANGE_MONEY_SIDE";
     /** 改单执行动作（写入 ad_order_log.action）。 */
     private static final String ACTION_CHANGE_EXECUTED = "CHANGE_EXECUTED";
 
@@ -253,8 +251,6 @@ public class AdOrderChangeService {
         applyAfter(order, after);
         // 2) 金额重算（L-02/L-11/L-28）
         amountCalculator.computeAmounts(order);
-        // 3) L-04 资金侧处理
-        handleMoneySide(order, userId, orgId);
         // 4) 父单解锁 60 → 50
         order.setStatus(OrderStateMachine.EXECUTING);
         order.setUpdateUser(userId);
@@ -422,45 +418,6 @@ public class AdOrderChangeService {
                 case "customerId": order.setCustomerId(toStr(val)); break;
                 default: break;
             }
-        }
-    }
-
-    /**
-     * L-04 资金侧处理：对比新应收与已收/已开票，置红冲标记并记录应退款/待补收/待补开。
-     * 支付记录(type=50 退款等)由 M4 负责，本期以订单操作日志留痕（财务中心可查）。
-     */
-    private void handleMoneySide(AdOrder order, String userId, String orgId) {
-        BigDecimal newReceivable = nvl(order.getReceivableAmount());
-        BigDecimal received = nvl(order.getReceivedAmount());
-        BigDecimal invoiced = nvl(order.getInvoicedAmount());
-
-        // 红冲标记（L-27）：已开票 > 新应收
-        if (invoiced.compareTo(newReceivable) > 0) {
-            order.setNeedsRedInvoice(1);
-        }
-
-        StringBuilder note = new StringBuilder();
-        if (received.compareTo(newReceivable) > 0) {
-            note.append("应退款=").append(received.subtract(newReceivable)).append("; ");
-        } else if (received.compareTo(newReceivable) < 0) {
-            note.append("待补收=").append(newReceivable.subtract(received)).append("; ");
-        }
-        if (invoiced.compareTo(newReceivable) > 0) {
-            note.append("需红冲(已开票>新应收); ");
-        } else if (invoiced.compareTo(newReceivable) < 0) {
-            note.append("待补开=").append(newReceivable.subtract(invoiced)).append("; ");
-        }
-        if (note.length() > 0) {
-            AdOrderLog log = new AdOrderLog();
-            log.setId(IDGenerator.nextStr());
-            log.setOrderId(order.getId());
-            log.setAction(ACTION_CHANGE_MONEY_SIDE);
-            log.setOperatorId(userId);
-            log.setOrganizationId(orgId);
-            log.setBeforeValue(String.format("{\"receivable\":%s}", newReceivable));
-            log.setAfterValue(note.toString());
-            log.setCreateTime(System.currentTimeMillis());
-            orderLogMapper.insert(log);
         }
     }
 
