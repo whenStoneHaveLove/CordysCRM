@@ -57,7 +57,7 @@
         :loading="loading"
         :pagination="pagination"
         :row-key="(row: any) => row.id"
-        :scroll-x="2200"
+        :scroll-x="2350"
         remote
       />
     </n-card>
@@ -251,16 +251,16 @@
       render: (row) => h('span', fmtDate(row.deliveryStartDate)),
     },
     {
-      key: 'createTime',
-      title: t('advertising.order.column.createTime'),
-      width: 160,
-      render: (row) => h('span', fmtDateTime(row.createTime)),
-    },
-    {
       key: 'deliveryEndDate',
       title: '投放结束',
       width: 110,
       render: (row) => h('span', fmtDate(row.deliveryEndDate)),
+    },
+    {
+      key: 'createTime',
+      title: t('advertising.order.column.createTime'),
+      width: 160,
+      render: (row) => h('span', fmtDateTime(row.createTime)),
     },
     {
       key: 'receiptDone',

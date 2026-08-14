@@ -572,7 +572,8 @@ public class AdOrderService {
         log.setId(IDGenerator.nextStr());
         log.setOrderId(order.getId());
         log.setAction(action);
-        log.setOperatorId(userId);
+        // 定时任务（系统自动流转）无登录用户，operator_id 用 SYSTEM 占位，避免 NOT NULL 约束报错
+        log.setOperatorId(userId == null || userId.isBlank() ? "SYSTEM" : userId);
         log.setOrganizationId(orgId);
         log.setBeforeValue(String.format("{\"status\":%d}", from));
         log.setAfterValue(String.format("{\"status\":%d}", to));
