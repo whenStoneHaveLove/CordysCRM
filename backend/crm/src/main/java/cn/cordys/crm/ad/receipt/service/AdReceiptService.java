@@ -5,7 +5,12 @@ import cn.cordys.common.pager.PageUtils;
 import cn.cordys.common.pager.PagerWithOption;
 import cn.cordys.common.uid.IDGenerator;
 import cn.cordys.crm.ad.common.annotation.OperationLog;
+import cn.cordys.crm.ad.contract.domain.AdContract;
+import cn.cordys.crm.ad.contract.dto.response.AdContractBriefResponse;
+import cn.cordys.crm.ad.contract.mapper.ExtAdContractMapper;
 import cn.cordys.crm.ad.order.domain.AdOrder;
+import cn.cordys.crm.ad.order.domain.AdOrderContract;
+import cn.cordys.crm.ad.order.mapper.ExtAdOrderContractMapper;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderMapper;
 import cn.cordys.crm.ad.receipt.constants.ReceiptStatus;
 import cn.cordys.crm.ad.receipt.constants.ReceiptType;
@@ -13,6 +18,7 @@ import cn.cordys.crm.ad.receipt.domain.AdReceipt;
 import cn.cordys.crm.ad.receipt.dto.request.AdReceiptApproveRequest;
 import cn.cordys.crm.ad.receipt.dto.request.AdReceiptPageRequest;
 import cn.cordys.crm.ad.receipt.dto.request.AdReceiptSaveRequest;
+import cn.cordys.crm.ad.receipt.dto.response.AdReceiptDetailResponse;
 import cn.cordys.crm.ad.receipt.dto.response.AdReceiptListResponse;
 import cn.cordys.crm.ad.receipt.mapper.ExtAdReceiptMapper;
 import cn.cordys.mybatis.BaseMapper;
@@ -43,6 +49,10 @@ public class AdReceiptService {
     private ExtAdReceiptMapper extAdReceiptMapper;
     @Resource
     private ExtAdOrderMapper extAdOrderMapper;
+    @Resource
+    private ExtAdOrderContractMapper orderContractMapper;
+    @Resource
+    private ExtAdContractMapper extAdContractMapper;
 
     /** 新建（草稿状态）。 */
     @OperationLog(module = "AD_RECEIPT", action = "CREATE", targetId = "")
@@ -145,9 +155,74 @@ public class AdReceiptService {
         return r;
     }
 
-    /** 详情。 */
-    public AdReceipt detail(String id, String userId, String orgId) {
-        return requireReceipt(id);
+    /** 详情（聚合收款单 + 审计 + 订单 + 合同信息）。 */
+    public AdReceiptDetailResponse detail(String id, String userId, String orgId) {
+        AdReceipt r = requireReceipt(id);
+        AdReceiptDetailResponse resp = new AdReceiptDetailResponse();
+        resp.setId(r.getId());
+        resp.setReceiptNo(r.getReceiptNo());
+        resp.setOrderId(r.getOrderId());
+        resp.setAmount(r.getAmount());
+        resp.setReceiptTime(r.getReceiptTime());
+        resp.setType(r.getType());
+        resp.setTypeLabel(ReceiptType.labelOf(r.getType()));
+        resp.setStatus(r.getStatus());
+        resp.setStatusLabel(ReceiptStatus.labelOf(r.getStatus()));
+        resp.setVoucherUrl(r.getVoucherUrl());
+        resp.setRemark(r.getRemark());
+        resp.setCreateUser(r.getCreateUser());
+        resp.setCreateTime(r.getCreateTime());
+        resp.setUpdateUser(r.getUpdateUser());
+        resp.setUpdateTime(r.getUpdateTime());
+        resp.setApproveUser(r.getApproveUser());
+        resp.setApproveTime(r.getApproveTime());
+        resp.setApproveRemark(r.getApproveRemark());
+
+        // 订单信息
+        AdOrder order = extAdOrderMapper.selectByPrimaryKey(r.getOrderId());
+        if (order != null) {
+            resp.setOrderNo(order.getOrderNo());
+            resp.setOrderName(order.getOrderName());
+        }
+
+        // 关联合同（框架合同 + 单笔合同）
+        resp.setContracts(loadContracts(r.getOrderId()));
+        return resp;
+    }
+
+    /** 加载订单关联的合同（框架合同通过 ad_order_contract，单笔合同通过 ad_contract.order_id）。 */
+    private List<AdContractBriefResponse> loadContracts(String orderId) {
+        List<AdContractBriefResponse> result = new java.util.ArrayList<>();
+        // 框架合同
+        List<AdOrderContract> orderContracts = orderContractMapper.selectByOrderId(orderId);
+        if (orderContracts != null) {
+            for (AdOrderContract oc : orderContracts) {
+                AdContract c = extAdContractMapper.selectByPrimaryKey(oc.getContractId());
+                if (c != null && (c.getDeleted() == null || c.getDeleted() == 0)) {
+                    result.add(toBrief(c));
+                }
+            }
+        }
+        // 单笔合同
+        List<AdContract> singleContracts = extAdContractMapper.selectByOrderId(orderId);
+        if (singleContracts != null) {
+            for (AdContract c : singleContracts) {
+                result.add(toBrief(c));
+            }
+        }
+        return result;
+    }
+
+    private AdContractBriefResponse toBrief(AdContract c) {
+        AdContractBriefResponse b = new AdContractBriefResponse();
+        b.setId(c.getId());
+        b.setContractNo(c.getContractNo());
+        b.setContractName(c.getContractName());
+        b.setContractType(c.getContractType());
+        b.setContractDirection(c.getContractDirection());
+        b.setAmount(c.getAmount());
+        b.setSealStatus(c.getSealStatus());
+        return b;
     }
 
     /** 按订单查询剩余应收金额（应收-已收），用于新建时带出默认金额。 */

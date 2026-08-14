@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * <p>职责：
  * <ul>
- *   <li>每天凌晨 1 点：将逾期的执行中订单(50，投放结束日已过期) 自动流转至结算中(80)。</li>
+ *   <li>每分钟：将逾期的执行中订单(50，投放结束日已过期) 自动流转至结算中(80)。</li>
  *   <li>每分钟：扫描结算中(80)订单，满足「有关联合同 + 收款已收 + 付款已付」后自动归档(90)。</li>
  * </ul>
  * 具体扫描与流转逻辑在 {@link AdOrderService#checkOverdue()} / {@link AdOrderService#checkArchive()} 中。</p>
@@ -29,9 +29,9 @@ public class AdOrderOverdueJob {
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     /**
-     * 逾期自动流转：执行中(50) 且投放结束日已过 → 结算中(80)。每天凌晨 1 点执行。
+     * 逾期自动流转：执行中(50) 且投放结束日已过 → 结算中(80)。每分钟执行。
      */
-    @QuartzScheduled(cron = "0 0 1 * * ?")
+    @QuartzScheduled(cron = "0 * * * * ?")
     public void overdueToSettlement() {
         if (!running.compareAndSet(false, true)) {
             log.warn("逾期检查已在运行中，跳过本次触发");

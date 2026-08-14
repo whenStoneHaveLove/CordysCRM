@@ -900,6 +900,40 @@ export interface AdReceiptInfo {
   createTime?: number;
 }
 
+export interface AdContractBriefInfo {
+  id?: string;
+  contractNo?: string;
+  contractName?: string;
+  contractType?: number;
+  contractDirection?: number;
+  amount?: number;
+  sealStatus?: number;
+}
+
+export interface AdReceiptDetail {
+  id?: string;
+  receiptNo?: string;
+  orderId?: string;
+  amount?: number;
+  receiptTime?: number | string | null;
+  type?: number;
+  typeLabel?: string;
+  status?: number;
+  statusLabel?: string;
+  voucherUrl?: string;
+  remark?: string;
+  createUser?: string;
+  createTime?: number;
+  updateUser?: string;
+  updateTime?: number;
+  approveUser?: string;
+  approveTime?: number;
+  approveRemark?: string;
+  orderNo?: string;
+  orderName?: string;
+  contracts?: AdContractBriefInfo[];
+}
+
 export type AdReceiptPageResult = CommonList<AdReceiptInfo>;
 
 /* ==================== 付款单 ==================== */
@@ -949,6 +983,31 @@ export interface AdPayoutInfo {
   approveRemark?: string;
   remark?: string;
   createTime?: number;
+}
+
+export interface AdPayoutDetail {
+  id?: string;
+  paymentNo?: string;
+  orderId?: string;
+  amount?: number;
+  paymentTime?: number | string | null;
+  type?: number;
+  typeLabel?: string;
+  status?: number;
+  statusLabel?: string;
+  mediaIds?: string;
+  voucherUrl?: string;
+  remark?: string;
+  createUser?: string;
+  createTime?: number;
+  updateUser?: string;
+  updateTime?: number;
+  approveUser?: string;
+  approveTime?: number;
+  approveRemark?: string;
+  orderNo?: string;
+  orderName?: string;
+  contracts?: AdContractBriefInfo[];
 }
 
 export type AdPayoutPageResult = CommonList<AdPayoutInfo>;

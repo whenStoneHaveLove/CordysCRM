@@ -53,11 +53,18 @@
             :options="orderOptions"
             placeholder="选择订单"
             @search="searchOrders"
+            @focus="() => searchOrders('')"
             @update:value="onOrderChange"
           />
         </n-form-item>
         <n-form-item label="收款金额" path="amount">
-          <n-input-number v-model:value="form.amount" :min="0" :precision="2" style="width: 100%" placeholder="剩余应收自动带出" />
+          <n-input-number
+            v-model:value="form.amount"
+            :min="0"
+            :precision="2"
+            style="width: 100%"
+            placeholder="剩余应收自动带出"
+          />
         </n-form-item>
         <n-form-item label="收款时间">
           <n-date-picker v-model:value="form.receiptTime" type="date" style="width: 100%" />
@@ -93,16 +100,70 @@
         </n-space>
       </template>
     </n-modal>
+
+    <!-- 详情弹窗 -->
+    <n-modal v-model:show="showDetail" preset="card" title="收款单详情" style="width: 640px">
+      <n-spin :show="detailLoading">
+        <n-descriptions label-placement="left" :column="2" bordered size="small">
+          <n-descriptions-item label="收款单号">{{ detail.receiptNo || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="收款金额">¥{{ detail.amount ?? 0 }}</n-descriptions-item>
+          <n-descriptions-item label="收款时间">{{ fmtDate(detail.receiptTime) }}</n-descriptions-item>
+          <n-descriptions-item label="类型">{{ detail.typeLabel || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="状态">{{ detail.statusLabel || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="备注">{{ detail.remark || '-' }}</n-descriptions-item>
+        </n-descriptions>
+
+        <n-divider title-placement="left">审计信息</n-divider>
+        <n-descriptions label-placement="left" :column="2" bordered size="small">
+          <n-descriptions-item label="创建人">{{ getUserName(detail.createUser) }}</n-descriptions-item>
+          <n-descriptions-item label="创建时间">{{ fmtDateTime(detail.createTime) }}</n-descriptions-item>
+          <n-descriptions-item label="修改人">{{ getUserName(detail.updateUser) }}</n-descriptions-item>
+          <n-descriptions-item label="修改时间">{{ fmtDateTime(detail.updateTime) }}</n-descriptions-item>
+          <n-descriptions-item label="审批人">{{ getUserName(detail.approveUser) }}</n-descriptions-item>
+          <n-descriptions-item label="审批时间">{{ fmtDateTime(detail.approveTime) }}</n-descriptions-item>
+          <n-descriptions-item label="审批备注" :span="2">{{ detail.approveRemark || '-' }}</n-descriptions-item>
+        </n-descriptions>
+
+        <n-divider title-placement="left">关联订单</n-divider>
+        <n-descriptions label-placement="left" :column="2" bordered size="small">
+          <n-descriptions-item label="订单编号">
+            <n-button text type="primary" @click="goOrderDetail(detail.orderId)">{{ detail.orderNo || '-' }}</n-button>
+          </n-descriptions-item>
+          <n-descriptions-item label="订单名称">{{ detail.orderName || '-' }}</n-descriptions-item>
+        </n-descriptions>
+
+        <template v-if="detail.contracts && detail.contracts.length">
+          <n-divider title-placement="left">关联合同</n-divider>
+          <n-descriptions label-placement="left" :column="2" bordered size="small">
+            <n-descriptions-item v-for="c in detail.contracts" :key="`no-${c.id}`" label="合同编号">
+              <n-button text type="primary" @click="goContractDetail(c.id)">{{ c.contractNo || '-' }}</n-button>
+            </n-descriptions-item>
+            <n-descriptions-item v-for="c in detail.contracts" :key="`name-${c.id}`" label="合同名称">
+              {{ c.contractName || '-' }}
+            </n-descriptions-item>
+          </n-descriptions>
+        </template>
+      </n-spin>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showDetail = false">关闭</n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
   import { computed, h, onMounted, reactive, ref } from 'vue';
+  import { useRouter } from 'vue-router';
   import {
     NButton,
     NCard,
     NDataTable,
     NDatePicker,
+    NDescriptions,
+    NDescriptionsItem,
+    NDivider,
     NForm,
     NFormItem,
     NInput,
@@ -110,6 +171,7 @@
     NModal,
     NSelect,
     NSpace,
+    NSpin,
     NTag,
     useMessage,
   } from 'naive-ui';
@@ -123,7 +185,7 @@
     getAdReceiptTypeLabel,
   } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
-  import type { AdReceiptInfo, AdReceiptPageParams } from '@lib/shared/models/advertising';
+  import type { AdReceiptDetail, AdReceiptInfo, AdReceiptPageParams } from '@lib/shared/models/advertising';
 
   import {
     approveAdReceipt,
@@ -136,10 +198,16 @@
     updateAdReceipt,
   } from '@/api/modules';
 
+  import { AdvertisingRouteEnum } from '@/enums/routeEnum';
+
+  import useUserMap from '../useUserMap';
+  import { fmtDate, fmtDateTime, toTimeStamp } from '../utils';
   import type { DataTableColumn } from 'naive-ui';
 
   const { t } = useI18n();
   const message = useMessage();
+  const { loadUserMap, getUserName } = useUserMap();
+  const router = useRouter();
 
   const statusOptions = AdReceiptStatusOptions;
   const typeOptions = AdReceiptTypeOptions;
@@ -192,6 +260,21 @@
     }
   }
 
+  interface ReceiptForm {
+    orderId?: string;
+    amount?: number;
+    receiptTime?: number | null;
+    type?: number;
+    remark?: string;
+  }
+  const form = reactive<ReceiptForm>({
+    orderId: undefined,
+    amount: undefined,
+    receiptTime: null,
+    type: 10,
+    remark: undefined,
+  });
+
   // ---- 订单选择 ----
   const orderLoading = ref(false);
   const orderOptions = ref<Array<{ label: string; value: string }>>([]);
@@ -227,21 +310,6 @@
   const editId = ref('');
   const modalTitle = computed(() => (editId.value ? '编辑收款单' : '新建收款单'));
 
-  interface ReceiptForm {
-    orderId?: string;
-    amount?: number;
-    receiptTime?: number | null;
-    type?: number;
-    remark?: string;
-  }
-  const form = reactive<ReceiptForm>({
-    orderId: undefined,
-    amount: undefined,
-    receiptTime: null,
-    type: 10,
-    remark: undefined,
-  });
-
   function resetForm() {
     form.orderId = undefined;
     form.amount = undefined;
@@ -264,7 +332,7 @@
       const res = await getAdReceiptDetail(row.id!);
       form.orderId = res.orderId;
       form.amount = res.amount;
-      form.receiptTime = res.receiptTime as any;
+      form.receiptTime = toTimeStamp(res.receiptTime);
       form.type = res.type ?? 10;
       form.remark = res.remark;
       if (res.orderId) {
@@ -357,16 +425,45 @@
     }
   }
 
+  // ---- 详情 ----
+  const showDetail = ref(false);
+  const detailLoading = ref(false);
+  const detail = reactive<AdReceiptDetail>({});
+  async function openDetail(row: AdReceiptInfo) {
+    showDetail.value = true;
+    detailLoading.value = true;
+    try {
+      const res = await getAdReceiptDetail(row.id!);
+      Object.assign(detail, res);
+    } catch (e) {
+      message.error((e as Error).message || '加载详情失败');
+    } finally {
+      detailLoading.value = false;
+    }
+  }
+  function goOrderDetail(orderId?: string) {
+    if (!orderId) return;
+    const { href } = router.resolve({ name: AdvertisingRouteEnum.ADVERTISING_ORDER_DETAIL, params: { id: orderId } });
+    window.open(href, '_blank');
+  }
+  function goContractDetail(contractId?: string) {
+    if (!contractId) return;
+    const { href } = router.resolve({ name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_DETAIL, params: { id: contractId } });
+    window.open(href, '_blank');
+  }
+
   const columns: DataTableColumn<AdReceiptInfo>[] = [
     { key: 'receiptNo', title: '收款单号', minWidth: 140, ellipsis: { tooltip: true } },
     { key: 'orderName', title: '关联订单', minWidth: 160, ellipsis: { tooltip: true } },
     { key: 'amount', title: '收款金额', width: 120, render: (row) => h('span', `¥${row.amount ?? 0}`) },
+    { key: 'receiptTime', title: '收款时间', width: 110, render: (row) => h('span', fmtDate(row.receiptTime)) },
     { key: 'type', title: '类型', width: 100, render: (row) => h('span', getAdReceiptTypeLabel(row.type)) },
     {
       key: 'status',
       title: '状态',
       width: 100,
-      render: (row) => h(NTag, { type: statusTagType(row.status) }, { default: () => getAdReceiptStatusLabel(row.status) }),
+      render: (row) =>
+        h(NTag, { type: statusTagType(row.status) }, { default: () => getAdReceiptStatusLabel(row.status) }),
     },
     {
       key: 'action',
@@ -380,15 +477,28 @@
           {
             default: () => {
               const actions: any[] = [];
+              actions.push(h(NButton, { size: 'small', onClick: () => openDetail(row) }, { default: () => '详情' }));
               if (row.status === 0 || row.status === 30) {
                 actions.push(
-                  h(NButton, { size: 'small', type: 'primary', onClick: () => openEdit(row) }, { default: () => '编辑' }),
-                  h(NButton, { size: 'small', type: 'primary', onClick: () => handleSubmit(row) }, { default: () => '提交' })
+                  h(
+                    NButton,
+                    { size: 'small', type: 'primary', onClick: () => openEdit(row) },
+                    { default: () => '编辑' }
+                  ),
+                  h(
+                    NButton,
+                    { size: 'small', type: 'primary', onClick: () => handleSubmit(row) },
+                    { default: () => '提交' }
+                  )
                 );
               }
               if (row.status === 10) {
                 actions.push(
-                  h(NButton, { size: 'small', type: 'success', onClick: () => openApprove(row) }, { default: () => '审批' })
+                  h(
+                    NButton,
+                    { size: 'small', type: 'success', onClick: () => openApprove(row) },
+                    { default: () => '审批' }
+                  )
                 );
               }
               return actions;
@@ -410,6 +520,7 @@
   }
 
   onMounted(() => {
+    loadUserMap();
     fetchData();
   });
 </script>

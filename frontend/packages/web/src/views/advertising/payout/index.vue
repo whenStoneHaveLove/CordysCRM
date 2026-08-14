@@ -53,11 +53,18 @@
             :options="orderOptions"
             placeholder="选择订单"
             @search="searchOrders"
+            @focus="() => searchOrders('')"
             @update:value="onOrderChange"
           />
         </n-form-item>
         <n-form-item label="付款金额" path="amount">
-          <n-input-number v-model:value="form.amount" :min="0" :precision="2" style="width: 100%" placeholder="剩余应付自动带出" />
+          <n-input-number
+            v-model:value="form.amount"
+            :min="0"
+            :precision="2"
+            style="width: 100%"
+            placeholder="剩余应付自动带出"
+          />
         </n-form-item>
         <n-form-item label="付款时间">
           <n-date-picker v-model:value="form.paymentTime" type="date" style="width: 100%" />
@@ -100,11 +107,62 @@
         </n-space>
       </template>
     </n-modal>
+
+    <!-- 详情弹窗 -->
+    <n-modal v-model:show="showDetail" preset="card" title="付款单详情" style="width: 640px">
+      <n-spin :show="detailLoading">
+        <n-descriptions label-placement="left" :column="2" bordered size="small">
+          <n-descriptions-item label="付款单号">{{ detail.paymentNo || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="付款金额">¥{{ detail.amount ?? 0 }}</n-descriptions-item>
+          <n-descriptions-item label="付款时间">{{ fmtDate(detail.paymentTime) }}</n-descriptions-item>
+          <n-descriptions-item label="类型">{{ detail.typeLabel || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="状态">{{ detail.statusLabel || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="备注">{{ detail.remark || '-' }}</n-descriptions-item>
+        </n-descriptions>
+
+        <n-divider title-placement="left">审计信息</n-divider>
+        <n-descriptions label-placement="left" :column="2" bordered size="small">
+          <n-descriptions-item label="创建人">{{ getUserName(detail.createUser) }}</n-descriptions-item>
+          <n-descriptions-item label="创建时间">{{ fmtDateTime(detail.createTime) }}</n-descriptions-item>
+          <n-descriptions-item label="修改人">{{ getUserName(detail.updateUser) }}</n-descriptions-item>
+          <n-descriptions-item label="修改时间">{{ fmtDateTime(detail.updateTime) }}</n-descriptions-item>
+          <n-descriptions-item label="审批人">{{ getUserName(detail.approveUser) }}</n-descriptions-item>
+          <n-descriptions-item label="审批时间">{{ fmtDateTime(detail.approveTime) }}</n-descriptions-item>
+          <n-descriptions-item label="审批备注" :span="2">{{ detail.approveRemark || '-' }}</n-descriptions-item>
+        </n-descriptions>
+
+        <n-divider title-placement="left">关联订单</n-divider>
+        <n-descriptions label-placement="left" :column="2" bordered size="small">
+          <n-descriptions-item label="订单编号">
+            <n-button text type="primary" @click="goOrderDetail(detail.orderId)">{{ detail.orderNo || '-' }}</n-button>
+          </n-descriptions-item>
+          <n-descriptions-item label="订单名称">{{ detail.orderName || '-' }}</n-descriptions-item>
+        </n-descriptions>
+
+        <template v-if="detail.contracts && detail.contracts.length">
+          <n-divider title-placement="left">关联合同</n-divider>
+          <n-descriptions label-placement="left" :column="2" bordered size="small">
+            <n-descriptions-item v-for="c in detail.contracts" :key="`no-${c.id}`" label="合同编号">
+              <n-button text type="primary" @click="goContractDetail(c.id)">{{ c.contractNo || '-' }}</n-button>
+            </n-descriptions-item>
+            <n-descriptions-item v-for="c in detail.contracts" :key="`name-${c.id}`" label="合同名称">
+              {{ c.contractName || '-' }}
+            </n-descriptions-item>
+          </n-descriptions>
+        </template>
+      </n-spin>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showDetail = false">关闭</n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
   import { computed, h, onMounted, reactive, ref } from 'vue';
+  import { useRouter } from 'vue-router';
   import {
     NButton,
     NCard,
@@ -112,6 +170,9 @@
     NCheckboxGroup,
     NDataTable,
     NDatePicker,
+    NDescriptions,
+    NDescriptionsItem,
+    NDivider,
     NForm,
     NFormItem,
     NInput,
@@ -119,6 +180,7 @@
     NModal,
     NSelect,
     NSpace,
+    NSpin,
     NTag,
     useMessage,
   } from 'naive-ui';
@@ -130,7 +192,7 @@
     getAdPayoutTypeLabel,
   } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
-  import type { AdPayoutInfo, AdPayoutPageParams } from '@lib/shared/models/advertising';
+  import type { AdPayoutDetail, AdPayoutInfo, AdPayoutPageParams } from '@lib/shared/models/advertising';
 
   import {
     approveAdPayout,
@@ -144,10 +206,16 @@
     updateAdPayout,
   } from '@/api/modules';
 
+  import { AdvertisingRouteEnum } from '@/enums/routeEnum';
+
+  import useUserMap from '../useUserMap';
+  import { fmtDate, fmtDateTime, toTimeStamp } from '../utils';
   import type { DataTableColumn } from 'naive-ui';
 
   const { t } = useI18n();
   const message = useMessage();
+  const router = useRouter();
+  const { loadUserMap, getUserName } = useUserMap();
 
   const statusOptions = AdPayoutStatusOptions;
   const typeOptions = AdPayoutTypeOptions;
@@ -200,6 +268,25 @@
     }
   }
 
+  const mediaOptions = ref<Array<{ label: string; value: string }>>([]);
+
+  interface PayoutForm {
+    orderId?: string;
+    amount?: number;
+    paymentTime?: number | null;
+    type?: number;
+    mediaIds?: string[];
+    remark?: string;
+  }
+  const form = reactive<PayoutForm>({
+    orderId: undefined,
+    amount: undefined,
+    paymentTime: null,
+    type: 10,
+    mediaIds: [],
+    remark: undefined,
+  });
+
   // ---- 订单选择 ----
   const orderLoading = ref(false);
   const orderOptions = ref<Array<{ label: string; value: string }>>([]);
@@ -229,7 +316,7 @@
       form.amount = Number(remaining ?? 0);
       const media = await getAdPayoutMedia(orderId);
       mediaOptions.value = (media || []).map((m: any) => ({
-        label: m.mediaName || m.downstreamMediaId || m.id,
+        label: m.mediaName || m.mediaId || m.id,
         value: m.id,
       }));
       // 默认全选
@@ -243,24 +330,6 @@
   const showModal = ref(false);
   const editId = ref('');
   const modalTitle = computed(() => (editId.value ? '编辑付款单' : '新建付款单'));
-  const mediaOptions = ref<Array<{ label: string; value: string }>>([]);
-
-  interface PayoutForm {
-    orderId?: string;
-    amount?: number;
-    paymentTime?: number | null;
-    type?: number;
-    mediaIds?: string[];
-    remark?: string;
-  }
-  const form = reactive<PayoutForm>({
-    orderId: undefined,
-    amount: undefined,
-    paymentTime: null,
-    type: 10,
-    mediaIds: [],
-    remark: undefined,
-  });
 
   function resetForm() {
     form.orderId = undefined;
@@ -286,14 +355,14 @@
       const res = await getAdPayoutDetail(row.id!);
       form.orderId = res.orderId;
       form.amount = res.amount;
-      form.paymentTime = res.paymentTime as any;
+      form.paymentTime = toTimeStamp(res.paymentTime);
       form.type = res.type ?? 10;
       form.remark = res.remark;
       if (res.orderId) {
         orderOptions.value = [{ label: res.orderName || res.orderId, value: res.orderId }];
         const media = await getAdPayoutMedia(res.orderId);
         mediaOptions.value = (media || []).map((m: any) => ({
-          label: m.mediaName || m.downstreamMediaId || m.id,
+          label: m.mediaName || m.mediaId || m.id,
           value: m.id,
         }));
       }
@@ -392,16 +461,44 @@
     }
   }
 
+  // ---- 详情 ----
+  const showDetail = ref(false);
+  const detailLoading = ref(false);
+  const detail = reactive<AdPayoutDetail>({});
+  async function openDetail(row: AdPayoutInfo) {
+    showDetail.value = true;
+    detailLoading.value = true;
+    try {
+      const res = await getAdPayoutDetail(row.id!);
+      Object.assign(detail, res);
+    } catch (e) {
+      message.error((e as Error).message || '加载详情失败');
+    } finally {
+      detailLoading.value = false;
+    }
+  }
+  function goOrderDetail(orderId?: string) {
+    if (!orderId) return;
+    const { href } = router.resolve({ name: AdvertisingRouteEnum.ADVERTISING_ORDER_DETAIL, params: { id: orderId } });
+    window.open(href, '_blank');
+  }
+  function goContractDetail(contractId?: string) {
+    if (!contractId) return;
+    const { href } = router.resolve({ name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_DETAIL, params: { id: contractId } });
+    window.open(href, '_blank');
+  }
   const columns: DataTableColumn<AdPayoutInfo>[] = [
     { key: 'paymentNo', title: '付款单号', minWidth: 140, ellipsis: { tooltip: true } },
     { key: 'orderName', title: '关联订单', minWidth: 160, ellipsis: { tooltip: true } },
     { key: 'amount', title: '付款金额', width: 120, render: (row) => h('span', `¥${row.amount ?? 0}`) },
+    { key: 'paymentTime', title: '付款时间', width: 110, render: (row) => h('span', fmtDate(row.paymentTime)) },
     { key: 'type', title: '类型', width: 100, render: (row) => h('span', getAdPayoutTypeLabel(row.type)) },
     {
       key: 'status',
       title: '状态',
       width: 100,
-      render: (row) => h(NTag, { type: statusTagType(row.status) }, { default: () => getAdPayoutStatusLabel(row.status) }),
+      render: (row) =>
+        h(NTag, { type: statusTagType(row.status) }, { default: () => getAdPayoutStatusLabel(row.status) }),
     },
     {
       key: 'action',
@@ -415,15 +512,28 @@
           {
             default: () => {
               const actions: any[] = [];
+              actions.push(h(NButton, { size: 'small', onClick: () => openDetail(row) }, { default: () => '详情' }));
               if (row.status === 0 || row.status === 30) {
                 actions.push(
-                  h(NButton, { size: 'small', type: 'primary', onClick: () => openEdit(row) }, { default: () => '编辑' }),
-                  h(NButton, { size: 'small', type: 'primary', onClick: () => handleSubmit(row) }, { default: () => '提交' })
+                  h(
+                    NButton,
+                    { size: 'small', type: 'primary', onClick: () => openEdit(row) },
+                    { default: () => '编辑' }
+                  ),
+                  h(
+                    NButton,
+                    { size: 'small', type: 'primary', onClick: () => handleSubmit(row) },
+                    { default: () => '提交' }
+                  )
                 );
               }
               if (row.status === 10) {
                 actions.push(
-                  h(NButton, { size: 'small', type: 'success', onClick: () => openApprove(row) }, { default: () => '审批' })
+                  h(
+                    NButton,
+                    { size: 'small', type: 'success', onClick: () => openApprove(row) },
+                    { default: () => '审批' }
+                  )
                 );
               }
               return actions;
@@ -445,6 +555,7 @@
   }
 
   onMounted(() => {
+    loadUserMap();
     fetchData();
   });
 </script>

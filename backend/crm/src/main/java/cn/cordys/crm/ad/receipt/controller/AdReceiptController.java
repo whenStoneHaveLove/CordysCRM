@@ -8,6 +8,7 @@ import cn.cordys.crm.ad.receipt.domain.AdReceipt;
 import cn.cordys.crm.ad.receipt.dto.request.AdReceiptApproveRequest;
 import cn.cordys.crm.ad.receipt.dto.request.AdReceiptPageRequest;
 import cn.cordys.crm.ad.receipt.dto.request.AdReceiptSaveRequest;
+import cn.cordys.crm.ad.receipt.dto.response.AdReceiptDetailResponse;
 import cn.cordys.crm.ad.receipt.dto.response.AdReceiptListResponse;
 import cn.cordys.crm.ad.receipt.service.AdReceiptService;
 import cn.cordys.security.SessionUtils;
@@ -75,8 +76,8 @@ public class AdReceiptController {
 
     @GetMapping("/{id}")
     @CsPermission(PermissionConstants.AD_RECEIPT_READ)
-    @Operation(summary = "收款单详情")
-    public AdReceipt detail(@PathVariable("id") String id) {
+    @Operation(summary = "收款单详情（含审计/订单/合同信息）")
+    public AdReceiptDetailResponse detail(@PathVariable("id") String id) {
         return adReceiptService.detail(id, userId(), orgId());
     }
 

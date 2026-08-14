@@ -13,6 +13,7 @@ import type {
   AdPayoutPageParams,
   AdPayoutPageResult,
   AdPayoutInfo,
+  AdPayoutDetail,
 } from '@lib/shared/models/advertising';
 
 export default function useAdPayoutApi(CDR: CordysAxios) {
@@ -38,7 +39,7 @@ export default function useAdPayoutApi(CDR: CordysAxios) {
 
   // 付款单详情
   function getAdPayoutDetail(id: string) {
-    return CDR.get<AdPayoutInfo>({ url: `${AdPayoutDetailUrl}/${id}` });
+    return CDR.get<AdPayoutDetail>({ url: `${AdPayoutDetailUrl}/${id}` });
   }
 
   // 订单剩余应付金额
@@ -46,9 +47,9 @@ export default function useAdPayoutApi(CDR: CordysAxios) {
     return CDR.get<number>({ url: `${AdPayoutRemainingUrl}/${orderId}` });
   }
 
-  // 订单的下游媒体列表（付款勾选用）
+  // 订单的下游媒体列表（付款勾选用，含媒体名称）
   function getAdPayoutMedia(orderId: string) {
-    return CDR.get<Array<{ id: string; mediaName?: string; downstreamMediaId?: string }>>({
+    return CDR.get<Array<{ id: string; mediaId?: string; mediaName?: string }>>({
       url: `${AdPayoutMediaUrl}/${orderId}`,
     });
   }

@@ -5,9 +5,12 @@ import cn.cordys.common.pager.PageUtils;
 import cn.cordys.common.pager.PagerWithOption;
 import cn.cordys.common.uid.IDGenerator;
 import cn.cordys.crm.ad.common.annotation.OperationLog;
+import cn.cordys.crm.ad.contract.domain.AdContract;
+import cn.cordys.crm.ad.contract.dto.response.AdContractBriefResponse;
+import cn.cordys.crm.ad.contract.mapper.ExtAdContractMapper;
 import cn.cordys.crm.ad.order.domain.AdOrder;
-import cn.cordys.crm.ad.order.domain.AdOrderDownstreamMedia;
-import cn.cordys.crm.ad.order.mapper.ExtAdOrderDownstreamMediaMapper;
+import cn.cordys.crm.ad.order.domain.AdOrderContract;
+import cn.cordys.crm.ad.order.mapper.ExtAdOrderContractMapper;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderMapper;
 import cn.cordys.crm.ad.payout.constants.PayoutStatus;
 import cn.cordys.crm.ad.payout.constants.PayoutType;
@@ -15,8 +18,10 @@ import cn.cordys.crm.ad.payout.domain.AdPayout;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutApproveRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutPageRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutSaveRequest;
+import cn.cordys.crm.ad.payout.dto.response.AdPayoutDetailResponse;
 import cn.cordys.crm.ad.payout.dto.response.AdPayoutListResponse;
 import cn.cordys.crm.ad.payout.mapper.ExtAdPayoutMapper;
+import cn.cordys.crm.ad.payout.mapper.ExtAdPayoutMediaOptionMapper;
 import cn.cordys.mybatis.BaseMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.Page;
@@ -47,7 +52,11 @@ public class AdPayoutService {
     @Resource
     private ExtAdOrderMapper extAdOrderMapper;
     @Resource
-    private ExtAdOrderDownstreamMediaMapper extAdOrderDownstreamMediaMapper;
+    private ExtAdPayoutMediaOptionMapper extAdPayoutMediaOptionMapper;
+    @Resource
+    private ExtAdOrderContractMapper orderContractMapper;
+    @Resource
+    private ExtAdContractMapper extAdContractMapper;
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -154,9 +163,73 @@ public class AdPayoutService {
         return p;
     }
 
-    /** 详情。 */
-    public AdPayout detail(String id, String userId, String orgId) {
-        return requirePayout(id);
+    /** 详情（聚合付款单 + 审计 + 订单 + 合同信息）。 */
+    public AdPayoutDetailResponse detail(String id, String userId, String orgId) {
+        AdPayout p = requirePayout(id);
+        AdPayoutDetailResponse resp = new AdPayoutDetailResponse();
+        resp.setId(p.getId());
+        resp.setPaymentNo(p.getPaymentNo());
+        resp.setOrderId(p.getOrderId());
+        resp.setAmount(p.getAmount());
+        resp.setPaymentTime(p.getPaymentTime());
+        resp.setType(p.getType());
+        resp.setTypeLabel(PayoutType.labelOf(p.getType()));
+        resp.setStatus(p.getStatus());
+        resp.setStatusLabel(PayoutStatus.labelOf(p.getStatus()));
+        resp.setMediaIds(p.getMediaIds());
+        resp.setVoucherUrl(p.getVoucherUrl());
+        resp.setRemark(p.getRemark());
+        resp.setCreateUser(p.getCreateUser());
+        resp.setCreateTime(p.getCreateTime());
+        resp.setUpdateUser(p.getUpdateUser());
+        resp.setUpdateTime(p.getUpdateTime());
+        resp.setApproveUser(p.getApproveUser());
+        resp.setApproveTime(p.getApproveTime());
+        resp.setApproveRemark(p.getApproveRemark());
+
+        // 订单信息
+        AdOrder order = extAdOrderMapper.selectByPrimaryKey(p.getOrderId());
+        if (order != null) {
+            resp.setOrderNo(order.getOrderNo());
+            resp.setOrderName(order.getOrderName());
+        }
+
+        // 关联合同（框架合同 + 单笔合同）
+        resp.setContracts(loadContracts(p.getOrderId()));
+        return resp;
+    }
+
+    /** 加载订单关联的合同（框架合同通过 ad_order_contract，单笔合同通过 ad_contract.order_id）。 */
+    private List<AdContractBriefResponse> loadContracts(String orderId) {
+        List<AdContractBriefResponse> result = new java.util.ArrayList<>();
+        List<AdOrderContract> orderContracts = orderContractMapper.selectByOrderId(orderId);
+        if (orderContracts != null) {
+            for (AdOrderContract oc : orderContracts) {
+                AdContract c = extAdContractMapper.selectByPrimaryKey(oc.getContractId());
+                if (c != null && (c.getDeleted() == null || c.getDeleted() == 0)) {
+                    result.add(toBrief(c));
+                }
+            }
+        }
+        List<AdContract> singleContracts = extAdContractMapper.selectByOrderId(orderId);
+        if (singleContracts != null) {
+            for (AdContract c : singleContracts) {
+                result.add(toBrief(c));
+            }
+        }
+        return result;
+    }
+
+    private AdContractBriefResponse toBrief(AdContract c) {
+        AdContractBriefResponse b = new AdContractBriefResponse();
+        b.setId(c.getId());
+        b.setContractNo(c.getContractNo());
+        b.setContractName(c.getContractName());
+        b.setContractType(c.getContractType());
+        b.setContractDirection(c.getContractDirection());
+        b.setAmount(c.getAmount());
+        b.setSealStatus(c.getSealStatus());
+        return b;
     }
 
     /** 订单剩余应付金额（媒体应付-已付），用于新建时带出默认金额。 */
@@ -170,9 +243,9 @@ public class AdPayoutService {
         return payable.subtract(paid);
     }
 
-    /** 订单的下游媒体列表（付款单选择订单时带出供勾选）。 */
-    public List<AdOrderDownstreamMedia> listMedia(String orderId, String userId, String orgId) {
-        return extAdOrderDownstreamMediaMapper.selectByOrderId(orderId);
+    /** 订单的下游媒体列表（付款单选择订单时带出供勾选，JOIN 出媒体名称）。 */
+    public List<cn.cordys.crm.ad.payout.dto.response.AdPayoutMediaOptionResponse> listMedia(String orderId, String userId, String orgId) {
+        return extAdPayoutMediaOptionMapper.selectMediaOptions(orderId);
     }
 
     /** 分页列表。 */

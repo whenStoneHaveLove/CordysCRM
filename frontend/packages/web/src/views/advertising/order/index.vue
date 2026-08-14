@@ -257,6 +257,12 @@
       render: (row) => h('span', fmtDateTime(row.createTime)),
     },
     {
+      key: 'deliveryEndDate',
+      title: '投放结束',
+      width: 110,
+      render: (row) => h('span', fmtDate(row.deliveryEndDate)),
+    },
+    {
       key: 'receiptDone',
       title: t('advertising.order.column.receiptDone'),
       width: 90,

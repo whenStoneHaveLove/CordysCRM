@@ -12,6 +12,7 @@ import type {
   AdReceiptPageParams,
   AdReceiptPageResult,
   AdReceiptInfo,
+  AdReceiptDetail,
 } from '@lib/shared/models/advertising';
 
 export default function useAdReceiptApi(CDR: CordysAxios) {
@@ -37,7 +38,7 @@ export default function useAdReceiptApi(CDR: CordysAxios) {
 
   // 收款单详情
   function getAdReceiptDetail(id: string) {
-    return CDR.get<AdReceiptInfo>({ url: `${AdReceiptDetailUrl}/${id}` });
+    return CDR.get<AdReceiptDetail>({ url: `${AdReceiptDetailUrl}/${id}` });
   }
 
   // 订单剩余应收金额

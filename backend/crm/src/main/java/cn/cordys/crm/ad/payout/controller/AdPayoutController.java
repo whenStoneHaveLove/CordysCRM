@@ -4,12 +4,13 @@ import cn.cordys.common.constants.PermissionConstants;
 import cn.cordys.common.pager.PagerWithOption;
 import cn.cordys.common.permission.CsPermission;
 import cn.cordys.context.OrganizationContext;
-import cn.cordys.crm.ad.order.domain.AdOrderDownstreamMedia;
 import cn.cordys.crm.ad.payout.domain.AdPayout;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutApproveRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutPageRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutSaveRequest;
+import cn.cordys.crm.ad.payout.dto.response.AdPayoutDetailResponse;
 import cn.cordys.crm.ad.payout.dto.response.AdPayoutListResponse;
+import cn.cordys.crm.ad.payout.dto.response.AdPayoutMediaOptionResponse;
 import cn.cordys.crm.ad.payout.service.AdPayoutService;
 import cn.cordys.security.SessionUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -76,8 +77,8 @@ public class AdPayoutController {
 
     @GetMapping("/{id}")
     @CsPermission(PermissionConstants.AD_PAYOUT_READ)
-    @Operation(summary = "付款单详情")
-    public AdPayout detail(@PathVariable("id") String id) {
+    @Operation(summary = "付款单详情（含审计/订单/合同信息）")
+    public AdPayoutDetailResponse detail(@PathVariable("id") String id) {
         return adPayoutService.detail(id, userId(), orgId());
     }
 
@@ -90,8 +91,8 @@ public class AdPayoutController {
 
     @GetMapping("/media/{orderId}")
     @CsPermission(PermissionConstants.AD_PAYOUT_READ)
-    @Operation(summary = "订单的下游媒体列表（付款勾选用）")
-    public List<AdOrderDownstreamMedia> listMedia(@PathVariable("orderId") String orderId) {
+    @Operation(summary = "订单的下游媒体列表（付款勾选用，含媒体名称）")
+    public List<AdPayoutMediaOptionResponse> listMedia(@PathVariable("orderId") String orderId) {
         return adPayoutService.listMedia(orderId, userId(), orgId());
     }
 
