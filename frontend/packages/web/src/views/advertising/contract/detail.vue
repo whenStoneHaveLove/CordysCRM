@@ -14,12 +14,18 @@
           <n-space>
             <!-- 已用印 / 归档审批驳回 → 上传双盖附件 + 提交归档审批 -->
             <template v-if="detail.contract.sealStatus === 20 || detail.contract.sealStatus === 50">
-              <n-button type="primary" @click="showDoubleSealUpload = true">上传双盖附件</n-button>
-              <n-button type="info" @click="handleQuickSubmitArchive">提交归档审批</n-button>
+              <n-button v-permission="['AD_CONTRACT:UPDATE']" type="primary" @click="showDoubleSealUpload = true"
+                >上传双盖附件</n-button
+              >
+              <n-button v-permission="['AD_CONTRACT:UPDATE']" type="info" @click="handleQuickSubmitArchive"
+                >提交归档审批</n-button
+              >
             </template>
             <!-- 归档审批中 → 老板可见：归档审核 -->
             <template v-if="detail.contract.sealStatus === 40 && isBoss">
-              <n-button type="warning" @click="showArchiveAudit = true">归档审核</n-button>
+              <n-button v-permission="['AD_CONTRACT:ARCHIVE_APPROVE']" type="warning" @click="showArchiveAudit = true"
+                >归档审核</n-button
+              >
             </template>
             <n-button @click="goBack">返回</n-button>
           </n-space>

@@ -13,20 +13,39 @@
         </template>
         <template #header-extra>
           <n-space>
-            <n-button v-if="detail.order.status === 0" type="primary" @click="handleSubmit">提交</n-button>
-            <n-button v-if="detail.order.status === 10" type="primary" @click="openModal('approve')">审核通过</n-button>
-            <n-button v-if="detail.order.status === 10" @click="openModal('reject')">驳回</n-button>
-            <n-button v-if="detail.order.status === 45" type="primary" @click="handleConfirmExecute"
+            <n-button v-if="detail.order.status === 0" v-permission="['AD_ORDER:SUBMIT']" type="primary" @click="handleSubmit"
+              >提交</n-button
+            >
+            <n-button
+              v-if="detail.order.status === 10"
+              v-permission="['AD_ORDER:APPROVE']"
+              type="primary"
+              @click="openModal('approve')"
+              >审核通过</n-button
+            >
+            <n-button v-if="detail.order.status === 10" v-permission="['AD_ORDER:REJECT']" @click="openModal('reject')"
+              >驳回</n-button
+            >
+            <n-button
+              v-if="detail.order.status === 45"
+              v-permission="['AD_ORDER:CONFIRM_EXECUTE']"
+              type="primary"
+              @click="handleConfirmExecute"
               >确认执行</n-button
             >
             <n-button
               v-if="detail.order.status !== 90 && detail.order.status !== 100"
+              v-permission="['AD_ORDER:VOID']"
               type="warning"
               @click="openModal('void')"
             >
               作废
             </n-button>
-            <n-button v-if="detail.order.status === 80" type="error" @click="openModal('forceArchive')"
+            <n-button
+              v-if="detail.order.status === 80"
+              v-permission="['AD_ORDER:FORCE_ARCHIVE']"
+              type="error"
+              @click="openModal('forceArchive')"
               >强制归档</n-button
             >
             <n-button @click="goBack">返回</n-button>

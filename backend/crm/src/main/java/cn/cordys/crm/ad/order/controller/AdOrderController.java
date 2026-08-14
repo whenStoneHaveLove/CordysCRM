@@ -86,7 +86,7 @@ public class AdOrderController {
     }
 
     @PostMapping("/{id}/confirm-execute")
-    @CsPermission(PermissionConstants.AD_ORDER_READ)
+    @CsPermission(PermissionConstants.AD_ORDER_CONFIRM_EXECUTE)
     @Operation(summary = "确认执行（45→50）")
     public AdOrder confirmExecute(@PathVariable("id") String id) {
         return adOrderService.confirmExecute(id, userId(), orgId());

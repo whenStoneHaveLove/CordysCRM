@@ -25,7 +25,7 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">重置</n-button>
-        <n-button type="primary" @click="openCreate">新建收款</n-button>
+        <n-button v-permission="['AD_RECEIPT:CREATE']" type="primary" @click="openCreate">新建收款</n-button>
       </n-space>
     </n-card>
 

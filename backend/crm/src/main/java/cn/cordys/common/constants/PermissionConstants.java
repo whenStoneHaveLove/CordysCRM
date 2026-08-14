@@ -276,6 +276,7 @@ public class PermissionConstants {
     public static final String AD_ORDER_SUBMIT = "AD_ORDER:SUBMIT";
     public static final String AD_ORDER_APPROVE = "AD_ORDER:APPROVE";
     public static final String AD_ORDER_REJECT = "AD_ORDER:REJECT";
+    public static final String AD_ORDER_CONFIRM_EXECUTE = "AD_ORDER:CONFIRM_EXECUTE";
     public static final String AD_ORDER_ARCHIVE = "AD_ORDER:ARCHIVE";
     public static final String AD_ORDER_FORCE_ARCHIVE = "AD_ORDER:FORCE_ARCHIVE";
     public static final String AD_ORDER_VOID = "AD_ORDER:VOID";
@@ -310,6 +311,7 @@ public class PermissionConstants {
     public static final String AD_CONTRACT_CREATE = "AD_CONTRACT:CREATE";
     public static final String AD_CONTRACT_UPDATE = "AD_CONTRACT:UPDATE";
     public static final String AD_CONTRACT_DELETE = "AD_CONTRACT:DELETE";
+    public static final String AD_CONTRACT_ARCHIVE_APPROVE = "AD_CONTRACT:ARCHIVE_APPROVE";
     /*------ end: AD_CONTRACT ------*/
 
     /*------ start: AD_SEAL（§3.3 / §9.3，替代旧 AD_CONTRACT:SEAL_*） ------*/

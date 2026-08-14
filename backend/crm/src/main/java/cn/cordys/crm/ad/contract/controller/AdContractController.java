@@ -80,7 +80,7 @@ public class AdContractController {
     // ===================== 归档审批 =====================
 
     @PutMapping("/{id}/double-seal")
-    @CsPermission(PermissionConstants.AD_CONTRACT_UPDATE)
+    @CsPermission(PermissionConstants.AD_CONTRACT_ARCHIVE_APPROVE)
     @Operation(summary = "上传双盖附件（仅保存，不改状态）")
     public AdContract uploadDoubleSeal(@PathVariable("id") String id, @RequestBody Map<String, String> body) {
         return adContractService.uploadDoubleSeal(id, body.get("fileUrl"), userId(), orgId());
@@ -94,7 +94,7 @@ public class AdContractController {
     }
 
     @PutMapping("/{id}/approve-archive")
-    @CsPermission(PermissionConstants.AD_CONTRACT_UPDATE)
+    @CsPermission(PermissionConstants.AD_CONTRACT_ARCHIVE_APPROVE)
     @Operation(summary = "归档审批通过（用印状态→已归档，老板操作）")
     public AdContract approveArchive(@PathVariable("id") String id, @RequestBody(required = false) Map<String, String> body) {
         String remark = body == null ? null : body.get("remark");
@@ -102,7 +102,7 @@ public class AdContractController {
     }
 
     @PutMapping("/{id}/reject-archive")
-    @CsPermission(PermissionConstants.AD_CONTRACT_UPDATE)
+    @CsPermission(PermissionConstants.AD_CONTRACT_ARCHIVE_APPROVE)
     @Operation(summary = "归档审批驳回（用印状态→归档审批驳回，老板操作）")
     public AdContract rejectArchive(@PathVariable("id") String id, @RequestBody(required = false) Map<String, String> body) {
         String remark = body == null ? null : body.get("remark");

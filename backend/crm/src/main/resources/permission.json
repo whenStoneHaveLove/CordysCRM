@@ -494,6 +494,7 @@
           { "id": "AD_ORDER:SUBMIT" },
           { "id": "AD_ORDER:APPROVE" },
           { "id": "AD_ORDER:REJECT" },
+          { "id": "AD_ORDER:CONFIRM_EXECUTE" },
           { "id": "AD_ORDER:ARCHIVE" },
           { "id": "AD_ORDER:FORCE_ARCHIVE" },
           { "id": "AD_ORDER:VOID" },
@@ -511,16 +512,25 @@
         ]
       },
       {
-        "id": "AD_PAYMENT",
-        "name": "permission.ad.payment.name",
+        "id": "AD_RECEIPT",
+        "name": "permission.ad.receipt.name",
         "permissions": [
-          { "id": "AD_PAYMENT:READ" },
-          { "id": "AD_PAYMENT:RECEIVE" },
-          { "id": "AD_PAYMENT:CONFIRM_PREPAY" },
-          { "id": "AD_PAYMENT:PAY_MEDIA_PREPAY" },
-          { "id": "AD_PAYMENT:PAY_MEDIA_POSTPAY" },
-          { "id": "AD_PAYMENT:INVOICE" },
-          { "id": "AD_PAYMENT:RED_INVOICE_CLEAR" }
+          { "id": "AD_RECEIPT:READ" },
+          { "id": "AD_RECEIPT:CREATE" },
+          { "id": "AD_RECEIPT:UPDATE" },
+          { "id": "AD_RECEIPT:DELETE" },
+          { "id": "AD_RECEIPT:APPROVE" }
+        ]
+      },
+      {
+        "id": "AD_PAYOUT",
+        "name": "permission.ad.payout.name",
+        "permissions": [
+          { "id": "AD_PAYOUT:READ" },
+          { "id": "AD_PAYOUT:CREATE" },
+          { "id": "AD_PAYOUT:UPDATE" },
+          { "id": "AD_PAYOUT:DELETE" },
+          { "id": "AD_PAYOUT:APPROVE" }
         ]
       },
       {
@@ -530,7 +540,8 @@
           { "id": "AD_CONTRACT:READ" },
           { "id": "AD_CONTRACT:CREATE" },
           { "id": "AD_CONTRACT:UPDATE" },
-          { "id": "AD_CONTRACT:DELETE" }
+          { "id": "AD_CONTRACT:DELETE" },
+          { "id": "AD_CONTRACT:ARCHIVE_APPROVE" }
         ]
       },
       {

@@ -46,7 +46,7 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">{{ t('advertising.order.reset') }}</n-button>
-        <n-button type="primary" @click="goCreate">{{ t('advertising.order.new') }}</n-button>
+        <n-button v-permission="['AD_ORDER:CREATE']" type="primary" @click="goCreate">{{ t('advertising.order.new') }}</n-button>
       </n-space>
     </n-card>
 
