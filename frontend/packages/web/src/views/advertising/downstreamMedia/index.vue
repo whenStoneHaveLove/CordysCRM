@@ -25,7 +25,7 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">重置</n-button>
-        <n-button type="primary" @click="openCreate">新建媒体</n-button>
+        <n-button v-permission="['AD_DOWNSTREAM_MEDIA:CREATE']" type="primary" @click="openCreate">新建媒体</n-button>
       </n-space>
     </n-card>
 
@@ -87,7 +87,13 @@
       <template #footer>
         <n-space justify="end">
           <n-button @click="closeModal">取消</n-button>
-          <n-button type="primary" :loading="saving" @click="handleSave">保存</n-button>
+          <n-button
+            v-permission="[modal.editId ? 'AD_DOWNSTREAM_MEDIA:UPDATE' : 'AD_DOWNSTREAM_MEDIA:CREATE']"
+            type="primary"
+            :loading="saving"
+            @click="handleSave"
+            >保存</n-button
+          >
         </n-space>
       </template>
     </n-modal>
@@ -95,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { h, onMounted, reactive, ref } from 'vue';
+import { h, onMounted, reactive, ref, resolveDirective, withDirectives } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   NButton,
@@ -128,6 +134,8 @@ import type { DataTableColumn } from 'naive-ui';
 const { t } = useI18n();
 const router = useRouter();
 const message = useMessage();
+
+const permissionDirective = resolveDirective('permission');
 
 const loading = ref(false);
 const saving = ref(false);
@@ -306,17 +314,30 @@ const columns: DataTableColumn<any>[] = [
             { size: 'small', onClick: () => openDetail(row) },
             { default: () => '详情' }
           ),
-          h(NButton, { size: 'small', type: 'primary', onClick: () => openEdit(row) }, { default: () => '编辑' }),
+          withDirectives(
+            h(
+              NButton,
+              { size: 'small', type: 'primary', onClick: () => openEdit(row) },
+              { default: () => '编辑' }
+            ),
+            [[permissionDirective, ['AD_DOWNSTREAM_MEDIA:UPDATE']]]
+          ),
           row.status === 20
-            ? h(
-                NButton,
-                { size: 'small', type: 'success', onClick: () => handleEnable(row) },
-                { default: () => '启用' }
+            ? withDirectives(
+                h(
+                  NButton,
+                  { size: 'small', type: 'success', onClick: () => handleEnable(row) },
+                  { default: () => '启用' }
+                ),
+                [[permissionDirective, ['AD_DOWNSTREAM_MEDIA:UPDATE']]]
               )
-            : h(
-                NButton,
-                { size: 'small', type: 'error', onClick: () => handleDisable(row) },
-                { default: () => '停用' }
+            : withDirectives(
+                h(
+                  NButton,
+                  { size: 'small', type: 'error', onClick: () => handleDisable(row) },
+                  { default: () => '停用' }
+                ),
+                [[permissionDirective, ['AD_DOWNSTREAM_MEDIA:UPDATE']]]
               ),
         ],
       }),

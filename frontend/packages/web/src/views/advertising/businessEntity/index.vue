@@ -18,7 +18,7 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">重置</n-button>
-        <n-button type="primary" @click="openCreate">{{ t('advertising.businessEntity.new') }}</n-button>
+        <n-button v-permission="['AD_BUSINESS_ENTITY:CREATE']" type="primary" @click="openCreate">{{ t('advertising.businessEntity.new') }}</n-button>
       </n-space>
     </n-card>
 
@@ -61,9 +61,13 @@
       <template #footer>
         <n-space justify="end">
           <n-button @click="showModal = false">{{ t('advertising.businessEntity.form.cancel') }}</n-button>
-          <n-button type="primary" :loading="saving" @click="handleSave">{{
-            t('advertising.businessEntity.form.save')
-          }}</n-button>
+          <n-button
+            v-permission="[editId ? 'AD_BUSINESS_ENTITY:UPDATE' : 'AD_BUSINESS_ENTITY:CREATE']"
+            type="primary"
+            :loading="saving"
+            @click="handleSave"
+            >{{ t('advertising.businessEntity.form.save') }}</n-button
+          >
         </n-space>
       </template>
     </n-modal>
@@ -71,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, h, onMounted, reactive, ref } from 'vue';
+  import { computed, h, onMounted, reactive, ref, resolveDirective, withDirectives } from 'vue';
   import { useRouter } from 'vue-router';
   import {
     NButton,
@@ -109,6 +113,8 @@
   const { t } = useI18n();
   const router = useRouter();
   const message = useMessage();
+
+  const permissionDirective = resolveDirective('permission');
 
   const statusOptions = AdBusinessEntityStatusOptions;
 
@@ -324,15 +330,21 @@
                 { size: 'small', onClick: () => openDetail(row) },
                 { default: () => t('advertising.businessEntity.detail') }
               ),
-              h(
-                NButton,
-                { size: 'small', type: 'primary', onClick: () => openEdit(row) },
-                { default: () => t('advertising.businessEntity.edit') }
+              withDirectives(
+                h(
+                  NButton,
+                  { size: 'small', type: 'primary', onClick: () => openEdit(row) },
+                  { default: () => t('advertising.businessEntity.edit') }
+                ),
+                [[permissionDirective, ['AD_BUSINESS_ENTITY:UPDATE']]]
               ),
-              h(
-                NButton,
-                { size: 'small', type: 'error', onClick: () => handleDisable(row) },
-                { default: () => t('advertising.businessEntity.disable') }
+              withDirectives(
+                h(
+                  NButton,
+                  { size: 'small', type: 'error', onClick: () => handleDisable(row) },
+                  { default: () => t('advertising.businessEntity.disable') }
+                ),
+                [[permissionDirective, ['AD_BUSINESS_ENTITY:DELETE']]]
               ),
             ],
           }

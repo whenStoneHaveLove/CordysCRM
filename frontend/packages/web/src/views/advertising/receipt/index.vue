@@ -79,7 +79,13 @@
       <template #footer>
         <n-space justify="end">
           <n-button @click="showModal = false">取消</n-button>
-          <n-button type="primary" :loading="saving" @click="handleSave">保存</n-button>
+          <n-button
+            v-permission="[editId ? 'AD_RECEIPT:UPDATE' : 'AD_RECEIPT:CREATE']"
+            type="primary"
+            :loading="saving"
+            @click="handleSave"
+            >保存</n-button
+          >
         </n-space>
       </template>
     </n-modal>
@@ -95,8 +101,8 @@
       <template #footer>
         <n-space justify="end">
           <n-button @click="showApprove = false">取消</n-button>
-          <n-button type="success" :loading="saving" @click="doApprove('APPROVE')">通过</n-button>
-          <n-button type="error" :loading="saving" @click="doApprove('REJECT')">驳回</n-button>
+          <n-button v-permission="['AD_RECEIPT:APPROVE']" type="success" :loading="saving" @click="doApprove('APPROVE')">通过</n-button>
+          <n-button v-permission="['AD_RECEIPT:APPROVE']" type="error" :loading="saving" @click="doApprove('REJECT')">驳回</n-button>
         </n-space>
       </template>
     </n-modal>
@@ -154,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, h, onMounted, reactive, ref } from 'vue';
+  import { computed, h, onMounted, reactive, ref, resolveDirective, withDirectives } from 'vue';
   import { useRouter } from 'vue-router';
   import {
     NButton,
@@ -208,6 +214,8 @@
   const message = useMessage();
   const { loadUserMap, getUserName } = useUserMap();
   const router = useRouter();
+
+  const permissionDirective = resolveDirective('permission');
 
   const statusOptions = AdReceiptStatusOptions;
   const typeOptions = AdReceiptTypeOptions;
@@ -480,24 +488,33 @@
               actions.push(h(NButton, { size: 'small', onClick: () => openDetail(row) }, { default: () => '详情' }));
               if (row.status === 0 || row.status === 30) {
                 actions.push(
-                  h(
-                    NButton,
-                    { size: 'small', type: 'primary', onClick: () => openEdit(row) },
-                    { default: () => '编辑' }
+                  withDirectives(
+                    h(
+                      NButton,
+                      { size: 'small', type: 'primary', onClick: () => openEdit(row) },
+                      { default: () => '编辑' }
+                    ),
+                    [[permissionDirective, ['AD_RECEIPT:UPDATE']]]
                   ),
-                  h(
-                    NButton,
-                    { size: 'small', type: 'primary', onClick: () => handleSubmit(row) },
-                    { default: () => '提交' }
+                  withDirectives(
+                    h(
+                      NButton,
+                      { size: 'small', type: 'primary', onClick: () => handleSubmit(row) },
+                      { default: () => '提交' }
+                    ),
+                    [[permissionDirective, ['AD_RECEIPT:UPDATE']]]
                   )
                 );
               }
               if (row.status === 10) {
                 actions.push(
-                  h(
-                    NButton,
-                    { size: 'small', type: 'success', onClick: () => openApprove(row) },
-                    { default: () => '审批' }
+                  withDirectives(
+                    h(
+                      NButton,
+                      { size: 'small', type: 'success', onClick: () => openApprove(row) },
+                      { default: () => '审批' }
+                    ),
+                    [[permissionDirective, ['AD_RECEIPT:APPROVE']]]
                   )
                 );
               }
