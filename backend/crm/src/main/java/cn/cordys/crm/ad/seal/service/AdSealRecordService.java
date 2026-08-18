@@ -329,7 +329,7 @@ public class AdSealRecordService {
         switch (requiredRole) {
             case ROLE_MEDIA:
                 return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("媒体") || n.contains("media") || n.contains("运营"));
+                        .anyMatch(n -> n.contains("媒体") || n.contains("媒介") || n.contains("media") || n.contains("运营"));
             case ROLE_BOSS:
                 return isAdmin || roleNames.stream()
                         .anyMatch(n -> n.contains("老板") || n.contains("boss"));

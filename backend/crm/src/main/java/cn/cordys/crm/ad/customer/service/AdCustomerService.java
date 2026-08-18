@@ -211,7 +211,7 @@ public class AdCustomerService {
         switch (requiredRole) {
             case ROLE_MEDIA:
                 return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("媒体") || n.contains("media") || n.contains("运营"));
+                        .anyMatch(n -> n.contains("媒体") || n.contains("媒介") || n.contains("media") || n.contains("运营"));
             default:
                 return false;
         }
