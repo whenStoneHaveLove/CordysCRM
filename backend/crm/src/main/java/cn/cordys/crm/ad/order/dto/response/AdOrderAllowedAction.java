@@ -18,7 +18,7 @@ public class AdOrderAllowedAction {
     @Schema(description = "触发动作(SUBMIT/APPROVE/REJECT/...)")
     private String trigger;
 
-    @Schema(description = "所需角色(ROLE_MEDIA/ROLE_FINANCE/ROLE_BOSS/ROLE_SYSTEM)")
+    @Schema(description = "所需权限码(AD_ORDER:*/AD_ORDER_CHANGE:*/SYSTEM)，走分配的权限码体系")
     private String requiredRole;
 
     @Schema(description = "当前用户是否有权执行")

@@ -1,5 +1,6 @@
 package cn.cordys.crm.ad.common.constants;
 
+import cn.cordys.common.constants.PermissionConstants;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -46,10 +47,14 @@ public final class OrderStateMachine {
     public static final int ARCHIVED = 90;               // 已归档
     public static final int VOIDED = 100;                // 已作废
 
-    /* ---------- 角色（requiredRole） ---------- */
+    /* ---------- 角色（requiredRole，已废弃，保留仅作兼容占位，不再用于权限校验） ---------- */
+    @Deprecated
     public static final String ROLE_MEDIA = "ROLE_MEDIA";
+    @Deprecated
     public static final String ROLE_FINANCE = "ROLE_FINANCE";
+    @Deprecated
     public static final String ROLE_BOSS = "ROLE_BOSS";
+    /** 系统级流转（定时任务自动执行）标识，无对应权限码。 */
     public static final String ROLE_SYSTEM = "SYSTEM";
 
     /* ---------- 触发动作（trigger） ---------- */
@@ -70,27 +75,27 @@ public final class OrderStateMachine {
     }
 
     private static final List<Transition> TRANSITIONS = List.of(
-            // 提交 / 审批
-            new Transition(DRAFT, PENDING_BOSS_APPROVAL, TRIGGER_SUBMIT, ROLE_MEDIA),
-            new Transition(PENDING_BOSS_APPROVAL, DRAFT, TRIGGER_REJECT, ROLE_BOSS),
-            new Transition(PENDING_BOSS_APPROVAL, PENDING_EXECUTE, TRIGGER_APPROVE, ROLE_BOSS),
+            // 提交 / 审批（权限码见 PermissionConstants）
+            new Transition(DRAFT, PENDING_BOSS_APPROVAL, TRIGGER_SUBMIT, PermissionConstants.AD_ORDER_SUBMIT),
+            new Transition(PENDING_BOSS_APPROVAL, DRAFT, TRIGGER_REJECT, PermissionConstants.AD_ORDER_REJECT),
+            new Transition(PENDING_BOSS_APPROVAL, PENDING_EXECUTE, TRIGGER_APPROVE, PermissionConstants.AD_ORDER_APPROVE),
             // 确认执行
-            new Transition(PENDING_EXECUTE, EXECUTING, TRIGGER_CONFIRM_EXECUTE, ROLE_MEDIA),
-            // 改单（通过/驳回均回到执行中）
-            new Transition(EXECUTING, CHANGE_APPROVING, TRIGGER_APPLY_CHANGE, ROLE_MEDIA),
-            new Transition(CHANGE_APPROVING, EXECUTING, TRIGGER_CHANGE_APPROVED, ROLE_BOSS),
-            new Transition(CHANGE_APPROVING, EXECUTING, TRIGGER_CHANGE_REJECTED, ROLE_BOSS),
-            // 到期自动结算 / 自动归档
+            new Transition(PENDING_EXECUTE, EXECUTING, TRIGGER_CONFIRM_EXECUTE, PermissionConstants.AD_ORDER_CONFIRM_EXECUTE),
+            // 改单（申请/通过/驳回，权限码归属 AD_ORDER_CHANGE）
+            new Transition(EXECUTING, CHANGE_APPROVING, TRIGGER_APPLY_CHANGE, PermissionConstants.AD_ORDER_CHANGE_SUBMIT),
+            new Transition(CHANGE_APPROVING, EXECUTING, TRIGGER_CHANGE_APPROVED, PermissionConstants.AD_ORDER_CHANGE_APPROVE),
+            new Transition(CHANGE_APPROVING, EXECUTING, TRIGGER_CHANGE_REJECTED, PermissionConstants.AD_ORDER_CHANGE_REJECT),
+            // 到期自动结算 / 自动归档（系统级）
             new Transition(EXECUTING, SETTLEMENT, TRIGGER_AUTO_OVERDUE, ROLE_SYSTEM),
             new Transition(SETTLEMENT, ARCHIVED, TRIGGER_AUTO_ARCHIVE, ROLE_SYSTEM),
-            new Transition(SETTLEMENT, ARCHIVED, TRIGGER_FORCE_ARCHIVE, ROLE_BOSS),
+            new Transition(SETTLEMENT, ARCHIVED, TRIGGER_FORCE_ARCHIVE, PermissionConstants.AD_ORDER_FORCE_ARCHIVE),
             // 作废（除已归档外均可）
-            new Transition(DRAFT, VOIDED, TRIGGER_VOID, ROLE_MEDIA),
-            new Transition(PENDING_BOSS_APPROVAL, VOIDED, TRIGGER_VOID, ROLE_BOSS),
-            new Transition(PENDING_EXECUTE, VOIDED, TRIGGER_VOID, ROLE_BOSS),
-            new Transition(EXECUTING, VOIDED, TRIGGER_VOID, ROLE_BOSS),
-            new Transition(CHANGE_APPROVING, VOIDED, TRIGGER_VOID, ROLE_BOSS),
-            new Transition(SETTLEMENT, VOIDED, TRIGGER_VOID, ROLE_BOSS)
+            new Transition(DRAFT, VOIDED, TRIGGER_VOID, PermissionConstants.AD_ORDER_VOID),
+            new Transition(PENDING_BOSS_APPROVAL, VOIDED, TRIGGER_VOID, PermissionConstants.AD_ORDER_VOID),
+            new Transition(PENDING_EXECUTE, VOIDED, TRIGGER_VOID, PermissionConstants.AD_ORDER_VOID),
+            new Transition(EXECUTING, VOIDED, TRIGGER_VOID, PermissionConstants.AD_ORDER_VOID),
+            new Transition(CHANGE_APPROVING, VOIDED, TRIGGER_VOID, PermissionConstants.AD_ORDER_VOID),
+            new Transition(SETTLEMENT, VOIDED, TRIGGER_VOID, PermissionConstants.AD_ORDER_VOID)
     );
 
     /**
@@ -130,7 +135,9 @@ public final class OrderStateMachine {
     }
 
     /**
-     * 返回 from→to 转换所需的角色；若不存在该转换则返回 null。
+     * 返回 from→to 转换所需的权限码（见 PermissionConstants）。
+     * 系统级流转返回 {@link #ROLE_SYSTEM}（"SYSTEM"，表示无需权限码校验）。
+     * 若不存在该转换则返回 null。
      */
     public static String requiredRoleFor(int from, int to) {
         return TRANSITIONS.stream()
@@ -138,6 +145,13 @@ public final class OrderStateMachine {
                 .map(Transition::requiredRole)
                 .findFirst()
                 .orElse(null);
+    }
+
+    /**
+     * 返回 from→to 转换所需的权限码（语义同 {@link #requiredRoleFor}，方法别名）。
+     */
+    public static String requiredPermissionFor(int from, int to) {
+        return requiredRoleFor(from, to);
     }
 
     /**

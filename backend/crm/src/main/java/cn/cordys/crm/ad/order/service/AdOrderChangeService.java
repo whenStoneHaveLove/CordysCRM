@@ -1,8 +1,10 @@
 package cn.cordys.crm.ad.order.service;
 
+import cn.cordys.common.constants.PermissionConstants;
 import cn.cordys.common.exception.GenericException;
 import cn.cordys.common.pager.PageUtils;
 import cn.cordys.common.pager.PagerWithOption;
+import cn.cordys.common.permission.PermissionUtils;
 import cn.cordys.common.uid.IDGenerator;
 import cn.cordys.context.OrganizationContext;
 import cn.cordys.crm.ad.common.AdEntityPermissionProvider;
@@ -20,8 +22,6 @@ import cn.cordys.crm.ad.order.dto.response.AdOrderChangeListResponse;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderChangeMapper;
 import cn.cordys.mybatis.BaseMapper;
 import cn.cordys.security.SessionUtils;
-import cn.cordys.security.SessionUser;
-import cn.cordys.common.dto.RoleDataScopeDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,16 +35,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 广告改单服务（M3 T-20/T-21，V3.1 §6/§7.2/§8）。
@@ -162,7 +159,7 @@ public class AdOrderChangeService {
         if (!OrderStateMachine.canTransit(order.getStatus(), OrderStateMachine.CHANGE_APPROVING, approvalEnabled)) {
             throw new GenericException("当前订单状态(" + order.getStatus() + ")不可发起改单");
         }
-        assertRole(OrderStateMachine.ROLE_MEDIA);
+        assertRole(PermissionConstants.AD_ORDER_CHANGE_SUBMIT);
         int fromOrder = order.getStatus();
         order.setStatus(OrderStateMachine.CHANGE_APPROVING);
         order.setUpdateUser(userId);
@@ -189,7 +186,7 @@ public class AdOrderChangeService {
         if (change.getStatus() != AdOrderChangeStatus.SUBMITTED.getCode()) {
             throw new GenericException("仅已提交的改单可被审批");
         }
-        assertRole(OrderStateMachine.ROLE_BOSS);
+        assertRole(PermissionConstants.AD_ORDER_CHANGE_APPROVE);
         AdOrder order = requireOrder(change.getOrderId());
         change.setStatus(AdOrderChangeStatus.APPROVED.getCode());
         change.setApproverId(userId);
@@ -212,7 +209,7 @@ public class AdOrderChangeService {
         if (change.getStatus() != AdOrderChangeStatus.SUBMITTED.getCode()) {
             throw new GenericException("仅已提交的改单可驳回");
         }
-        assertRole(OrderStateMachine.ROLE_BOSS);
+        assertRole(PermissionConstants.AD_ORDER_CHANGE_REJECT);
         AdOrder order = requireOrder(change.getOrderId());
         int fromOrder = order.getStatus();
         change.setStatus(AdOrderChangeStatus.REJECTED.getCode());
@@ -242,7 +239,7 @@ public class AdOrderChangeService {
         if (change.getStatus() != AdOrderChangeStatus.APPROVED.getCode()) {
             throw new GenericException("仅审批通过的改单可执行");
         }
-        assertRole(OrderStateMachine.ROLE_MEDIA);
+        assertRole(PermissionConstants.AD_ORDER_CHANGE_SUBMIT);
         AdOrder order = requireOrder(change.getOrderId());
         int fromOrder = order.getStatus();
 
@@ -515,45 +512,21 @@ public class AdOrderChangeService {
         }
     }
 
-    // ===================== 角色守卫（best-effort，同 M2） =====================
+    // ===================== 权限守卫（走分配的权限码体系，见 PermissionConstants） =====================
 
-    private void assertRole(String requiredRole) {
-        if (requiredRole == null || OrderStateMachine.ROLE_SYSTEM.equals(requiredRole)) {
+    private void assertRole(String requiredPermission) {
+        if (requiredPermission == null || OrderStateMachine.ROLE_SYSTEM.equals(requiredPermission)) {
             return;
         }
-        if (!hasRole(requiredRole)) {
-            throw new GenericException("当前角色无权执行该操作: " + requiredRole);
+        if (!PermissionUtils.hasPermission(requiredPermission)) {
+            throw new GenericException("当前权限无权执行该操作: " + requiredPermission);
         }
     }
 
-    private boolean hasRole(String requiredRole) {
-        if (requiredRole == null || OrderStateMachine.ROLE_SYSTEM.equals(requiredRole)) {
+    private boolean hasRole(String requiredPermission) {
+        if (requiredPermission == null || OrderStateMachine.ROLE_SYSTEM.equals(requiredPermission)) {
             return true;
         }
-        SessionUser user = SessionUtils.getUser();
-        if (user == null) {
-            return false;
-        }
-        List<String> roleNames = user.getRoles() == null ? Collections.emptyList()
-                : user.getRoles().stream()
-                .map(RoleDataScopeDTO::getName)
-                .filter(Objects::nonNull)
-                .map(s -> s.toLowerCase())
-                .collect(Collectors.toList());
-        boolean isAdmin = roleNames.stream()
-                .anyMatch(n -> n.contains("admin") || n.contains("超级") || n.contains("管理员"));
-        switch (requiredRole) {
-            case OrderStateMachine.ROLE_MEDIA:
-                return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("媒体") || n.contains("media") || n.contains("运营"));
-            case OrderStateMachine.ROLE_BOSS:
-                return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("老板") || n.contains("boss"));
-            case OrderStateMachine.ROLE_FINANCE:
-                return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("财务") || n.contains("finance"));
-            default:
-                return false;
-        }
+        return PermissionUtils.hasPermission(requiredPermission);
     }
 }

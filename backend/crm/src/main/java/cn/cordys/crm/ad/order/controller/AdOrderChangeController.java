@@ -55,7 +55,7 @@ public class AdOrderChangeController {
     }
 
     @PostMapping("/{id}/submit")
-    @CsPermission(PermissionConstants.AD_ORDER_CHANGE_CREATE)
+    @CsPermission(PermissionConstants.AD_ORDER_CHANGE_SUBMIT)
     @Operation(summary = "提交改单：锁定父单→变更审核中(60)；审批关时直达审批通过(L-14)")
     public AdOrderChange submit(@PathVariable("id") String id) {
         return adOrderChangeService.submit(id, userId(), orgId());
@@ -78,7 +78,7 @@ public class AdOrderChangeController {
     }
 
     @PostMapping("/{id}/execute")
-    @CsPermission(PermissionConstants.AD_ORDER_CHANGE_CREATE)
+    @CsPermission(PermissionConstants.AD_ORDER_CHANGE_SUBMIT)
     @Operation(summary = "执行改单：应用快照+金额重算+L-04资金侧，父单恢复执行中(50)")
     public AdOrderChange execute(@PathVariable("id") String id) {
         return adOrderChangeService.execute(id, userId(), orgId());

@@ -492,6 +492,7 @@
         "permissions": [
           { "id": "AD_ORDER_CHANGE:READ" },
           { "id": "AD_ORDER_CHANGE:CREATE" },
+          { "id": "AD_ORDER_CHANGE:SUBMIT" },
           { "id": "AD_ORDER_CHANGE:APPROVE" },
           { "id": "AD_ORDER_CHANGE:REJECT" }
         ]

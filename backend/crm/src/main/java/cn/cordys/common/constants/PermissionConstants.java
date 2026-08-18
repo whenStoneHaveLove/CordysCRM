@@ -286,6 +286,7 @@ public class PermissionConstants {
     /*------ start: AD_ORDER_CHANGE（§3.3 / §6.2 / §9.1，替代旧 AD_ORDER:CHANGE） ------*/
     public static final String AD_ORDER_CHANGE_READ = "AD_ORDER_CHANGE:READ";
     public static final String AD_ORDER_CHANGE_CREATE = "AD_ORDER_CHANGE:CREATE";
+    public static final String AD_ORDER_CHANGE_SUBMIT = "AD_ORDER_CHANGE:SUBMIT";
     public static final String AD_ORDER_CHANGE_APPROVE = "AD_ORDER_CHANGE:APPROVE";
     public static final String AD_ORDER_CHANGE_REJECT = "AD_ORDER_CHANGE:REJECT";
     /*------ end: AD_ORDER_CHANGE ------*/

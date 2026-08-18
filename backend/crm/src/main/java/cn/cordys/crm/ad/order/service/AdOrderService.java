@@ -3,6 +3,7 @@ package cn.cordys.crm.ad.order.service;
 import cn.cordys.common.exception.GenericException;
 import cn.cordys.common.pager.PageUtils;
 import cn.cordys.common.pager.PagerWithOption;
+import cn.cordys.common.permission.PermissionUtils;
 import cn.cordys.common.uid.IDGenerator;
 import cn.cordys.context.OrganizationContext;
 import cn.cordys.crm.ad.businessentity.domain.AdBusinessEntity;
@@ -13,7 +14,6 @@ import cn.cordys.crm.ad.common.constants.OrderStatus;
 import cn.cordys.crm.ad.common.constants.OrderType;
 import cn.cordys.crm.ad.common.constants.PaymentMethod;
 import cn.cordys.crm.ad.common.constants.ReceiptMethod;
-import cn.cordys.common.dto.RoleDataScopeDTO;
 import cn.cordys.crm.ad.contract.constants.ContractType;
 import cn.cordys.crm.ad.contract.domain.AdContract;
 import cn.cordys.crm.ad.order.domain.AdOrder;
@@ -38,7 +38,6 @@ import cn.cordys.crm.ad.order.mapper.ExtAdOrderAttachmentMapper;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderLogMapper;
 import cn.cordys.mybatis.BaseMapper;
 import cn.cordys.security.SessionUtils;
-import cn.cordys.security.SessionUser;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import jakarta.annotation.Resource;
@@ -51,11 +50,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -434,50 +431,23 @@ public class AdOrderService {
     }
 
     /**
-     * 按所需角色做权限校验（best-effort，依据 SessionUser 的角色名关键字匹配）。
-     * SYSTEM 始终放行；未登录抛异常。
+     * 按所需权限码做权限校验（走分配的权限码体系，见 PermissionConstants）。
+     * SYSTEM 始终放行；无权限抛异常。
      */
-    private void assertRole(String requiredRole) {
-        if (requiredRole == null || OrderStateMachine.ROLE_SYSTEM.equals(requiredRole)) {
+    private void assertRole(String requiredPermission) {
+        if (requiredPermission == null || OrderStateMachine.ROLE_SYSTEM.equals(requiredPermission)) {
             return;
         }
-        if (!hasRole(requiredRole)) {
-            throw new GenericException("当前角色无权执行该操作: " + requiredRole);
+        if (!PermissionUtils.hasPermission(requiredPermission)) {
+            throw new GenericException("当前权限无权执行该操作: " + requiredPermission);
         }
     }
 
-    private boolean hasRole(String requiredRole) {
-        if (requiredRole == null) {
+    private boolean hasRole(String requiredPermission) {
+        if (requiredPermission == null || OrderStateMachine.ROLE_SYSTEM.equals(requiredPermission)) {
             return true;
         }
-        if (OrderStateMachine.ROLE_SYSTEM.equals(requiredRole)) {
-            return true;
-        }
-        SessionUser user = SessionUtils.getUser();
-        if (user == null) {
-            return false;
-        }
-        List<String> roleNames = user.getRoles() == null ? Collections.emptyList()
-                : user.getRoles().stream()
-                .map(RoleDataScopeDTO::getName)
-                .filter(Objects::nonNull)
-                .map(s -> s.toLowerCase())
-                .collect(Collectors.toList());
-        boolean isAdmin = roleNames.stream()
-                .anyMatch(n -> n.contains("admin") || n.contains("超级") || n.contains("管理员"));
-        switch (requiredRole) {
-            case OrderStateMachine.ROLE_MEDIA:
-                return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("媒体") || n.contains("media") || n.contains("运营"));
-            case OrderStateMachine.ROLE_BOSS:
-                return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("老板") || n.contains("boss"));
-            case OrderStateMachine.ROLE_FINANCE:
-                return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("财务") || n.contains("finance"));
-            default:
-                return false;
-        }
+        return PermissionUtils.hasPermission(requiredPermission);
     }
 
     private void requireAttachment(String orderId, int type, String message) {
