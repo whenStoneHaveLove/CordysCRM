@@ -441,16 +441,6 @@
         ]
       },
       {
-        "id": "AD_USER_BUSINESS_ENTITY",
-        "name": "permission.ad.user_business_entity.name",
-        "permissions": [
-          { "id": "AD_USER_BUSINESS_ENTITY:READ" },
-          { "id": "AD_USER_BUSINESS_ENTITY:CREATE" },
-          { "id": "AD_USER_BUSINESS_ENTITY:UPDATE" },
-          { "id": "AD_USER_BUSINESS_ENTITY:DELETE" }
-        ]
-      },
-      {
         "id": "AD_CUSTOMER",
         "name": "permission.ad.customer.name",
         "permissions": [

@@ -357,13 +357,6 @@ public class PermissionConstants {
     public static final String AD_DICT_DELETE = "AD_DICT:DELETE";
     /*------ end: AD_DICT ------*/
 
-    /*------ start: AD_USER_BUSINESS_ENTITY（§3.2 / §9.4） ------*/
-    public static final String AD_USER_BUSINESS_ENTITY_READ = "AD_USER_BUSINESS_ENTITY:READ";
-    public static final String AD_USER_BUSINESS_ENTITY_CREATE = "AD_USER_BUSINESS_ENTITY:CREATE";
-    public static final String AD_USER_BUSINESS_ENTITY_UPDATE = "AD_USER_BUSINESS_ENTITY:UPDATE";
-    public static final String AD_USER_BUSINESS_ENTITY_DELETE = "AD_USER_BUSINESS_ENTITY:DELETE";
-    /*------ end: AD_USER_BUSINESS_ENTITY ------*/
-
     /*------ start: AD_REPORT（§8.5 / §9.5） ------*/
     public static final String AD_REPORT_READ = "AD_REPORT:READ";
     /*------ end: AD_REPORT ------*/
