@@ -505,6 +505,12 @@ public class AdOrderService {
      * </ul>
      */
     private void syncOrderContract(String orderId, String contractId, Integer orderType, String userId, String orgId) {
+        // 先逻辑删除该订单所有现有合同关联，实现全量替换（订单端当前仅支持单选，避免残留旧关联）
+        List<AdOrderContract> existing = orderContractMapper.selectByOrderId(orderId);
+        for (AdOrderContract oc : existing) {
+            oc.setDeleted(1);
+            orderContractMapper.update(oc);
+        }
         if (contractId == null || contractId.isBlank()) {
             return;
         }
@@ -516,12 +522,6 @@ public class AdOrderService {
         if (orderType != null && orderType == OrderType.FRAMEWORK.getCode()
                 && contract.getContractType() != ContractType.FRAMEWORK.getCode()) {
             throw new GenericException("框架订单必须关联【框架合同】");
-        }
-        // 防重复
-        List<AdOrderContract> existing = orderContractMapper.selectByOrderId(orderId);
-        boolean exists = existing.stream().anyMatch(oc -> contractId.equals(oc.getContractId()));
-        if (exists) {
-            return;
         }
         AdOrderContract oc = new AdOrderContract();
         oc.setId(IDGenerator.nextStr());

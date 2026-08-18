@@ -391,6 +391,7 @@
 
   const isEdit = computed(() => !!route.params.id);
   const orderId = computed(() => (route.params.id as string) || '');
+  let isRestoringFromDetail = false;
   const saving = ref(false);
   const loading = ref(false);
 
@@ -725,6 +726,9 @@
   watch(
     () => form.orderType,
     (newType, oldType) => {
+      if (isRestoringFromDetail) {
+        return;
+      }
       if (newType !== oldType) {
         form.contractId = undefined;
         if (newType === 10 || newType === 20) {
@@ -755,6 +759,7 @@
 
   async function loadForEdit() {
     if (!orderId.value) return;
+    isRestoringFromDetail = true;
     try {
       const res = await getAdOrderDetail(orderId.value);
       const o = res.order;
@@ -803,6 +808,8 @@
       fileListType40.value = buildFileListForType(40);
     } catch (e) {
       message.error((e as Error).message || '加载失败');
+    } finally {
+      isRestoringFromDetail = false;
     }
   }
 
