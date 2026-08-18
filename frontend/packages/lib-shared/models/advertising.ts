@@ -288,7 +288,7 @@ export interface AdContractSaveParams {
   contractType?: number;
   relatedPartyId?: string;
   relatedPartyType?: number;
-  orderId?: string;
+  orderIds?: string[];
   changeOrderId?: string;
   signingEntity?: string;
   validFrom?: number | null;
@@ -308,6 +308,7 @@ export interface AdContractInfo {
   relatedPartyId?: string;
   relatedPartyType?: number;
   orderId?: string;
+  orderIds?: string[];
   changeOrderId?: string;
   signingEntity?: string;
   validFrom?: number | string | null;
@@ -356,11 +357,18 @@ export interface AdContractListItem {
   createTime?: number;
 }
 
+export interface AdContractOrderVO {
+  orderId?: string;
+  orderNo?: string;
+  orderName?: string;
+}
+
 export interface AdContractDetailResponse {
   contract: AdContractInfo;
   businessEntityName?: string;
   relatedPartyName?: string;
-  orderNo?: string;
+  orderIds?: string[];
+  orderList?: AdContractOrderVO[];
   statusLabel?: string;
   sealStatusLabel?: string;
   directionLabel?: string;
