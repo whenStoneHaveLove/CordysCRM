@@ -735,14 +735,19 @@
       if (isRestoringFromDetail) {
         return;
       }
-      if (newType !== oldType) {
-        form.contractId = undefined;
-        selectedContract.value = null;
-        if (newType === 10 || newType === 20) {
-          loadContractOptions();
-        } else {
-          contractOptions.value = [];
-        }
+      if (newType === oldType) {
+        return;
+      }
+      // 编辑页首次回填 orderType（从 undefined 变为实际值）时，不清空已回填的合同
+      if (isEdit.value && oldType == null) {
+        return;
+      }
+      form.contractId = undefined;
+      selectedContract.value = null;
+      if (newType === 10 || newType === 20) {
+        loadContractOptions();
+      } else {
+        contractOptions.value = [];
       }
     }
   );

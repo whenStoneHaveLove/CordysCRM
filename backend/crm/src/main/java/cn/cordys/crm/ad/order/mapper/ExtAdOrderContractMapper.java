@@ -14,6 +14,9 @@ public interface ExtAdOrderContractMapper extends BaseMapper<AdOrderContract> {
     @Select("SELECT * FROM ad_order_contract WHERE order_id = #{orderId} AND deleted = 0")
     List<AdOrderContract> selectByOrderId(@Param("orderId") String orderId);
 
+    @Select("SELECT * FROM ad_order_contract WHERE order_id = #{orderId}")
+    List<AdOrderContract> selectAllByOrderId(@Param("orderId") String orderId);
+
     @Select("SELECT * FROM ad_order_contract WHERE contract_id = #{contractId} AND deleted = 0")
     List<AdOrderContract> selectByContractId(@Param("contractId") String contractId);
 }

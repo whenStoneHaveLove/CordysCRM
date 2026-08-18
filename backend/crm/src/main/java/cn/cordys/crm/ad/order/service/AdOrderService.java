@@ -505,13 +505,17 @@ public class AdOrderService {
      * </ul>
      */
     private void syncOrderContract(String orderId, String contractId, Integer orderType, String userId, String orgId) {
-        // 先逻辑删除该订单所有现有合同关联，实现全量替换（订单端当前仅支持单选，避免残留旧关联）
-        List<AdOrderContract> existing = orderContractMapper.selectByOrderId(orderId);
-        for (AdOrderContract oc : existing) {
-            oc.setDeleted(1);
-            orderContractMapper.update(oc);
-        }
+        // 唯一键 uk_ad_oc(order_id, contract_id) 不区分 deleted，因此不能先删再插，
+        // 必须复用已存在记录（含已删除），否则会触发 Duplicate entry。
+        List<AdOrderContract> all = orderContractMapper.selectAllByOrderId(orderId);
         if (contractId == null || contractId.isBlank()) {
+            // 清空：将全部关联逻辑删除
+            for (AdOrderContract oc : all) {
+                if (oc.getDeleted() != 1) {
+                    oc.setDeleted(1);
+                    orderContractMapper.update(oc);
+                }
+            }
             return;
         }
         AdContract contract = contractMapper.selectByPrimaryKey(contractId);
@@ -523,14 +527,32 @@ public class AdOrderService {
                 && contract.getContractType() != ContractType.FRAMEWORK.getCode()) {
             throw new GenericException("框架订单必须关联【框架合同】");
         }
-        AdOrderContract oc = new AdOrderContract();
-        oc.setId(IDGenerator.nextStr());
-        oc.setOrderId(orderId);
-        oc.setContractId(contractId);
-        oc.setOrganizationId(orgId);
-        oc.setDeleted(0);
-        oc.setCreateTime(System.currentTimeMillis());
-        orderContractMapper.insert(oc);
+        // 复用已存在的 (order_id, contract_id) 记录（含已删除），否则新增
+        AdOrderContract existing = all.stream()
+                .filter(oc -> contractId.equals(oc.getContractId()))
+                .findFirst()
+                .orElse(null);
+        if (existing != null) {
+            existing.setDeleted(0);
+            existing.setOrganizationId(orgId);
+            orderContractMapper.update(existing);
+        } else {
+            AdOrderContract oc = new AdOrderContract();
+            oc.setId(IDGenerator.nextStr());
+            oc.setOrderId(orderId);
+            oc.setContractId(contractId);
+            oc.setOrganizationId(orgId);
+            oc.setDeleted(0);
+            oc.setCreateTime(System.currentTimeMillis());
+            orderContractMapper.insert(oc);
+        }
+        // 其余合同关联逻辑删除（订单端当前仅支持单选）
+        for (AdOrderContract oc : all) {
+            if (!contractId.equals(oc.getContractId()) && oc.getDeleted() != 1) {
+                oc.setDeleted(1);
+                orderContractMapper.update(oc);
+            }
+        }
     }
 
     /**
