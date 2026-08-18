@@ -48,9 +48,6 @@ public class AdContractListResponse {
     @Schema(description = "关联方类型标签")
     private String relatedPartyTypeLabel;
 
-    @Schema(description = "关联订单id")
-    private String orderId;
-
     @Schema(description = "签约主体")
     private String signingEntity;
 

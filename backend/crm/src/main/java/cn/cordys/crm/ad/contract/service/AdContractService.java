@@ -38,6 +38,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
@@ -115,8 +116,8 @@ public class AdContractService {
         contractMapper.insert(c);
         // 用印附件：把前端上传的临时文件转存为正式附件
         transferAttachment(c.getId(), orgId, userId, request.getFileUrl());
-        // 如果关联了订单，自动写入 ad_order_contract 中间表
-        syncOrderContract(c.getId(), request.getOrderId(), userId, orgId);
+        // 如果关联了订单，自动写入 ad_order_contract 中间表（一对多）
+        syncOrderContract(c.getId(), request.getOrderIds(), userId, orgId);
         return c;
     }
 
@@ -150,8 +151,8 @@ public class AdContractService {
         existing.setUpdateUser(userId);
         existing.setUpdateTime(System.currentTimeMillis());
         contractMapper.update(existing);
-        // 同步 ad_order_contract 中间表
-        syncOrderContract(request.getId(), request.getOrderId(), userId, orgId);
+        // 同步 ad_order_contract 中间表（一对多，全量替换）
+        syncOrderContract(request.getId(), request.getOrderIds(), userId, orgId);
         return existing;
     }
 
@@ -258,8 +259,7 @@ public class AdContractService {
         resp.setContract(c);
         resp.setBusinessEntityName(resolveBusinessEntityName(c.getBusinessEntityId()));
         resp.setRelatedPartyName(resolveRelatedPartyName(c.getRelatedPartyType(), c.getRelatedPartyId()));
-        resp.setOrderNo(resolveOrderNo(c.getOrderId()));
-        resp.setOrderName(resolveOrderName(c.getOrderId()));
+        resp.setOrderList(resolveOrderList(c.getId()));
         resp.setDirectionLabel(ContractDirection.labelOf(c.getContractDirection()));
         resp.setTypeLabel(ContractType.labelOf(c.getContractType()));
         resp.setSealStatusLabel(SealStatus.labelOf(c.getSealStatus()));
@@ -303,11 +303,8 @@ public class AdContractService {
         if (tempFileUrl == null || tempFileUrl.isBlank()) {
             return;
         }
-        UploadTransferRequest transferRequest = new UploadTransferRequest();
-        transferRequest.setOrganizationId(orgId);
-        transferRequest.setResourceId(contractId);
-        transferRequest.setOperatorUserId(userId);
-        transferRequest.setTempFileIds(List.of(tempFileUrl));
+        UploadTransferRequest transferRequest =
+            new UploadTransferRequest(orgId, contractId, userId, List.of(tempFileUrl));
         attachmentService.processTemp(transferRequest);
     }
 
@@ -347,28 +344,34 @@ public class AdContractService {
     }
 
     /**
-     * 同步 ad_order_contract 中间表：将合同与订单关联写入。
-     * 若 orderId 为 null/blank 则跳过（不清除已有关联）。
-     * 若已存在相同关联则跳过（防重复）。
+     * 同步 ad_order_contract 中间表：将合同与订单关联写入（一对多）。
+     * 全量替换：先逻辑删除该合同已有的关联，再插入本次传入的订单列表。
+     * orderIds 为 null/空则仅清除旧关联（不报错）。
      */
-    private void syncOrderContract(String contractId, String orderId, String userId, String orgId) {
-        if (orderId == null || orderId.isBlank()) {
+    private void syncOrderContract(String contractId, List<String> orderIds, String userId, String orgId) {
+        // 先逻辑删除该合同已有的全部关联
+        List<AdOrderContract> existing = orderContractMapper.selectByContractId(contractId);
+        for (AdOrderContract oc : existing) {
+            oc.setDeleted(1);
+            orderContractMapper.update(oc);
+        }
+        if (orderIds == null || orderIds.isEmpty()) {
             return;
         }
-        // 检查是否已有该订单-合同关联
-        List<AdOrderContract> existing = orderContractMapper.selectByOrderId(orderId);
-        boolean exists = existing.stream().anyMatch(oc -> contractId.equals(oc.getContractId()));
-        if (exists) {
-            return;
+        long now = System.currentTimeMillis();
+        for (String orderId : orderIds) {
+            if (orderId == null || orderId.isBlank()) {
+                continue;
+            }
+            AdOrderContract oc = new AdOrderContract();
+            oc.setId(IDGenerator.nextStr());
+            oc.setOrderId(orderId);
+            oc.setContractId(contractId);
+            oc.setOrganizationId(orgId);
+            oc.setDeleted(0);
+            oc.setCreateTime(now);
+            orderContractMapper.insert(oc);
         }
-        AdOrderContract oc = new AdOrderContract();
-        oc.setId(IDGenerator.nextStr());
-        oc.setOrderId(orderId);
-        oc.setContractId(contractId);
-        oc.setOrganizationId(orgId);
-        oc.setDeleted(0);
-        oc.setCreateTime(System.currentTimeMillis());
-        orderContractMapper.insert(oc);
     }
 
     private String resolveBusinessEntityName(String businessEntityId) {
@@ -398,20 +401,24 @@ public class AdContractService {
         return null;
     }
 
-    private String resolveOrderNo(String orderId) {
-        if (orderId == null || orderId.isBlank()) {
-            return null;
+    private List<AdContractDetailResponse.AdContractOrderVO> resolveOrderList(String contractId) {
+        List<AdOrderContract> links = orderContractMapper.selectByContractId(contractId);
+        if (links == null || links.isEmpty()) {
+            return Collections.emptyList();
         }
-        AdOrder o = adOrderMapper.selectByPrimaryKey(orderId);
-        return o == null ? null : o.getOrderNo();
-    }
-
-    private String resolveOrderName(String orderId) {
-        if (orderId == null || orderId.isBlank()) {
-            return null;
+        List<AdContractDetailResponse.AdContractOrderVO> result = new ArrayList<>();
+        for (AdOrderContract link : links) {
+            AdOrder o = adOrderMapper.selectByPrimaryKey(link.getOrderId());
+            if (o == null) {
+                continue;
+            }
+            AdContractDetailResponse.AdContractOrderVO vo = new AdContractDetailResponse.AdContractOrderVO();
+            vo.setOrderId(o.getId());
+            vo.setOrderNo(o.getOrderNo());
+            vo.setOrderName(o.getOrderName());
+            result.add(vo);
         }
-        AdOrder o = adOrderMapper.selectByPrimaryKey(orderId);
-        return o == null ? null : o.getOrderName();
+        return result;
     }
 
     /**

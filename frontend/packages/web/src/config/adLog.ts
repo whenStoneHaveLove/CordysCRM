@@ -43,4 +43,5 @@ export const adLogActionOption = [
   { value: 'SUBMIT_ARCHIVE', label: 'advertising.log.action.SUBMIT_ARCHIVE' },
   { value: 'APPROVE_ARCHIVE', label: 'advertising.log.action.APPROVE_ARCHIVE' },
   { value: 'REJECT_ARCHIVE', label: 'advertising.log.action.REJECT_ARCHIVE' },
+  { value: 'OVERDUE_AUTO_50_TO_80', label: 'advertising.log.action.OVERDUE_AUTO_50_TO_80' },
 ];

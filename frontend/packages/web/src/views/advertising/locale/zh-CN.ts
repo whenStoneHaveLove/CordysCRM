@@ -479,6 +479,7 @@ export default {
   'advertising.log.action.SUBMIT_ARCHIVE': '提交归档',
   'advertising.log.action.APPROVE_ARCHIVE': '归档通过',
   'advertising.log.action.REJECT_ARCHIVE': '归档驳回',
+  'advertising.log.action.OVERDUE_AUTO_50_TO_80': '超期自动结算',
   'advertising.log.detail': '日志详情',
   'advertising.log.beforeChange': '修改前',
   'advertising.log.afterChange': '修改后',

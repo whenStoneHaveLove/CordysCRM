@@ -37,9 +37,6 @@ public class AdContractPageRequest extends BasePageRequest {
     @Schema(description = "业务主体id")
     private String businessEntityId;
 
-    @Schema(description = "关联订单id(单笔合同)")
-    private String orderId;
-
     @Schema(description = "关联变更单id")
     private String changeOrderId;
 

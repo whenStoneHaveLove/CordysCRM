@@ -199,7 +199,7 @@ public class AdPayoutService {
         return resp;
     }
 
-    /** 加载订单关联的合同（框架合同通过 ad_order_contract，单笔合同通过 ad_contract.order_id）。 */
+    /** 加载订单关联的合同（统一通过 ad_order_contract 中间表，支持一对多）。 */
     private List<AdContractBriefResponse> loadContracts(String orderId) {
         List<AdContractBriefResponse> result = new java.util.ArrayList<>();
         List<AdOrderContract> orderContracts = orderContractMapper.selectByOrderId(orderId);
@@ -209,12 +209,6 @@ public class AdPayoutService {
                 if (c != null && (c.getDeleted() == null || c.getDeleted() == 0)) {
                     result.add(toBrief(c));
                 }
-            }
-        }
-        List<AdContract> singleContracts = extAdContractMapper.selectByOrderId(orderId);
-        if (singleContracts != null) {
-            for (AdContract c : singleContracts) {
-                result.add(toBrief(c));
             }
         }
         return result;

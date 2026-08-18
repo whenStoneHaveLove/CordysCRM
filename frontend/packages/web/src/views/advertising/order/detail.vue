@@ -69,6 +69,9 @@
           <n-descriptions-item label="行业类别">{{ detail.order.industryCode || '-' }}</n-descriptions-item>
           <n-descriptions-item label="签约主体">{{ detail.order.signingEntity || '-' }}</n-descriptions-item>
           <n-descriptions-item label="下游媒体">{{ downstreamMediaNames || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="关联合同">{{
+            [detail.contractNo, detail.contractName].filter(Boolean).join(' ') || '-'
+          }}</n-descriptions-item>
           <n-descriptions-item label="订单类型">{{ getAdOrderTypeLabel(detail.order.orderType) }}</n-descriptions-item>
           <n-descriptions-item label="收款方式">{{
             getAdReceiptMethodLabel(detail.order.receiptMethod)
@@ -492,7 +495,17 @@
     if (v === null || v === undefined || v === '') return '-';
     const meta = AD_ORDER_CHANGE_FIELD_META.find((m) => m.field === field);
     if (!meta) return String(v);
-    if (meta.type === 'date') return String(v).slice(0, 10);
+    if (meta.type === 'date') {
+      const ts = Number(v);
+      if (!Number.isNaN(ts) && String(v).length >= 10) {
+        const d = new Date(ts < 1e12 ? ts * 1000 : ts);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+      return String(v).slice(0, 10);
+    }
     if (meta.control === 'select-customer') return entityNameCache[`customer-${v}`] || String(v);
     if (meta.control === 'select-businessEntity') return entityNameCache[`entity-${v}`] || String(v);
     if (meta.control && enumOptionsMap[meta.control]) {

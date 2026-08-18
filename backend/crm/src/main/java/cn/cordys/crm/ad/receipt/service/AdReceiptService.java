@@ -190,10 +190,9 @@ public class AdReceiptService {
         return resp;
     }
 
-    /** 加载订单关联的合同（框架合同通过 ad_order_contract，单笔合同通过 ad_contract.order_id）。 */
+    /** 加载订单关联的合同（统一通过 ad_order_contract 中间表，支持一对多）。 */
     private List<AdContractBriefResponse> loadContracts(String orderId) {
         List<AdContractBriefResponse> result = new java.util.ArrayList<>();
-        // 框架合同
         List<AdOrderContract> orderContracts = orderContractMapper.selectByOrderId(orderId);
         if (orderContracts != null) {
             for (AdOrderContract oc : orderContracts) {
@@ -201,13 +200,6 @@ public class AdReceiptService {
                 if (c != null && (c.getDeleted() == null || c.getDeleted() == 0)) {
                     result.add(toBrief(c));
                 }
-            }
-        }
-        // 单笔合同
-        List<AdContract> singleContracts = extAdContractMapper.selectByOrderId(orderId);
-        if (singleContracts != null) {
-            for (AdContract c : singleContracts) {
-                result.add(toBrief(c));
             }
         }
         return result;

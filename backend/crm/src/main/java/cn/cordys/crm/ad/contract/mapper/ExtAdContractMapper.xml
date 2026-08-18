@@ -17,7 +17,6 @@
             c.contract_type     AS contractType,
             c.related_party_id  AS relatedPartyId,
             c.related_party_type AS relatedPartyType,
-            c.order_id          AS orderId,
             c.signing_entity    AS signingEntity,
             c.valid_from        AS validFrom,
             c.valid_to          AS validTo,
@@ -49,9 +48,6 @@
         </if>
         <if test="request.businessEntityId != null and request.businessEntityId != ''">
             AND c.business_entity_id = #{request.businessEntityId}
-        </if>
-        <if test="request.orderId != null and request.orderId != ''">
-            AND c.order_id = #{request.orderId}
         </if>
         <if test="request.changeOrderId != null and request.changeOrderId != ''">
             AND c.change_order_id = #{request.changeOrderId}

@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 合同保存请求（M5，创建/编辑共用；POST /api/ad/contract 创建，PUT /api/ad/contract 编辑）。
@@ -39,8 +40,8 @@ public class AdContractSaveRequest {
     @Schema(description = "关联方类型:10客户/20上游代理/30下游媒体")
     private Integer relatedPartyType;
 
-    @Schema(description = "关联订单id(单笔合同)")
-    private String orderId;
+    @Schema(description = "关联订单id列表(统一走 ad_order_contract 中间表，支持一对多)")
+    private List<String> orderIds;
 
     @Schema(description = "关联变更单id(可选)")
     private String changeOrderId;

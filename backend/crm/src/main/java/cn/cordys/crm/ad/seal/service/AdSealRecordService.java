@@ -11,6 +11,8 @@ import cn.cordys.crm.ad.contract.constants.SealStatus;
 import cn.cordys.crm.ad.contract.domain.AdContract;
 import cn.cordys.crm.ad.contract.domain.AdSealRecord;
 import cn.cordys.crm.ad.dict.domain.AdDict;
+import cn.cordys.crm.ad.order.domain.AdOrderContract;
+import cn.cordys.crm.ad.order.mapper.ExtAdOrderContractMapper;
 import cn.cordys.crm.ad.dict.service.AdDictService;
 import cn.cordys.crm.ad.order.domain.AdOrder;
 import cn.cordys.crm.ad.seal.constants.AdSealRecordStatus;
@@ -78,6 +80,8 @@ public class AdSealRecordService {
     private AdDictService adDictService;
     @Resource
     private AdEntityPermissionProvider entityPermissionProvider;
+    @Resource
+    private ExtAdOrderContractMapper orderContractMapper;
 
     /** 用印模块角色守卫（best-effort，同 M2/M3）。 */
     private static final String ROLE_MEDIA = "ROLE_MEDIA";
@@ -219,8 +223,10 @@ public class AdSealRecordService {
         String businessEntityName = null;
         if (contract != null) {
             resp.setContractNo(contract.getContractNo());
-            if (contract.getOrderId() != null && !contract.getOrderId().isBlank()) {
-                AdOrder o = adOrderMapper.selectByPrimaryKey(contract.getOrderId());
+            // 通过 ad_order_contract 中间表反查该合同关联的订单
+            List<AdOrderContract> links = orderContractMapper.selectByContractId(contract.getId());
+            if (links != null && !links.isEmpty()) {
+                AdOrder o = adOrderMapper.selectByPrimaryKey(links.get(0).getOrderId());
                 if (o != null) {
                     orderNo = o.getOrderNo();
                     orderName = o.getOrderName();

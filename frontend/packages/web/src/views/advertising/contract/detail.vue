@@ -40,7 +40,16 @@
           <n-descriptions-item label="合同方向">{{ detail.directionLabel || '-' }}</n-descriptions-item>
           <n-descriptions-item label="合同类型">{{ detail.typeLabel || '-' }}</n-descriptions-item>
           <n-descriptions-item label="关联方">{{ detail.relatedPartyName || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="关联订单">{{ detail.orderNo || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="关联订单">
+            <template v-if="detail.orderList && detail.orderList.length">
+              <n-space :size="4">
+                <n-tag v-for="it in detail.orderList" :key="it.orderId" type="info" size="small">
+                  {{ [it.orderNo, it.orderName].filter(Boolean).join(' ') }}
+                </n-tag>
+              </n-space>
+            </template>
+            <span v-else>-</span>
+          </n-descriptions-item>
           <n-descriptions-item label="签约主体">{{ detail.contract.signingEntity || '-' }}</n-descriptions-item>
           <n-descriptions-item label="有效期起">{{ fmtDate(detail.contract.validFrom) }}</n-descriptions-item>
           <n-descriptions-item label="有效期止">{{ fmtDate(detail.contract.validTo) }}</n-descriptions-item>

@@ -176,7 +176,18 @@
 
   function fmtVal(v: any, type?: string, control?: string): string {
     if (v === null || v === undefined || v === '') return '-';
-    if (type === 'date') return String(v).slice(0, 10);
+    if (type === 'date') {
+      const ts = Number(v);
+      // 值为时间戳（秒级或毫秒级）时格式化为日期，避免直接展示数字
+      if (!Number.isNaN(ts) && String(v).length >= 10) {
+        const d = new Date(ts < 1e12 ? ts * 1000 : ts);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+      return String(v).slice(0, 10);
+    }
     if (control) return labelOf(control, v);
     return String(v);
   }

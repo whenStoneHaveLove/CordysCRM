@@ -22,11 +22,8 @@ public class AdContractDetailResponse {
     @Schema(description = "关联方名称")
     private String relatedPartyName;
 
-    @Schema(description = "关联订单编号")
-    private String orderNo;
-
-    @Schema(description = "关联订单名称")
-    private String orderName;
+    @Schema(description = "关联订单列表(统一走 ad_order_contract 中间表，一对多)")
+    private List<AdContractOrderVO> orderList;
 
     @Schema(description = "合同状态标签")
     private String statusLabel;
@@ -42,4 +39,17 @@ public class AdContractDetailResponse {
 
     @Schema(description = "用印记录历史（按申请时间倒序）")
     private List<AdSealRecord> sealRecords;
+
+    @Data
+    @Schema(description = "合同关联的订单视图")
+    public static class AdContractOrderVO {
+        @Schema(description = "订单id")
+        private String orderId;
+
+        @Schema(description = "订单编号")
+        private String orderNo;
+
+        @Schema(description = "订单名称")
+        private String orderName;
+    }
 }

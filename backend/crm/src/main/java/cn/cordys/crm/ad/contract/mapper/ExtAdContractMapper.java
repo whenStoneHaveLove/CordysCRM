@@ -34,10 +34,4 @@ public interface ExtAdContractMapper extends BaseMapper<AdContract> {
     long countTodayContracts(@Param("orgId") String orgId,
                               @Param("start") Long start,
                               @Param("end") Long end);
-
-    /**
-     * 按订单id查询单笔合同（ad_contract.order_id 直接关联）。
-     */
-    @org.apache.ibatis.annotations.Select("SELECT * FROM ad_contract WHERE order_id = #{orderId} AND deleted = 0")
-    List<AdContract> selectByOrderId(@Param("orderId") String orderId);
 }

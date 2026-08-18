@@ -36,9 +36,6 @@ public class AdContract extends BaseModel {
     @Schema(description = "关联方类型:10客户/20上游代理/30下游媒体")
     private Integer relatedPartyType;
 
-    @Schema(description = "关联订单(单笔合同)")
-    private String orderId;
-
     @Schema(description = "关联变更单id(M5,可空)")
     private String changeOrderId;
 

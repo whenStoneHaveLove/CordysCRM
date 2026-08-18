@@ -700,13 +700,14 @@
     }
   }
 
-  /** 加载合同列表（按订单类型过滤） */
+  /** 加载合同列表（按订单类型 + 已归档过滤） */
   async function loadContractOptions() {
     try {
       const res = await getAdContractPage({
         current: 1,
         pageSize: 200,
         contractType: form.orderType ?? undefined,
+        sealStatus: 60, // 只可选已归档（双盖完成）的合同
       });
       contractOptions.value = (res.list || []).map((it: any) => ({
         label: [it.contractNo, it.contractName].filter(Boolean).join(' ') || it.id,

@@ -66,10 +66,11 @@
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.contract.form.orderId')">
                 <n-select
-                  v-model:value="form.orderId"
+                  v-model:value="form.orderIds"
                   :options="orderOptions"
+                  multiple
                   filterable
-                  placeholder="请选择关联订单"
+                  placeholder="请选择关联订单（可多选）"
                 />
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.contract.form.amount')" path="amount">
@@ -178,7 +179,7 @@
     contractType?: number | null;
     relatedPartyType?: number | null;
     relatedPartyId?: string;
-    orderId?: string;
+    orderIds?: string[];
     signingEntity?: string;
     validFrom?: number | null;
     validTo?: number | null;
@@ -209,7 +210,7 @@
     contractType: null,
     relatedPartyType: null,
     relatedPartyId: undefined,
-    orderId: undefined,
+    orderIds: [],
     signingEntity: undefined,
     validFrom: null,
     validTo: null,
@@ -365,7 +366,7 @@
       contractType: form.contractType ?? undefined,
       relatedPartyType: form.relatedPartyType ?? undefined,
       relatedPartyId: form.relatedPartyId,
-      orderId: form.orderId,
+      orderIds: form.orderIds,
       signingEntity: form.signingEntity,
       validFrom: form.validFrom ?? undefined,
       validTo: form.validTo ?? undefined,
@@ -401,7 +402,7 @@
       return false;
     }
     // 单笔合同(contractType=20) 关联订单必填
-    if (form.contractType === 20 && !form.orderId) {
+    if (form.contractType === 20 && (!form.orderIds || form.orderIds.length === 0)) {
       message.warning(`${t('advertising.contract.form.orderId')} ${t('advertising.order.form.required')}`);
       return false;
     }
@@ -449,7 +450,7 @@
       form.contractType = o.contractType ?? null;
       form.relatedPartyType = o.relatedPartyType ?? null;
       form.relatedPartyId = o.relatedPartyId;
-      form.orderId = o.orderId;
+      form.orderIds = o.orderIds || [];
       form.signingEntity = o.signingEntity;
       form.validFrom = toDateValue(o.validFrom);
       form.validTo = toDateValue(o.validTo);
