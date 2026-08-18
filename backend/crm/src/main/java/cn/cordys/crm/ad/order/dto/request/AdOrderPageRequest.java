@@ -41,6 +41,9 @@ public class AdOrderPageRequest extends BasePageRequest {
     @Schema(description = "关键字（订单号/客户名）")
     private String keyword;
 
+    @Schema(description = "缺合同筛选：1=仅缺合同，0=仅不缺合同，null=不限")
+    private Integer missingContract;
+
     @Schema(description = "投放起始日-起（含）")
     private Date deliveryStartFrom;
 

@@ -25,6 +25,9 @@ public class AdContractDetailResponse {
     @Schema(description = "关联订单编号")
     private String orderNo;
 
+    @Schema(description = "关联订单名称")
+    private String orderName;
+
     @Schema(description = "合同状态标签")
     private String statusLabel;
 

@@ -196,20 +196,6 @@
       icon: renderIcon('iconicon_set_up'),
     },
     {
-      label: t('module.personal.plan'),
-      key: AppRouteEnum.PERSONAL_PLAN,
-      icon: renderIcon('iconicon_calendar1'),
-    },
-    ...(hasExportPermission.value
-      ? [
-          {
-            label: t('module.personal.myExport'),
-            key: AppRouteEnum.PERSONAL_EXPORT,
-            icon: renderIcon('iconicon_export'),
-          },
-        ]
-      : []),
-    {
       label: t('module.logout'),
       key: AppRouteEnum.LOGOUT,
       icon: renderIcon('iconicon_logout'),

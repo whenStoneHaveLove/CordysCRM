@@ -162,18 +162,6 @@
         name: PersonalEnum.INFO,
         tab: t('system.personal.info'),
       },
-      {
-        name: PersonalEnum.MY_PLAN,
-        tab: t('system.personal.plan'),
-      },
-      ...(hasAnyPermission(['PERSONAL_API_KEY:READ'])
-        ? [
-            {
-              name: PersonalEnum.API_KEY,
-              tab: t('system.personal.apiKey'),
-            },
-          ]
-        : []),
     ];
   });
 

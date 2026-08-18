@@ -277,7 +277,17 @@
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_CREATE });
   }
 
-  onMounted(fetchData);
+  function applyQuery() {
+    const q = router.currentRoute.value.query;
+    if (q.contractDirection != null && q.contractDirection !== '') searchForm.contractDirection = Number(q.contractDirection);
+    if (q.contractType != null && q.contractType !== '') searchForm.contractType = Number(q.contractType);
+    if (q.sealStatus != null && q.sealStatus !== '') searchForm.sealStatus = Number(q.sealStatus);
+  }
+
+  onMounted(() => {
+    applyQuery();
+    fetchData();
+  });
 </script>
 
 <style scoped>

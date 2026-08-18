@@ -538,13 +538,6 @@
       groupList: [],
       enable: true,
     },
-    {
-      label: t('module.advertising.system'),
-      key: ModuleConfigEnum.AD_SYSTEM,
-      icon: 'iconicon_set_up',
-      groupList: [],
-      enable: true,
-    },
   ];
 
   const moduleConfigList = computed<ModuleConfigItem[]>(() => {

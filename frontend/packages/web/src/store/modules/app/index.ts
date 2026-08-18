@@ -131,10 +131,6 @@ const defaultModuleConfig = [
     moduleKey: ModuleConfigEnum.AD_REPORT,
     enable: true,
   },
-  {
-    moduleKey: ModuleConfigEnum.AD_SYSTEM,
-    enable: true,
-  },
 ];
 
 const useAppStore = defineStore('app', {

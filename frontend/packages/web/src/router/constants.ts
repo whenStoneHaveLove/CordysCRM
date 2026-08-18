@@ -59,7 +59,6 @@ export const featureRouteMap: Record<string, any> = {
   [AdvertisingRouteEnum.ADVERTISING_RESOURCE_MANAGEMENT]: ModuleConfigEnum.AD_UPSTREAM_AGENT,
   [AdvertisingRouteEnum.ADVERTISING_APPROVAL_GROUP]: ModuleConfigEnum.AD_APPROVAL,
   [AdvertisingRouteEnum.ADVERTISING_REPORT_GROUP]: ModuleConfigEnum.AD_REPORT,
-  [AdvertisingRouteEnum.ADVERTISING_SYSTEM_GROUP]: ModuleConfigEnum.AD_SYSTEM,
 };
 
 export const allMenuRouteMap: Record<string, any> = {

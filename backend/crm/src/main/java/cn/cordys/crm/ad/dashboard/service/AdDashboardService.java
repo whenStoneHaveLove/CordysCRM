@@ -1,29 +1,31 @@
 package cn.cordys.crm.ad.dashboard.service;
 
-import cn.cordys.common.dto.RoleDataScopeDTO;
+import cn.cordys.common.constants.PermissionConstants;
+import cn.cordys.common.permission.PermissionUtils;
+import cn.cordys.crm.ad.report.dto.response.AdDashboardSummaryResponse;
 import cn.cordys.crm.ad.report.dto.response.AdWorkbenchTodoItem;
 import cn.cordys.crm.ad.report.dto.response.AdWorkbenchTodoResponse;
 import cn.cordys.crm.ad.report.mapper.ExtAdReportMapper;
-import cn.cordys.security.SessionUser;
-import cn.cordys.security.SessionUtils;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * 广告工作台服务（V3.1 §8.5，B-5）。
  *
- * <p>分角色聚合待办：媒介（待提交/改单草稿/用印申请/缺合同）、老板（待审订单/改单/用印/强制归档）、
- * 财务（待确认预收/媒体预付/开票/收款/媒体尾款/红冲）。计数来自 ad 表聚合，非 100% 精确，
+ * <p>分角色聚合待办：
+ * 媒介（待提交订单/待执行/改单执行/待提交付款单/待用印/待提交归档/缺合同）、
+ * 老板（待审订单/改单/用印/归档/收款单/付款单）、
+ * 财务（待提交收款单）。计数来自 ad 表聚合，非 100% 精确，
  * 命中主状态/子状态即可（§A.5 B-5 允许合理近似）。</p>
  */
 @Service
@@ -31,6 +33,75 @@ public class AdDashboardService {
 
     @Resource
     private ExtAdReportMapper extAdReportMapper;
+
+    /** 工作台首页数据概览（5 个核心指标 + 近 12 个月趋势）。 */
+    public AdDashboardSummaryResponse dashboardSummary(String orgId) {
+        Map<String, BigDecimal> summary = extAdReportMapper.dashboardSummary(orgId);
+
+        AdDashboardSummaryResponse resp = new AdDashboardSummaryResponse();
+        resp.setActiveOrderCount(toLong(summary.get("activeOrderCount")));
+        resp.setTotalReceivable(summary.getOrDefault("totalReceivable", BigDecimal.ZERO));
+        resp.setTotalMediaPayable(summary.getOrDefault("totalMediaPayable", BigDecimal.ZERO));
+        resp.setPendingReceivable(summary.getOrDefault("pendingReceivable", BigDecimal.ZERO));
+        resp.setPendingPayable(summary.getOrDefault("pendingPayable", BigDecimal.ZERO));
+        resp.setMonthlyTrend(recentMonthlyTrend(orgId));
+        return resp;
+    }
+
+    /**
+     * 近 12 个月订单趋势（含当月，缺数据的月份补 0）。
+     * 复用 {@link ExtAdReportMapper#monthlyTrend} 逐年查询后按月份填充。
+     */
+    private List<Map<String, Object>> recentMonthlyTrend(String orgId) {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM");
+        // 生成近 12 个月（含当月）的 key
+        Map<String, Map<String, Object>> monthMap = new LinkedHashMap<>();
+        LocalDate now = LocalDate.now();
+        for (int i = 11; i >= 0; i--) {
+            String key = now.minusMonths(i).format(fmt);
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("month", key);
+            m.put("orderCount", 0L);
+            m.put("amount", BigDecimal.ZERO);
+            monthMap.put(key, m);
+        }
+
+        // 涉及两个年份（跨年时）：只查当前年和上一年
+        int thisYear = now.getYear();
+        Set<Integer> years = new LinkedHashSet<>();
+        years.add(thisYear);
+        years.add(now.minusMonths(11).getYear());
+        for (Integer y : years) {
+            List<Map<String, Object>> rows = extAdReportMapper.monthlyTrend(orgId, y);
+            if (rows == null) {
+                continue;
+            }
+            for (Map<String, Object> row : rows) {
+                String month = row.get("month") == null ? null : row.get("month").toString();
+                if (month == null || !monthMap.containsKey(month)) {
+                    continue;
+                }
+                Map<String, Object> target = monthMap.get(month);
+                target.put("orderCount", toLong(row.get("orderCount")));
+                target.put("amount", row.get("amount") == null ? BigDecimal.ZERO : row.get("amount"));
+            }
+        }
+        return new ArrayList<>(monthMap.values());
+    }
+
+    private long toLong(Object v) {
+        if (v == null) {
+            return 0L;
+        }
+        if (v instanceof Number n) {
+            return n.longValue();
+        }
+        try {
+            return Long.parseLong(v.toString());
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
 
     /** 分角色工作台待办聚合。 */
     public AdWorkbenchTodoResponse workbenchTodo(String orgId) {
@@ -40,28 +111,28 @@ public class AdDashboardService {
         Map<String, List<AdWorkbenchTodoItem>> todos = new LinkedHashMap<>();
         if (roles.contains("MEDIA")) {
             todos.put("MEDIA", List.of(
-                    item("pendingSubmit", "待提交审核", num(counts, "draftCount"), "/advertising/order"),
-                    item("changeDraft", "改单待审", num(counts, "changePending"), "/advertising/order-change"),
-                    item("sealApply", "用印申请", num(counts, "sealPending"), "/advertising/seal"),
-                    item("missingContract", "缺合同提醒", num(counts, "missingContract"), "/advertising/order")
+                    item("pendingSubmit", "待提交订单", num(counts, "draftCount"), "/advertising/order-management/order?status=0"),
+                    item("pendingExecute", "待执行订单", num(counts, "pendingExecute"), "/advertising/order-management/order?status=45"),
+                    item("changeExecute", "改单待执行", num(counts, "changeExecute"), "/advertising/order-management/change?status=20"),
+                    item("payoutDraft", "待提交付款单", num(counts, "payoutDraft"), "/advertising/order-management/payout?status=0"),
+                    item("sealApply", "合同待用印", num(counts, "sealApply"), "/advertising/contract-management/contract?sealStatus=0"),
+                    item("archiveSubmit", "合同待归档", num(counts, "archiveSubmit"), "/advertising/contract-management/contract?sealStatus=20"),
+                    item("missingContract", "待补单笔合同", num(counts, "missingContract"), "/advertising/order-management/order?missingContract=1")
             ));
         }
         if (roles.contains("BOSS")) {
             todos.put("BOSS", List.of(
-                    item("pendingApprove", "待我审批(订单)", num(counts, "pendingApproveOrder"), "/advertising/order"),
-                    item("changeApprove", "待审改单", num(counts, "changePending"), "/advertising/order-change"),
-                    item("sealApprove", "待审用印", num(counts, "sealPending"), "/advertising/seal"),
-                    item("forceArchive", "强制归档", num(counts, "forceArchive"), "/advertising/order")
+                    item("pendingApprove", "待审订单", num(counts, "pendingApproveOrder"), "/advertising/order-management/order?status=10"),
+                    item("changeApprove", "待审改单", num(counts, "changePending"), "/advertising/order-management/change?status=10"),
+                    item("sealApprove", "待审用印", num(counts, "sealApprove"), "/advertising/contract-management/seal?status=0"),
+                    item("archiveApprove", "待审归档", num(counts, "archiveApprove"), "/advertising/contract-management/contract?sealStatus=40"),
+                    item("receiptApprove", "待审收款单", num(counts, "receiptApprove"), "/advertising/order-management/receipt?status=10"),
+                    item("payoutApprove", "待审付款单", num(counts, "payoutApprove"), "/advertising/order-management/payout?status=10")
             ));
         }
         if (roles.contains("FINANCE")) {
             todos.put("FINANCE", List.of(
-                    item("prepayConfirm", "待确认预收", num(counts, "prepayConfirm"), "/advertising/payment"),
-                    item("mediaPrepay", "待付媒体预付款", num(counts, "mediaPrepay"), "/advertising/payment"),
-                    item("invoice", "待开票", num(counts, "invoice"), "/advertising/payment"),
-                    item("receive", "待收款", num(counts, "receive"), "/advertising/payment"),
-                    item("mediaPostpay", "待付媒体尾款", num(counts, "mediaPostpay"), "/advertising/payment"),
-                    item("redInvoice", "红冲待办", num(counts, "redInvoice"), "/advertising/payment")
+                    item("receiptDraft", "待提交收款单", num(counts, "receiptDraft"), "/advertising/order-management/receipt?status=0")
             ));
         }
 
@@ -96,37 +167,20 @@ public class AdDashboardService {
     }
 
     /**
-     * 解析当前用户具备的广告角色分组（MEDIA/BOSS/FINANCE）。
-     * 管理员视为全部角色（可见所有待办卡片）；否则按角色名模糊匹配。
+     * 解析当前用户可见的广告工作台板块（MEDIA/BOSS/FINANCE）。
+     * 通过权限点判断：AD_WORKBENCH:MEDIA / AD_WORKBENCH:BOSS / AD_WORKBENCH:FINANCE。
+     * admin 用户拥有所有权限（PermissionUtils 内部对 admin 恒返回 true）。
      */
     private Set<String> resolveAdRoles() {
-        SessionUser user = SessionUtils.getUser();
         Set<String> roles = new LinkedHashSet<>();
-        if (user == null) {
-            return roles;
-        }
-        List<String> roleNames = user.getRoles() == null ? Collections.<String>emptyList()
-                : user.getRoles().stream()
-                .map(RoleDataScopeDTO::getName)
-                .filter(Objects::nonNull)
-                .map(String::toLowerCase)
-                .collect(Collectors.toList());
-        boolean isAdmin = roleNames.stream()
-                .anyMatch(n -> n.contains("admin") || n.contains("超级") || n.contains("管理员"));
-        if (isAdmin) {
-            roles.add("MEDIA");
-            roles.add("BOSS");
-            roles.add("FINANCE");
-            return roles;
-        }
-        if (roleNames.stream().anyMatch(n -> n.contains("媒体") || n.contains("media") || n.contains("运营"))) {
+        if (PermissionUtils.hasPermission(PermissionConstants.AD_WORKBENCH_MEDIA)) {
             roles.add("MEDIA");
         }
-        if (roleNames.stream().anyMatch(n -> n.contains("财务") || n.contains("finance"))) {
-            roles.add("FINANCE");
-        }
-        if (roleNames.stream().anyMatch(n -> n.contains("老板") || n.contains("boss"))) {
+        if (PermissionUtils.hasPermission(PermissionConstants.AD_WORKBENCH_BOSS)) {
             roles.add("BOSS");
+        }
+        if (PermissionUtils.hasPermission(PermissionConstants.AD_WORKBENCH_FINANCE)) {
+            roles.add("FINANCE");
         }
         return roles;
     }

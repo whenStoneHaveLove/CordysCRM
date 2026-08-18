@@ -202,8 +202,14 @@
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_CHANGE_CREATE });
   }
 
+  function applyQuery() {
+    const q = router.currentRoute.value.query;
+    if (q.status != null && q.status !== '') searchForm.status = Number(q.status);
+  }
+
   onMounted(() => {
     loadUserMap();
+    applyQuery();
     fetchData();
   });
 </script>

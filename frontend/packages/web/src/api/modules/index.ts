@@ -966,7 +966,7 @@ export const {
   getAdApprovalPendingCount,
 } = adApprovalApi;
 
-export const { getAdWorkbenchTodo } = adDashboardApi;
+export const { getAdWorkbenchTodo, getAdDashboardSummary } = adDashboardApi;
 
 export const { getAdReportOrderSummary, getAdReportPaymentSummary, getAdReportMonthlyTrend, getAdReportByCode } =
   adReportApi;

@@ -42,7 +42,7 @@ export enum AdOrderChangeStatusEnum {
 
 export const AdOrderChangeStatusLabel: Record<number, string> = {
   [AdOrderChangeStatusEnum.DRAFT]: '草稿',
-  [AdOrderChangeStatusEnum.SUBMITTED]: '已提交',
+  [AdOrderChangeStatusEnum.SUBMITTED]: '审批中',
   [AdOrderChangeStatusEnum.APPROVED]: '审批通过',
   [AdOrderChangeStatusEnum.REJECTED]: '已驳回',
   [AdOrderChangeStatusEnum.EXECUTED]: '已执行',

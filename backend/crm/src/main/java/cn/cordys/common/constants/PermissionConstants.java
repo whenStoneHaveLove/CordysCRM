@@ -370,16 +370,17 @@ public class PermissionConstants {
 
     /*------ start: AD_WORKBENCH（§8.5） ------*/
     public static final String AD_WORKBENCH_READ = "AD_WORKBENCH:READ";
+    /** 媒介板块待办可见权限 */
+    public static final String AD_WORKBENCH_MEDIA = "AD_WORKBENCH:MEDIA";
+    /** 老板板块待办可见权限 */
+    public static final String AD_WORKBENCH_BOSS = "AD_WORKBENCH:BOSS";
+    /** 财务板块待办可见权限 */
+    public static final String AD_WORKBENCH_FINANCE = "AD_WORKBENCH:FINANCE";
     /*------ end: AD_WORKBENCH ------*/
 
     /*------ start: AD_APPROVAL（§8.5） ------*/
     public static final String AD_APPROVAL_READ = "AD_APPROVAL:READ";
     public static final String AD_APPROVAL_APPROVE = "AD_APPROVAL:APPROVE";
     /*------ end: AD_APPROVAL ------*/
-
-    /*------ start: AD_SYSTEM（§8.5） ------*/
-    public static final String AD_SYSTEM_READ = "AD_SYSTEM:READ";
-    public static final String AD_SYSTEM_CONFIG = "AD_SYSTEM:CONFIG";
-    /*------ end: AD_SYSTEM ------*/
 }
 

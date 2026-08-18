@@ -36,6 +36,12 @@ public interface ExtAdReportMapper {
     Map<String, Object> workbenchCounts(@Param("organizationId") String organizationId);
 
     /**
+     * 工作台首页数据概览：进行中订单数 + 应收/媒体应付总额 + 待收/待付款。
+     * 待收/待付仅统计收款单/付款单尚未审核通过的订单（receipt_done=0 / payment_done=0）。
+     */
+    Map<String, BigDecimal> dashboardSummary(@Param("organizationId") String organizationId);
+
+    /**
      * 报表-应收应付：应收总额 vs 媒体应付总额（B-6）。
      */
     Map<String, BigDecimal> receivablePayable(@Param("organizationId") String organizationId);

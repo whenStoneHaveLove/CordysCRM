@@ -3,31 +3,96 @@
 
 <mapper namespace="cn.cordys.crm.ad.approval.mapper.ExtAdApprovalMapper">
 
+    <!-- 订单待审批：status=10（待老板审核） -->
     <select id="pendingOrders" resultType="java.util.HashMap">
         SELECT
-            id, order_no AS refNo, order_name AS summary, creator_id AS applicantId,
-            total_amount AS amount, create_time AS createTime, status
-        FROM ad_order
-        WHERE organization_id = #{orgId} AND status = #{status} AND deleted = 0
-        ORDER BY create_time DESC
+            o.id,
+            o.order_no     AS refNo,
+            o.order_name   AS summary,
+            o.creator_id   AS applicantId,
+            o.total_amount AS amount,
+            o.create_time  AS createTime,
+            o.status
+        FROM ad_order o
+        WHERE o.organization_id = #{orgId} AND o.status = #{status} AND o.deleted = 0
+        ORDER BY o.create_time DESC
     </select>
 
+    <!-- 改单待审批：status=10（已提交），关联订单编号 -->
     <select id="pendingChanges" resultType="java.util.HashMap">
         SELECT
-            id, id AS refNo, reason AS summary, create_user AS applicantId,
-            create_time AS createTime, status
-        FROM ad_order_change
-        WHERE organization_id = #{orgId} AND status = 0 AND deleted = 0
-        ORDER BY create_time DESC
+            c.id,
+            c.order_id     AS orderId,
+            o.order_no     AS refNo,
+            c.reason       AS summary,
+            c.create_user  AS applicantId,
+            c.create_time  AS createTime,
+            c.status
+        FROM ad_order_change c
+        LEFT JOIN ad_order o ON o.id = c.order_id AND o.deleted = 0
+        WHERE c.organization_id = #{orgId} AND c.status = #{status} AND c.deleted = 0
+        ORDER BY c.create_time DESC
     </select>
 
+    <!-- 用印待审批：status=0（审批中），关联合同编号 -->
     <select id="pendingSeals" resultType="java.util.HashMap">
         SELECT
-            id, contract_id AS refNo, apply_remark AS summary, applicant_id AS applicantId,
-            create_time AS createTime, status
-        FROM ad_seal_record
-        WHERE organization_id = #{orgId} AND status = 0 AND deleted = 0
-        ORDER BY create_time DESC
+            s.id,
+            s.contract_id  AS contractId,
+            ct.contract_no AS refNo,
+            s.apply_remark AS summary,
+            s.applicant_id AS applicantId,
+            s.create_time  AS createTime,
+            s.status
+        FROM ad_seal_record s
+        LEFT JOIN ad_contract ct ON ct.id = s.contract_id AND ct.deleted = 0
+        WHERE s.organization_id = #{orgId} AND s.status = #{status} AND s.deleted = 0
+        ORDER BY s.create_time DESC
+    </select>
+
+    <!-- 归档待审批：seal_status=40（归档审批中） -->
+    <select id="pendingArchives" resultType="java.util.HashMap">
+        SELECT
+            ct.id,
+            ct.contract_no   AS refNo,
+            ct.contract_name AS summary,
+            ct.create_user   AS applicantId,
+            ct.amount        AS amount,
+            ct.create_time   AS createTime,
+            ct.seal_status   AS status
+        FROM ad_contract ct
+        WHERE ct.organization_id = #{orgId} AND ct.seal_status = #{sealStatus} AND ct.deleted = 0
+        ORDER BY ct.create_time DESC
+    </select>
+
+    <!-- 收款单待审批：status=10（待审核） -->
+    <select id="pendingReceipts" resultType="java.util.HashMap">
+        SELECT
+            r.id,
+            r.receipt_no   AS refNo,
+            r.remark       AS summary,
+            r.create_user  AS applicantId,
+            r.amount       AS amount,
+            r.create_time  AS createTime,
+            r.status
+        FROM ad_receipt r
+        WHERE r.organization_id = #{orgId} AND r.status = #{status} AND r.deleted = 0
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 付款单待审批：status=10（待审核），表名 ad_payment -->
+    <select id="pendingPayouts" resultType="java.util.HashMap">
+        SELECT
+            p.id,
+            p.payment_no   AS refNo,
+            p.remark       AS summary,
+            p.create_user  AS applicantId,
+            p.amount       AS amount,
+            p.create_time  AS createTime,
+            p.status
+        FROM ad_payment p
+        WHERE p.organization_id = #{orgId} AND p.status = #{status} AND p.deleted = 0
+        ORDER BY p.create_time DESC
     </select>
 
 </mapper>

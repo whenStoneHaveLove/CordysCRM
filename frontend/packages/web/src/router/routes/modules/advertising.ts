@@ -260,7 +260,13 @@ const resourceManagement: AppRouteRecordRaw = {
   component: DEFAULT_LAYOUT,
   meta: {
     locale: 'module.advertising.resourceManagement',
-    permissions: ['AD_UPSTREAM_AGENT:READ', 'AD_DOWNSTREAM_MEDIA:READ', 'AD_CUSTOMER:READ', 'AD_BUSINESS_ENTITY:READ'],
+    permissions: [
+      'AD_UPSTREAM_AGENT:READ',
+      'AD_DOWNSTREAM_MEDIA:READ',
+      'AD_CUSTOMER:READ',
+      'AD_BUSINESS_ENTITY:READ',
+      'AD_DICT:READ',
+    ],
     icon: 'iconicon_enterprise',
     hideChildrenInMenu: true,
     collapsedLocale: 'module.advertising.resourceManagement',
@@ -396,6 +402,16 @@ const resourceManagement: AppRouteRecordRaw = {
         activeMenu: AdvertisingRouteEnum.ADVERTISING_BUSINESS_ENTITY,
       },
     },
+    {
+      path: 'dict',
+      name: AdvertisingRouteEnum.ADVERTISING_SYSTEM_DICT,
+      component: () => import('@/views/advertising/system/dict/index.vue'),
+      meta: {
+        locale: 'module.advertising.dict',
+        isTopMenu: true,
+        permissions: ['AD_DICT:READ'],
+      },
+    },
   ],
 };
 
@@ -456,67 +472,6 @@ const report: AppRouteRecordRaw = {
 };
 
 /**
- * 系统配置（独立父模块，无子标签）
- */
-const system: AppRouteRecordRaw = {
-  path: '/advertising/system',
-  name: AdvertisingRouteEnum.ADVERTISING_SYSTEM_GROUP,
-  redirect: '/advertising/system',
-  component: DEFAULT_LAYOUT,
-  meta: {
-    locale: 'module.advertising.system',
-    permissions: ['AD_SYSTEM:READ', 'AD_DICT:READ', 'AD_SYSTEM:CONFIG'],
-    icon: 'iconicon_set_up',
-    hideChildrenInMenu: true,
-    collapsedLocale: 'module.advertising.system',
-  },
-  children: [
-    {
-      path: '',
-      name: AdvertisingRouteEnum.ADVERTISING_SYSTEM,
-      component: () => import('@/views/advertising/system/index.vue'),
-      meta: {
-        locale: 'module.advertising.system',
-        permissions: ['AD_SYSTEM:READ'],
-      },
-    },
-    {
-      path: 'business-entity',
-      name: AdvertisingRouteEnum.ADVERTISING_SYSTEM_BE,
-      component: () => import('@/views/advertising/system/business-entity/index.vue'),
-      meta: {
-        locale: 'module.advertising.businessEntity',
-        permissions: ['AD_BUSINESS_ENTITY:READ'],
-        hideInMenu: true,
-        activeMenu: AdvertisingRouteEnum.ADVERTISING_SYSTEM,
-      },
-    },
-    {
-      path: 'dict',
-      name: AdvertisingRouteEnum.ADVERTISING_SYSTEM_DICT,
-      component: () => import('@/views/advertising/system/dict/index.vue'),
-      meta: {
-        locale: 'module.advertising.dict',
-        permissions: ['AD_DICT:READ'],
-        hideInMenu: true,
-        activeMenu: AdvertisingRouteEnum.ADVERTISING_SYSTEM,
-      },
-    },
-    {
-      path: 'settings',
-      name: AdvertisingRouteEnum.ADVERTISING_SYSTEM_SETTINGS,
-      component: () => import('@/views/advertising/system/settings.vue'),
-      meta: {
-        locale: 'module.advertising.systemSettings',
-        permissions: ['AD_SYSTEM:CONFIG'],
-        hideInMenu: true,
-        activeMenu: AdvertisingRouteEnum.ADVERTISING_SYSTEM,
-      },
-    },
-  ],
-};
-
-/**
  * 操作日志（独立父模块，无子标签）
  */
 const adLog: AppRouteRecordRaw = {
@@ -550,7 +505,6 @@ const advertising: AppRouteRecordRaw[] = [
   resourceManagement,
   approval,
   report,
-  system,
   adLog,
 ];
 

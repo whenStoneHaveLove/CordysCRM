@@ -18,6 +18,7 @@ export interface AdOrderPageParams {
   orderType?: number | null;
   receiptMethod?: number | null;
   paymentMethod?: number | null;
+  missingContract?: number | null;
   deliveryStartFrom?: number | null;
   deliveryStartTo?: number | null;
   [key: string]: any;
@@ -571,28 +572,28 @@ export interface AdSettingInfo {
 /* ----------------------------- 审批中心 ----------------------------- */
 
 /** 审批类型（对应三 Tab：订单/改单/用印）。 */
-export type AdApprovalType = 'order' | 'change' | 'seal';
+export type AdApprovalType = 'order' | 'change' | 'seal' | 'archive' | 'receipt' | 'payout';
 
 export interface AdApprovalPageParams {
   current?: number;
   pageSize?: number;
   sort?: { name?: string; type?: string };
   keyword?: string;
-  /** 审批类型：order/change/seal（三 Tab 过滤）。 */
+  /** 审批类型：order/change/seal/archive/receipt/payout（缺省查全部）。 */
   type?: string | null;
   [key: string]: any;
 }
 
 export interface AdApprovalTodoItem {
   id?: string;
-  /** 业务单据 ID（订单/改单/用印记录），用于审批动作与跳转详情。 */
+  /** 业务单据 ID（订单/改单/用印/合同/收款单/付款单），用于审批动作与跳转详情。 */
   businessId?: string;
-  /** 审批类型：order/change/seal。 */
+  /** 审批类型：order/change/seal/archive/receipt/payout。 */
   type?: string;
   typeLabel?: string;
   applicantId?: string;
   applicantName?: string;
-  /** 关联单号（订单号/改单号/合同号）。 */
+  /** 关联单号（订单号/合同号/收款单号/付款单号）。 */
   refNo?: string;
   businessEntityName?: string;
   customerName?: string;
@@ -620,24 +621,46 @@ export type AdApprovalPendingCountResult = AdApprovalPendingCountItem[];
 /* ----------------------------- 工作台 ----------------------------- */
 
 export interface AdWorkbenchTodoItem {
-  /** 待办类型码（如 pendingSubmit / pendingApprove / financePrepay ...）。 */
-  todoType?: string;
-  todoLabel?: string;
+  /** 待办 key（如 pendingSubmit / pendingExecute / payoutDraft ...）。 */
+  key?: string;
+  /** 待办标签（后端已本地化）。 */
+  label?: string;
+  /** 待办数量。 */
   count?: number;
-  refNo?: string;
-  amount?: number;
-  dueDate?: number | string | null;
-  /** 点击跳转的路由 name（可选）。 */
-  routeName?: string;
-  routeParams?: Record<string, any>;
+  /** 点击跳转路由（前端使用）。 */
+  link?: string;
   [key: string]: any;
 }
 
 export interface AdWorkbenchTodoResult {
-  media?: AdWorkbenchTodoItem[];
-  boss?: AdWorkbenchTodoItem[];
-  finance?: AdWorkbenchTodoItem[];
+  /** 当前用户具备的广告角色（MEDIA/BOSS/FINANCE）。 */
+  roles?: string[];
+  /** 分角色待办：key=角色，value=该角色待办列表。 */
+  todos?: Record<string, AdWorkbenchTodoItem[]>;
   [key: string]: any;
+}
+
+/** 工作台首页数据概览（对应 AdDashboardSummaryResponse）。 */
+export interface AdDashboardSummary {
+  /** 进行中订单数（非归档/非作废）。 */
+  activeOrderCount?: number;
+  /** 应收总额。 */
+  totalReceivable?: number;
+  /** 媒体应付总额。 */
+  totalMediaPayable?: number;
+  /** 待收款金额。 */
+  pendingReceivable?: number;
+  /** 待付款金额。 */
+  pendingPayable?: number;
+  /** 近12个月趋势。 */
+  monthlyTrend?: AdDashboardTrendItem[];
+  [key: string]: any;
+}
+
+export interface AdDashboardTrendItem {
+  month?: string;
+  orderCount?: number;
+  amount?: number;
 }
 
 /* ----------------------------- 报表中心 ----------------------------- */

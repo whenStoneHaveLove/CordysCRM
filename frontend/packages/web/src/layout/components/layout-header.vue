@@ -5,7 +5,8 @@
     </div>
     <div class="flex flex-1 items-center justify-between px-[16px]">
       <CrmTopMenu />
-      <div v-if="!props.isPreview" class="flex items-center gap-[8px]">
+      <div v-if="false && !props.isPreview" class="flex items-center gap-[8px]">
+        <!-- 顶部图标按钮组（搜索/任务/数据/语言/通知/AI/版本/帮助）已隐藏 -->
         <CrmButtonGroup not-show-divider class="gap-[8px]" :list="appStore.getNavTopConfigList">
           <template #searchSlot>
             <n-button

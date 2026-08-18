@@ -16,6 +16,12 @@ public class AdOrderChangeDetailResponse {
     @Schema(description = "关联订单编号")
     private String orderNo;
 
+    @Schema(description = "关联订单ID")
+    private String orderId;
+
+    @Schema(description = "关联订单名称")
+    private String orderName;
+
     @Schema(description = "状态中文标签")
     private String statusLabel;
 }

@@ -48,33 +48,31 @@
             (SELECT COUNT(1) FROM ad_order o
              WHERE o.organization_id = #{organizationId} AND o.deleted = 0 AND o.status = 10) AS pendingApproveOrder,
             (SELECT COUNT(1) FROM ad_order o
-             WHERE o.organization_id = #{organizationId} AND o.deleted = 0 AND o.status = 80) AS forceArchive,
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0 AND o.status = 45) AS pendingExecute,
             (SELECT COUNT(1) FROM ad_order_change c
-             WHERE c.organization_id = #{organizationId} AND c.deleted = 0 AND c.status = 0)   AS changePending,
+             WHERE c.organization_id = #{organizationId} AND c.deleted = 0 AND c.status = 10) AS changePending,
+            (SELECT COUNT(1) FROM ad_order_change c
+             WHERE c.organization_id = #{organizationId} AND c.deleted = 0 AND c.status = 20) AS changeExecute,
+            (SELECT COUNT(1) FROM ad_receipt r
+             WHERE r.organization_id = #{organizationId} AND r.deleted = 0 AND r.status = 0)  AS receiptDraft,
+            (SELECT COUNT(1) FROM ad_receipt r
+             WHERE r.organization_id = #{organizationId} AND r.deleted = 0 AND r.status = 10) AS receiptApprove,
+            (SELECT COUNT(1) FROM ad_payment p
+             WHERE p.organization_id = #{organizationId} AND p.deleted = 0 AND p.status = 0)  AS payoutDraft,
+            (SELECT COUNT(1) FROM ad_payment p
+             WHERE p.organization_id = #{organizationId} AND p.deleted = 0 AND p.status = 10) AS payoutApprove,
+            (SELECT COUNT(1) FROM ad_contract c
+             WHERE c.organization_id = #{organizationId} AND c.deleted = 0 AND c.seal_status = 0)  AS sealApply,
             (SELECT COUNT(1) FROM ad_seal_record s
-             WHERE s.organization_id = #{organizationId} AND s.deleted = 0 AND s.status = 0)   AS sealPending,
+             WHERE s.organization_id = #{organizationId} AND s.deleted = 0 AND s.status = 0)    AS sealApprove,
+            (SELECT COUNT(1) FROM ad_contract c
+             WHERE c.organization_id = #{organizationId} AND c.deleted = 0 AND c.seal_status = 20) AS archiveSubmit,
+            (SELECT COUNT(1) FROM ad_contract c
+             WHERE c.organization_id = #{organizationId} AND c.deleted = 0 AND c.seal_status = 40) AS archiveApprove,
             (SELECT COUNT(1) FROM ad_order o
              WHERE o.organization_id = #{organizationId} AND o.deleted = 0
                AND o.status NOT IN (90, 100)
-               AND NOT EXISTS (SELECT 1 FROM ad_order_contract oc WHERE oc.order_id = o.id AND oc.deleted = 0)) AS missingContract,
-            (SELECT COUNT(1) FROM ad_order o
-             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
-               AND o.receipt_method = 10 AND o.receipt_status = 0)                              AS prepayConfirm,
-            (SELECT COUNT(1) FROM ad_order o
-             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
-               AND o.payment_method = 10 AND o.media_payment_status = 0)                        AS mediaPrepay,
-            (SELECT COUNT(1) FROM ad_order o
-             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
-               AND o.invoice_status IN (0, 10))                                                 AS invoice,
-            (SELECT COUNT(1) FROM ad_order o
-             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
-               AND o.receipt_status IN (0, 10))                                                 AS receive,
-            (SELECT COUNT(1) FROM ad_order o
-             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
-               AND o.payment_method = 20 AND o.media_payment_status IN (0, 10))                 AS mediaPostpay,
-            (SELECT COUNT(1) FROM ad_order o
-             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
-               AND o.needs_red_invoice = 1)                                                     AS redInvoice
+               AND NOT EXISTS (SELECT 1 FROM ad_order_contract oc WHERE oc.order_id = o.id AND oc.deleted = 0)) AS missingContract
     </select>
 
     <!-- 报表-应收应付：应收总额 vs 媒体应付总额（B-6） -->
@@ -121,6 +119,29 @@
           AND o.status NOT IN (90, 100)
           AND NOT EXISTS (SELECT 1 FROM ad_order_contract oc WHERE oc.order_id = o.id AND oc.deleted = 0)
         ORDER BY o.create_time DESC
+    </select>
+
+    <!-- 工作台首页数据概览：进行中订单数 + 应收/媒体应付总额 + 待收/待付款。
+         待收/待付仅统计收款单/付款单尚未审核通过的订单（receipt_done=0 / payment_done=0）。 -->
+    <select id="dashboardSummary" resultType="java.util.HashMap">
+        SELECT
+            (SELECT COUNT(1) FROM ad_order o
+             WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+               AND o.status NOT IN (90, 100))                                                AS activeOrderCount,
+            IFNULL((SELECT SUM(o.receivable_amount) FROM ad_order o
+                    WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+                      AND o.status != 100), 0)                                               AS totalReceivable,
+            IFNULL((SELECT SUM(o.media_payable_amount) FROM ad_order o
+                    WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+                      AND o.status != 100), 0)                                               AS totalMediaPayable,
+            IFNULL((SELECT SUM(o.receivable_amount - o.received_amount) FROM ad_order o
+                    WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+                      AND o.status != 100
+                      AND o.receipt_done = 0), 0)                                            AS pendingReceivable,
+            IFNULL((SELECT SUM(o.media_payable_amount - o.media_paid_amount) FROM ad_order o
+                    WHERE o.organization_id = #{organizationId} AND o.deleted = 0
+                      AND o.status != 100
+                      AND o.payment_done = 0), 0)                                            AS pendingPayable
     </select>
 
     <!-- 报表-用印统计：按用印状态分布（B-6） -->

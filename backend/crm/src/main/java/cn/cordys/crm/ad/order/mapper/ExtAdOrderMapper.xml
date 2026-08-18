@@ -71,6 +71,12 @@
             AND o.delivery_start_date &lt;= #{request.deliveryStartTo}
         </if>
         GROUP BY o.id
+        <if test="request.missingContract != null and request.missingContract == 1">
+            HAVING COUNT(oc.id) = 0
+        </if>
+        <if test="request.missingContract != null and request.missingContract == 0">
+            HAVING COUNT(oc.id) &gt; 0
+        </if>
         <include refid="cn.cordys.common.mapper.CommonMapper.sort">
             <property name="sort" value="request.sort"/>
             <property name="prefix" value="o"/>

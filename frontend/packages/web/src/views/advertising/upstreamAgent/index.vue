@@ -62,7 +62,7 @@
         <n-form-item label="电话">
           <n-input v-model:value="form.contactPhone" placeholder="电话" />
         </n-form-item>
-        <n-form-item label="业务主体">
+        <n-form-item v-if="false" label="业务主体">
           <n-select
             v-model:value="form.businessEntityId"
             :options="businessEntityOptions"

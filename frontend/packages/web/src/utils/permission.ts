@@ -6,7 +6,7 @@ import appRoutes from '@/router/routes/index';
 import useAppStore from '@/store/modules/app';
 import useUserStore from '@/store/modules/user';
 
-import { WorkbenchRouteEnum } from '@/enums/routeEnum';
+import { AdvertisingRouteEnum, WorkbenchRouteEnum } from '@/enums/routeEnum';
 
 export function hasPermission(permission: string) {
   const userStore = useUserStore();
@@ -71,7 +71,11 @@ export function getFirstRouteNameByPermission(routerList: RouteRecordNormalized[
   const currentRoute = routerList.filter((item) => hasAnyPermission(item.meta.permissions || []))[0]; // 排除没有权限的路由
 
   const appStore = useAppStore();
-  // 首页模块开启默认首页，否则有权限的第一个路由
+  // 优先跳转广告工作台（二次开发首页），否则回退：首页模块开启默认首页 / 有权限的第一个路由
+  const hasAdWorkbench = hasAnyPermission(['AD_WORKBENCH:READ']);
+  if (hasAdWorkbench) {
+    return AdvertisingRouteEnum.ADVERTISING_WORKBENCH;
+  }
   return appStore.moduleConfigList.find((e) => e.moduleKey === ModuleConfigEnum.HOME && e.enable)
     ? WorkbenchRouteEnum.WORKBENCH
     : currentRoute?.name;

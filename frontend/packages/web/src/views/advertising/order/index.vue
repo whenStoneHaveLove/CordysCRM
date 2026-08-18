@@ -37,6 +37,13 @@
           clearable
           style="width: 150px"
         />
+        <n-select
+          v-model:value="searchForm.missingContract"
+          :placeholder="t('advertising.order.filter.missingContract')"
+          :options="missingContractOptions"
+          clearable
+          style="width: 130px"
+        />
         <n-date-picker
           v-model:value="deliveryRange"
           type="daterange"
@@ -97,6 +104,10 @@
   const orderTypeOptions = AdOrderTypeOptions;
   const receiptMethodOptions = AdReceiptMethodOptions;
   const paymentMethodOptions = AdPaymentMethodOptions;
+  const missingContractOptions = [
+    { label: t('advertising.common.yes'), value: 1 },
+    { label: t('advertising.common.no'), value: 0 },
+  ];
 
   const loading = ref(false);
   const list = ref<AdOrderListItem[]>([]);
@@ -106,6 +117,7 @@
     orderType: null as number | null,
     receiptMethod: null as number | null,
     paymentMethod: null as number | null,
+    missingContract: null as number | null,
   });
   const deliveryRange = ref<[number, number] | null>(null);
 
@@ -141,6 +153,7 @@
         orderType: searchForm.orderType,
         receiptMethod: searchForm.receiptMethod,
         paymentMethod: searchForm.paymentMethod,
+        missingContract: searchForm.missingContract,
         deliveryStartFrom: deliveryRange.value?.[0] ?? null,
         deliveryStartTo: deliveryRange.value?.[1] ?? null,
       };
@@ -335,6 +348,7 @@
     searchForm.orderType = null;
     searchForm.receiptMethod = null;
     searchForm.paymentMethod = null;
+    searchForm.missingContract = null;
     deliveryRange.value = null;
     handleSearch();
   }
@@ -342,7 +356,19 @@
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_ORDER_CREATE });
   }
 
-  onMounted(fetchData);
+  function applyQuery() {
+    const q = router.currentRoute.value.query;
+    if (q.status != null && q.status !== '') searchForm.status = Number(q.status);
+    if (q.orderType != null && q.orderType !== '') searchForm.orderType = Number(q.orderType);
+    if (q.receiptMethod != null && q.receiptMethod !== '') searchForm.receiptMethod = Number(q.receiptMethod);
+    if (q.paymentMethod != null && q.paymentMethod !== '') searchForm.paymentMethod = Number(q.paymentMethod);
+    if (q.missingContract != null && q.missingContract !== '') searchForm.missingContract = Number(q.missingContract);
+  }
+
+  onMounted(() => {
+    applyQuery();
+    fetchData();
+  });
 </script>
 
 <style scoped>

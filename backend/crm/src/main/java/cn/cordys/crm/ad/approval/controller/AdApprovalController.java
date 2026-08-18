@@ -30,7 +30,7 @@ public class AdApprovalController {
 
     @PostMapping("/pending")
     @CsPermission(PermissionConstants.AD_APPROVAL_READ)
-    @Operation(summary = "待审批分页（body 含 type:order/change/seal）")
+    @Operation(summary = "待审批分页（body 含 type:order/change/seal/archive/receipt/payout，缺省查全部）")
     public PagerWithOption<List<Map<String, Object>>> pending(@RequestBody Map<String, Object> params) {
         int current = params.get("current") instanceof Number n ? n.intValue() : 1;
         int pageSize = params.get("pageSize") instanceof Number n ? n.intValue() : 10;

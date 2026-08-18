@@ -215,12 +215,16 @@ public class AdSealRecordService {
         resp.setStatusLabel(AdSealRecordStatus.labelOf(s.getStatus()));
         AdContract contract = contractMapper.selectByPrimaryKey(s.getContractId());
         String orderNo = null;
+        String orderName = null;
         String businessEntityName = null;
         if (contract != null) {
             resp.setContractNo(contract.getContractNo());
             if (contract.getOrderId() != null && !contract.getOrderId().isBlank()) {
                 AdOrder o = adOrderMapper.selectByPrimaryKey(contract.getOrderId());
-                orderNo = o == null ? null : o.getOrderNo();
+                if (o != null) {
+                    orderNo = o.getOrderNo();
+                    orderName = o.getOrderName();
+                }
             }
             if (contract.getBusinessEntityId() != null && !contract.getBusinessEntityId().isBlank()) {
                 AdBusinessEntity be = businessEntityMapper.selectByPrimaryKey(contract.getBusinessEntityId());
@@ -228,6 +232,7 @@ public class AdSealRecordService {
             }
         }
         resp.setOrderNo(orderNo);
+        resp.setOrderName(orderName);
         resp.setBusinessEntityName(businessEntityName);
         return resp;
     }

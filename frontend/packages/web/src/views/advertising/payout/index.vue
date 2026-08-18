@@ -554,8 +554,15 @@
     handleSearch();
   }
 
+  function applyQuery() {
+    const q = router.currentRoute.value.query;
+    if (q.status != null && q.status !== '') searchForm.status = Number(q.status);
+    if (q.type != null && q.type !== '') searchForm.type = Number(q.type);
+  }
+
   onMounted(() => {
     loadUserMap();
+    applyQuery();
     fetchData();
   });
 </script>

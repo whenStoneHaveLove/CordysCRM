@@ -277,7 +277,11 @@ public class AdOrderChangeService {
         resp.setChange(change);
         resp.setStatusLabel(AdOrderChangeStatus.labelOf(change.getStatus()));
         AdOrder order = adOrderMapper.selectByPrimaryKey(change.getOrderId());
-        resp.setOrderNo(order == null ? null : order.getOrderNo());
+        if (order != null) {
+            resp.setOrderId(order.getId());
+            resp.setOrderNo(order.getOrderNo());
+            resp.setOrderName(order.getOrderName());
+        }
         return resp;
     }
 

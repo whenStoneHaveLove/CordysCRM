@@ -4,6 +4,7 @@ import cn.cordys.common.constants.PermissionConstants;
 import cn.cordys.common.permission.CsPermission;
 import cn.cordys.context.OrganizationContext;
 import cn.cordys.crm.ad.dashboard.service.AdDashboardService;
+import cn.cordys.crm.ad.report.dto.response.AdDashboardSummaryResponse;
 import cn.cordys.crm.ad.report.dto.response.AdWorkbenchTodoResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,5 +36,12 @@ public class AdDashboardController {
     @Operation(summary = "分角色工作台待办聚合（媒介/老板/财务）")
     public AdWorkbenchTodoResponse todo() {
         return adDashboardService.workbenchTodo(orgId());
+    }
+
+    @GetMapping("/summary")
+    @CsPermission(PermissionConstants.AD_WORKBENCH_READ)
+    @Operation(summary = "工作台首页数据概览（订单数/应收/媒体应付/待收/待付 + 月度趋势）")
+    public AdDashboardSummaryResponse summary() {
+        return adDashboardService.dashboardSummary(orgId());
     }
 }

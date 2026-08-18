@@ -399,7 +399,10 @@
         "id": "AD_WORKBENCH",
         "name": "permission.ad.workbench.name",
         "permissions": [
-          { "id": "AD_WORKBENCH:READ" }
+          { "id": "AD_WORKBENCH:READ" },
+          { "id": "AD_WORKBENCH:MEDIA" },
+          { "id": "AD_WORKBENCH:BOSS" },
+          { "id": "AD_WORKBENCH:FINANCE" }
         ]
       },
       {
@@ -418,19 +421,11 @@
         ]
       },
       {
-        "id": "AD_SYSTEM",
-        "name": "permission.ad.system.name",
-        "permissions": [
-          { "id": "AD_SYSTEM:READ" },
-          { "id": "AD_SYSTEM:CONFIG" }
-        ]
-      },
-      {
         "id": "AD_DICT",
         "name": "permission.ad.dict.name",
         "permissions": [
           { "id": "AD_DICT:READ" },
-          { "id": "AD_DICT:ADD" },
+          { "id": "AD_DICT:CREATE" },
           { "id": "AD_DICT:UPDATE" },
           { "id": "AD_DICT:DELETE" }
         ]

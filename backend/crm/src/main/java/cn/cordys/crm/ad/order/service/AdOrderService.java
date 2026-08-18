@@ -193,6 +193,13 @@ public class AdOrderService {
         AdOrderDetailResponse response = new AdOrderDetailResponse();
         response.setOrder(order);
         response.setContractId(contractId);
+        if (contractId != null) {
+            AdContract contract = contractMapper.selectByPrimaryKey(contractId);
+            if (contract != null) {
+                response.setContractNo(contract.getContractNo());
+                response.setContractName(contract.getContractName());
+            }
+        }
         response.setDownstreamMediaIds(downstreamMediaIds);
         response.setAttachments(attachments);
         response.setChanges(changes);

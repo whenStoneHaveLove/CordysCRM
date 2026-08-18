@@ -52,7 +52,7 @@
               >
                 <n-select
                   v-model:value="form.relatedPartyType"
-                  :options="relatedPartyTypeOptions"
+                  :options="filteredRelatedPartyTypeOptions"
                   placeholder="请选择关联方类型"
                 />
               </n-form-item-gi>
@@ -131,8 +131,10 @@
   } from 'naive-ui';
 
   import {
+    AdContractDirectionEnum,
     AdContractDirectionOptions,
     AdContractTypeOptions,
+    AdRelatedPartyTypeEnum,
     AdRelatedPartyTypeOptions,
   } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
@@ -215,6 +217,20 @@
     rebateTerms: undefined,
     fileUrl: undefined,
     fileName: undefined,
+  });
+
+  /** 根据合同方向过滤关联方类型选项：
+   *  上游(10) → 客户 + 上游代理；下游(20) → 下游媒体 */
+  const filteredRelatedPartyTypeOptions = computed(() => {
+    if (form.contractDirection === AdContractDirectionEnum.UPSTREAM) {
+      return relatedPartyTypeOptions.filter(
+        (it) => it.value === AdRelatedPartyTypeEnum.CUSTOMER || it.value === AdRelatedPartyTypeEnum.UPSTREAM_AGENT
+      );
+    }
+    if (form.contractDirection === AdContractDirectionEnum.DOWNSTREAM) {
+      return relatedPartyTypeOptions.filter((it) => it.value === AdRelatedPartyTypeEnum.DOWNSTREAM_MEDIA);
+    }
+    return relatedPartyTypeOptions;
   });
 
   function goBack() {
@@ -440,11 +456,29 @@
       form.amount = o.amount ?? null;
       form.rebateTerms = o.rebateTerms;
       form.fileUrl = o.fileUrl;
+
+      // 防御：若历史数据的关联方类型不在当前方向的允许范围内，则清空
+      const allowedTypes = filteredRelatedPartyTypeOptions.value.map((it) => it.value);
+      if (form.relatedPartyType != null && !allowedTypes.includes(form.relatedPartyType)) {
+        form.relatedPartyType = null;
+        form.relatedPartyId = undefined;
+      }
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);
     }
   }
+
+  // 合同方向变化 → 清空已选关联方类型/关联方，避免方向切换后残留旧数据
+  watch(
+    () => form.contractDirection,
+    () => {
+      if (suppressWatch.value) return;
+      form.relatedPartyType = null;
+      form.relatedPartyId = undefined;
+      relatedPartyOptions.value = [];
+    }
+  );
 
   // 关联方类型变化 → 清空已选关联方并重新拉取对应数据源
   watch(

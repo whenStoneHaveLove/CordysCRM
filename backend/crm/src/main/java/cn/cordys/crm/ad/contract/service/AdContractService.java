@@ -251,6 +251,7 @@ public class AdContractService {
         resp.setBusinessEntityName(resolveBusinessEntityName(c.getBusinessEntityId()));
         resp.setRelatedPartyName(resolveRelatedPartyName(c.getRelatedPartyType(), c.getRelatedPartyId()));
         resp.setOrderNo(resolveOrderNo(c.getOrderId()));
+        resp.setOrderName(resolveOrderName(c.getOrderId()));
         resp.setDirectionLabel(ContractDirection.labelOf(c.getContractDirection()));
         resp.setTypeLabel(ContractType.labelOf(c.getContractType()));
         resp.setSealStatusLabel(SealStatus.labelOf(c.getSealStatus()));
@@ -381,6 +382,14 @@ public class AdContractService {
         }
         AdOrder o = adOrderMapper.selectByPrimaryKey(orderId);
         return o == null ? null : o.getOrderNo();
+    }
+
+    private String resolveOrderName(String orderId) {
+        if (orderId == null || orderId.isBlank()) {
+            return null;
+        }
+        AdOrder o = adOrderMapper.selectByPrimaryKey(orderId);
+        return o == null ? null : o.getOrderName();
     }
 
     /**
