@@ -402,6 +402,7 @@
   const downstreamMediaOptions = ref<SelectItem[]>([]);
   const industryOptions = ref<SelectItem[]>([]);
   const contractOptions = ref<SelectItem[]>([]);
+  const selectedContract = ref<{ id: string; contractNo?: string; contractName?: string } | null>(null);
 
   // 已有附件（编辑时从 API 加载，已上传到服务器的）
   interface SavedAttach {
@@ -714,8 +715,13 @@
         label: [it.contractNo, it.contractName].filter(Boolean).join(' ') || it.id,
         value: it.id,
       }));
-      if (form.contractId && !contractOptions.value.some((opt) => opt.value === form.contractId)) {
-        form.contractId = undefined;
+      // 编辑回填时，若已选合同不在当前过滤结果中（如未归档或类型不匹配），
+      // 追加该选项避免被清空，保证再次保存时关联关系不丢失
+      if (form.contractId && selectedContract.value && !contractOptions.value.some((opt) => opt.value === form.contractId)) {
+        contractOptions.value.push({
+          label: [selectedContract.value.contractNo, selectedContract.value.contractName].filter(Boolean).join(' ') || selectedContract.value.id,
+          value: selectedContract.value.id,
+        });
       }
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -731,6 +737,7 @@
       }
       if (newType !== oldType) {
         form.contractId = undefined;
+        selectedContract.value = null;
         if (newType === 10 || newType === 20) {
           loadContractOptions();
         } else {
@@ -770,6 +777,9 @@
       form.signingEntity = o.signingEntity;
       form.orderType = o.orderType ?? null;
       form.contractId = res.contractId || undefined;
+      selectedContract.value = res.contractId
+        ? { id: res.contractId, contractNo: res.contractNo, contractName: res.contractName }
+        : null;
       form.downstreamMediaIds = res.downstreamMediaIds || [];
       form.upstreamAgentId = o.upstreamAgentId;
       form.agentOrderNo = o.agentOrderNo;
