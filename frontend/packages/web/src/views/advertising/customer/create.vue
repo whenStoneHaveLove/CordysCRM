@@ -8,9 +8,12 @@
           </div>
           <n-space>
             <n-button @click="goBack">{{ t('advertising.customer.form.cancel') }}</n-button>
-            <n-button type="primary" :loading="saving" @click="handleSave">{{
-              t('advertising.customer.form.save')
-            }}</n-button>
+            <n-button
+              v-permission="[isEdit ? 'AD_CUSTOMER:UPDATE' : 'AD_CUSTOMER:CREATE']"
+              type="primary"
+              :loading="saving"
+              @click="handleSave"
+            >{{ t('advertising.customer.form.save') }}</n-button>
           </n-space>
         </n-space>
 

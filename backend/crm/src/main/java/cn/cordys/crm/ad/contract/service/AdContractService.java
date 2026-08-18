@@ -28,8 +28,6 @@ import cn.cordys.crm.ad.seal.mapper.ExtAdSealRecordMapper;
 import cn.cordys.crm.system.dto.request.UploadTransferRequest;
 import cn.cordys.crm.system.service.AttachmentService;
 import cn.cordys.mybatis.BaseMapper;
-import cn.cordys.security.SessionUser;
-import cn.cordys.common.dto.RoleDataScopeDTO;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import jakarta.annotation.Resource;
@@ -40,11 +38,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
 
 /**
  * 广告合同服务（M5 T-40/T-41，V3.1 §5.2.3/§7.3/§8.2）。
@@ -85,10 +80,6 @@ public class AdContractService {
     @Resource
     private AttachmentService attachmentService;
 
-    /** 合同模块角色守卫（best-effort，同 M2/M3）。 */
-    private static final String ROLE_MEDIA = "ROLE_MEDIA";
-    private static final String ROLE_BOSS = "ROLE_BOSS";
-
     // ===================== 新建 / 编辑 =====================
 
     /**
@@ -96,7 +87,6 @@ public class AdContractService {
      */
     @OperationLog(module = "AD_CONTRACT", action = "CREATE", targetId = "")
     public AdContract create(AdContractSaveRequest request, String userId, String orgId) {
-        assertRole(ROLE_MEDIA);
         validate(request);
 
         AdContract c = new AdContract();
@@ -126,7 +116,6 @@ public class AdContractService {
      */
     @OperationLog(module = "AD_CONTRACT", action = "UPDATE", targetId = "#request.id")
     public AdContract update(AdContractSaveRequest request, String userId, String orgId) {
-        assertRole(ROLE_MEDIA);
         if (request.getId() == null || request.getId().isBlank()) {
             throw new GenericException("合同id不能为空");
         }
@@ -161,7 +150,6 @@ public class AdContractService {
      */
     @OperationLog(module = "AD_CONTRACT", action = "DELETE", targetId = "#id")
     public void delete(String id, String userId, String orgId) {
-        assertRole(ROLE_MEDIA);
         AdContract c = requireContract(id);
         c.setDeleted(1);
         c.setUpdateUser(userId);
@@ -212,7 +200,6 @@ public class AdContractService {
      */
     @OperationLog(module = "AD_CONTRACT", action = "APPROVE_ARCHIVE", targetId = "#id")
     public AdContract approveArchive(String id, String remark, String userId, String orgId) {
-        assertRole(ROLE_BOSS);
         AdContract c = requireContract(id);
         if (c.getSealStatus() != SealStatus.ARCHIVE_APPROVING.getCode()) {
             throw new GenericException("仅归档审批中的合同可审批");
@@ -233,7 +220,6 @@ public class AdContractService {
      */
     @OperationLog(module = "AD_CONTRACT", action = "REJECT_ARCHIVE", targetId = "#id")
     public AdContract rejectArchive(String id, String remark, String userId, String orgId) {
-        assertRole(ROLE_BOSS);
         AdContract c = requireContract(id);
         if (c.getSealStatus() != SealStatus.ARCHIVE_APPROVING.getCode()) {
             throw new GenericException("仅归档审批中的合同可驳回");
@@ -430,44 +416,5 @@ public class AdContractService {
                 cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
         int r = ThreadLocalRandom.current().nextInt(1000, 10000);
         return "CN" + ymd + "-" + r;
-    }
-
-    // ===================== 角色守卫（best-effort，同 M2/M3） =====================
-
-    private void assertRole(String requiredRole) {
-        if (requiredRole == null) {
-            return;
-        }
-        if (!hasRole(requiredRole)) {
-            throw new GenericException("当前角色无权执行该操作: " + requiredRole);
-        }
-    }
-
-    private boolean hasRole(String requiredRole) {
-        if (requiredRole == null) {
-            return true;
-        }
-        SessionUser user = cn.cordys.security.SessionUtils.getUser();
-        if (user == null) {
-            return false;
-        }
-        List<String> roleNames = user.getRoles() == null ? Collections.emptyList()
-                : user.getRoles().stream()
-                .map(RoleDataScopeDTO::getName)
-                .filter(Objects::nonNull)
-                .map(s -> s.toLowerCase())
-                .collect(Collectors.toList());
-        boolean isAdmin = roleNames.stream()
-                .anyMatch(n -> n.contains("admin") || n.contains("超级") || n.contains("管理员"));
-        switch (requiredRole) {
-            case ROLE_MEDIA:
-                return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("媒体") || n.contains("media") || n.contains("运营"));
-            case ROLE_BOSS:
-                return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("老板") || n.contains("boss"));
-            default:
-                return false;
-        }
     }
 }

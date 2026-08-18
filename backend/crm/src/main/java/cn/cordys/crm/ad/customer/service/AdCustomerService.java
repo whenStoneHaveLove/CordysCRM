@@ -18,8 +18,6 @@ import cn.cordys.crm.ad.dict.domain.AdDict;
 import cn.cordys.crm.ad.dict.service.AdDictService;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderMapper;
 import cn.cordys.mybatis.BaseMapper;
-import cn.cordys.security.SessionUser;
-import cn.cordys.common.dto.RoleDataScopeDTO;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import jakarta.annotation.Resource;
@@ -27,12 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * 广告客户服务（M6，V3.1 广告客户管理）。
@@ -55,12 +50,9 @@ public class AdCustomerService {
     @Resource
     private AdEntityPermissionProvider entityPermissionProvider;
 
-    private static final String ROLE_MEDIA = "ROLE_MEDIA";
-
     /** 新建客户。 */
     @OperationLog(module = "AD_CUSTOMER", action = "CREATE", targetId = "")
     public AdCustomer create(AdCustomerSaveRequest request, String userId, String orgId) {
-        assertRole(ROLE_MEDIA);
         validate(request);
 
         AdCustomer c = new AdCustomer();
@@ -90,7 +82,6 @@ public class AdCustomerService {
     /** 编辑客户。 */
     @OperationLog(module = "AD_CUSTOMER", action = "UPDATE", targetId = "#request.id")
     public AdCustomer update(AdCustomerSaveRequest request, String userId, String orgId) {
-        assertRole(ROLE_MEDIA);
         if (request.getId() == null || request.getId().isBlank()) {
             throw new GenericException("客户id不能为空");
         }
@@ -184,36 +175,6 @@ public class AdCustomerService {
         }
         if (CustomerLevel.of(request.getCustomerLevel()) == null) {
             throw new GenericException("客户等级不合法(10VIP/20普通/30潜力)");
-        }
-    }
-
-    // ===================== 角色守卫 =====================
-
-    private void assertRole(String requiredRole) {
-        if (requiredRole == null) return;
-        if (!hasRole(requiredRole)) {
-            throw new GenericException("当前角色无权执行该操作: " + requiredRole);
-        }
-    }
-
-    private boolean hasRole(String requiredRole) {
-        if (requiredRole == null) return true;
-        SessionUser user = cn.cordys.security.SessionUtils.getUser();
-        if (user == null) return false;
-        List<String> roleNames = user.getRoles() == null ? Collections.emptyList()
-                : user.getRoles().stream()
-                .map(RoleDataScopeDTO::getName)
-                .filter(Objects::nonNull)
-                .map(String::toLowerCase)
-                .collect(Collectors.toList());
-        boolean isAdmin = roleNames.stream()
-                .anyMatch(n -> n.contains("admin") || n.contains("超级") || n.contains("管理员"));
-        switch (requiredRole) {
-            case ROLE_MEDIA:
-                return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("媒体") || n.contains("媒介") || n.contains("media") || n.contains("运营"));
-            default:
-                return false;
         }
     }
 }

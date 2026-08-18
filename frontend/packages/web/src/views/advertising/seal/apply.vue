@@ -8,7 +8,7 @@
           </div>
           <n-space>
             <n-button @click="goBack">{{ t('advertising.order.form.cancel') }}</n-button>
-            <n-button type="primary" :loading="saving" @click="handleSave">{{ t('advertising.seal.submit') }}</n-button>
+            <n-button v-permission="['AD_SEAL:APPLY']" type="primary" :loading="saving" @click="handleSave">{{ t('advertising.seal.submit') }}</n-button>
           </n-space>
         </n-space>
 

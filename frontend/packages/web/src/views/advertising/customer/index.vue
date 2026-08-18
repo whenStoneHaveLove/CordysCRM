@@ -31,7 +31,7 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">{{ t('advertising.order.reset') }}</n-button>
-        <n-button type="primary" @click="openCreate">{{ t('advertising.customer.new') }}</n-button>
+        <n-button v-permission="['AD_CUSTOMER:CREATE']" type="primary" @click="openCreate">{{ t('advertising.customer.new') }}</n-button>
       </n-space>
     </n-card>
 
@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, h, onMounted, reactive, ref } from 'vue';
+  import { computed, h, onMounted, reactive, ref, resolveDirective, withDirectives } from 'vue';
   import { useRouter } from 'vue-router';
   import {
     NButton,
@@ -142,6 +142,8 @@
   const { t } = useI18n();
   const router = useRouter();
   const message = useMessage();
+
+  const permissionDirective = resolveDirective('permission');
 
   const levelOptions = AdCustomerLevelOptions;
   const statusOptions = AdCustomerStatusOptions;
@@ -390,10 +392,13 @@
                 { size: 'small', onClick: () => openDetail(row) },
                 { default: () => t('advertising.customer.detail') }
               ),
-              h(
-                NButton,
-                { size: 'small', type: 'primary', onClick: () => openEdit(row) },
-                { default: () => t('advertising.customer.edit') }
+              withDirectives(
+                h(
+                  NButton,
+                  { size: 'small', type: 'primary', onClick: () => openEdit(row) },
+                  { default: () => t('advertising.customer.edit') }
+                ),
+                [[permissionDirective, ['AD_CUSTOMER:UPDATE']]]
               ),
             ],
           }

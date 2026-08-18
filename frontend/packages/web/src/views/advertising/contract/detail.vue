@@ -21,8 +21,8 @@
                 >提交归档审批</n-button
               >
             </template>
-            <!-- 归档审批中 → 老板可见：归档审核 -->
-            <template v-if="detail.contract.sealStatus === 40 && isBoss">
+            <!-- 归档审批中 → 有归档审批权限可见：归档审核 -->
+            <template v-if="detail.contract.sealStatus === 40">
               <n-button v-permission="['AD_CONTRACT:ARCHIVE_APPROVE']" type="warning" @click="showArchiveAudit = true"
                 >归档审核</n-button
               >
@@ -228,7 +228,6 @@
   const doubleSealUploading = ref(false);
   const showArchiveAudit = ref(false);
   const archiveAuditRemark = ref('');
-  const isBoss = ref(true); // TODO: 根据当前用户角色判断
 
   function sealStatusTagType(status?: number): 'success' | 'warning' | 'error' | 'info' | 'default' {
     if (status === 20 || status === 60) return 'success';

@@ -38,10 +38,10 @@
             </n-form>
 
             <n-space justify="center" class="mt-[16px]">
-              <n-button type="success" :loading="saving" @click="handleApprove">{{
+              <n-button v-permission="['AD_SEAL:APPROVE']" type="success" :loading="saving" @click="handleApprove">{{
                 t('advertising.seal.approve')
               }}</n-button>
-              <n-button type="error" :loading="saving" @click="handleReject">{{
+              <n-button v-permission="['AD_SEAL:REJECT']" type="error" :loading="saving" @click="handleReject">{{
                 t('advertising.seal.reject')
               }}</n-button>
             </n-space>

@@ -25,7 +25,7 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">{{ t('advertising.order.reset') }}</n-button>
-        <n-button type="primary" @click="goApply">{{ t('advertising.seal.apply') }}</n-button>
+        <n-button v-permission="['AD_SEAL:APPLY']" type="primary" @click="goApply">{{ t('advertising.seal.apply') }}</n-button>
       </n-space>
     </n-card>
 
@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-  import { h, onMounted, reactive, ref } from 'vue';
+  import { h, onMounted, reactive, ref, resolveDirective, withDirectives } from 'vue';
   import { useRouter } from 'vue-router';
   import { NButton, NCard, NDataTable, NInput, NSelect, NSpace, NTag, useMessage } from 'naive-ui';
 
@@ -67,6 +67,8 @@
   const { t } = useI18n();
   const router = useRouter();
   const message = useMessage();
+
+  const permissionDirective = resolveDirective('permission');
 
   const sealTypeOptions = AdSealTypeOptions;
   const statusOptions = AdSealRecordStatusOptions;
@@ -209,10 +211,13 @@
                 { default: () => t('advertising.order.detail') }
               ),
               row.status === 0
-                ? h(
-                    NButton,
-                    { size: 'small', type: 'primary', onClick: () => goApprove(row) },
-                    { default: () => t('advertising.seal.approve') }
+                ? withDirectives(
+                    h(
+                      NButton,
+                      { size: 'small', type: 'primary', onClick: () => goApprove(row) },
+                      { default: () => t('advertising.seal.approve') }
+                    ),
+                    [[permissionDirective, ['AD_SEAL:APPROVE']]]
                   )
                 : null,
             ],

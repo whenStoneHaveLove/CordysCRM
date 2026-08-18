@@ -24,8 +24,6 @@ import cn.cordys.crm.ad.seal.dto.response.AdSealRecordDetailResponse;
 import cn.cordys.crm.ad.seal.dto.response.AdSealRecordListResponse;
 import cn.cordys.crm.ad.seal.mapper.ExtAdSealRecordMapper;
 import cn.cordys.mybatis.BaseMapper;
-import cn.cordys.security.SessionUser;
-import cn.cordys.common.dto.RoleDataScopeDTO;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import jakarta.annotation.Resource;
@@ -33,13 +31,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -83,10 +79,6 @@ public class AdSealRecordService {
     @Resource
     private ExtAdOrderContractMapper orderContractMapper;
 
-    /** 用印模块角色守卫（best-effort，同 M2/M3）。 */
-    private static final String ROLE_MEDIA = "ROLE_MEDIA";
-    private static final String ROLE_BOSS = "ROLE_BOSS";
-
     // ===================== 申请 / 审批 / 执行 =====================
 
     /**
@@ -94,7 +86,6 @@ public class AdSealRecordService {
      */
     @OperationLog(module = "AD_SEAL", action = "APPLY", targetId = "")
     public AdSealRecord apply(AdSealApplyRequest request, String userId, String orgId) {
-        assertRole(ROLE_MEDIA);
         if (request.getContractId() == null || request.getContractId().isBlank()) {
             throw new GenericException("合同id不能为空");
         }
@@ -134,7 +125,6 @@ public class AdSealRecordService {
      */
     @OperationLog(module = "AD_SEAL", action = "APPROVE", targetId = "#id")
     public AdSealRecord approve(String id, AdSealApproveRequest request, String userId, String orgId) {
-        assertRole(ROLE_BOSS);
         AdSealRecord s = requireSeal(id);
         if (s.getStatus() != AdSealRecordStatus.APPROVING.getCode()) {
             throw new GenericException("仅审批中的用印记录可被审批");
@@ -162,7 +152,6 @@ public class AdSealRecordService {
      */
     @OperationLog(module = "AD_SEAL", action = "REJECT", targetId = "#id")
     public AdSealRecord reject(String id, AdSealApproveRequest request, String userId, String orgId) {
-        assertRole(ROLE_BOSS);
         AdSealRecord s = requireSeal(id);
         if (s.getStatus() != AdSealRecordStatus.APPROVING.getCode()) {
             throw new GenericException("仅审批中的用印记录可被驳回");
@@ -189,7 +178,6 @@ public class AdSealRecordService {
      */
     @OperationLog(module = "AD_SEAL", action = "EXECUTE", targetId = "#id")
     public AdSealRecord upload(String id, AdSealUploadRequest request, String userId, String orgId) {
-        assertRole(ROLE_MEDIA);
         AdSealRecord s = requireSeal(id);
         if (s.getStatus() != AdSealRecordStatus.APPROVED.getCode()) {
             throw new GenericException("请先审批通过用印记录再上传盖章版");
@@ -297,44 +285,5 @@ public class AdSealRecordService {
             throw new GenericException("合同不存在");
         }
         return c;
-    }
-
-    // ===================== 角色守卫（best-effort，同 M2/M3） =====================
-
-    private void assertRole(String requiredRole) {
-        if (requiredRole == null) {
-            return;
-        }
-        if (!hasRole(requiredRole)) {
-            throw new GenericException("当前角色无权执行该操作: " + requiredRole);
-        }
-    }
-
-    private boolean hasRole(String requiredRole) {
-        if (requiredRole == null) {
-            return true;
-        }
-        SessionUser user = cn.cordys.security.SessionUtils.getUser();
-        if (user == null) {
-            return false;
-        }
-        List<String> roleNames = user.getRoles() == null ? Collections.emptyList()
-                : user.getRoles().stream()
-                .map(RoleDataScopeDTO::getName)
-                .filter(Objects::nonNull)
-                .map(s -> s.toLowerCase())
-                .collect(Collectors.toList());
-        boolean isAdmin = roleNames.stream()
-                .anyMatch(n -> n.contains("admin") || n.contains("超级") || n.contains("管理员"));
-        switch (requiredRole) {
-            case ROLE_MEDIA:
-                return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("媒体") || n.contains("媒介") || n.contains("media") || n.contains("运营"));
-            case ROLE_BOSS:
-                return isAdmin || roleNames.stream()
-                        .anyMatch(n -> n.contains("老板") || n.contains("boss"));
-            default:
-                return false;
-        }
     }
 }
