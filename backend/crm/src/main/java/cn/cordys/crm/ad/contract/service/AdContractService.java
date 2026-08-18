@@ -25,6 +25,8 @@ import cn.cordys.crm.ad.order.mapper.ExtAdOrderContractMapper;
 import cn.cordys.crm.ad.upstreamagent.domain.AdUpstreamAgent;
 import cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMedia;
 import cn.cordys.crm.ad.seal.mapper.ExtAdSealRecordMapper;
+import cn.cordys.crm.system.dto.request.UploadTransferRequest;
+import cn.cordys.crm.system.service.AttachmentService;
 import cn.cordys.mybatis.BaseMapper;
 import cn.cordys.security.SessionUser;
 import cn.cordys.common.dto.RoleDataScopeDTO;
@@ -79,6 +81,8 @@ public class AdContractService {
     private AdEntityPermissionProvider entityPermissionProvider;
     @Resource
     private ExtAdOrderContractMapper orderContractMapper;
+    @Resource
+    private AttachmentService attachmentService;
 
     /** 合同模块角色守卫（best-effort，同 M2/M3）。 */
     private static final String ROLE_MEDIA = "ROLE_MEDIA";
@@ -109,6 +113,8 @@ public class AdContractService {
         c.setCreateTime(now);
         c.setUpdateTime(now);
         contractMapper.insert(c);
+        // 用印附件：把前端上传的临时文件转存为正式附件
+        transferAttachment(c.getId(), orgId, userId, request.getFileUrl());
         // 如果关联了订单，自动写入 ad_order_contract 中间表
         syncOrderContract(c.getId(), request.getOrderId(), userId, orgId);
         return c;
@@ -169,6 +175,7 @@ public class AdContractService {
      */
     public AdContract uploadDoubleSeal(String id, String fileUrl, String userId, String orgId) {
         AdContract c = requireContract(id);
+        transferAttachment(id, orgId, userId, fileUrl);
         c.setDoubleSealFileUrl(fileUrl);
         c.setUpdateUser(userId);
         c.setUpdateTime(System.currentTimeMillis());
@@ -188,6 +195,7 @@ public class AdContractService {
             throw new GenericException("仅已用印或归档审批驳回的合同可提交归档审批");
         }
         if (fileUrl != null && !fileUrl.isBlank()) {
+            transferAttachment(id, orgId, userId, fileUrl);
             c.setDoubleSealFileUrl(fileUrl);
         }
         c.setSealStatus(SealStatus.ARCHIVE_APPROVING.getCode());
@@ -287,6 +295,20 @@ public class AdContractService {
             throw new GenericException("合同不存在");
         }
         return c;
+    }
+
+    /** 把前端上传的临时附件转存为正式附件（写入 attachment 表并从 tmp 目录搬移到 transfer 目录）。
+     *  tempFileUrl 为单个临时文件 ID，为空则跳过。 */
+    private void transferAttachment(String contractId, String orgId, String userId, String tempFileUrl) {
+        if (tempFileUrl == null || tempFileUrl.isBlank()) {
+            return;
+        }
+        UploadTransferRequest transferRequest = new UploadTransferRequest();
+        transferRequest.setOrganizationId(orgId);
+        transferRequest.setResourceId(contractId);
+        transferRequest.setOperatorUserId(userId);
+        transferRequest.setTempFileIds(List.of(tempFileUrl));
+        attachmentService.processTemp(transferRequest);
     }
 
     private void validate(AdContractSaveRequest request) {
