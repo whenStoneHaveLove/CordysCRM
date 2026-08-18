@@ -203,6 +203,8 @@ export interface AdOrderInfo {
 export interface AdOrderDetail {
   order: AdOrderInfo;
   contractId?: string;
+  contractNo?: string;
+  contractName?: string;
   downstreamMediaIds?: string[];
   attachments: AdOrderAttachment[];
   changes: AdOrderChange[];
