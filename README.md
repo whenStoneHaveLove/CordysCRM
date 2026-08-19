@@ -1,5 +1,5 @@
-<h1 align="center">Cordys CRM</h1>
-<h3 align="center">新一代的开源 AI CRM 系统</h3>
+<h1 align="center">FLOW</h1>
+<h3 align="center">广告下单管理系统</h3>
 <p align="center">
   <a href="https://trendshift.io/repositories/15469" target="_blank"><img src="https://trendshift.io/api/badge/repositories/15469" alt="1Panel-dev%2FCordysCRM | Trendshift" style="width: 240px; height: auto;" /></a>
 </p>
@@ -11,11 +11,11 @@
 
 <hr/>
 
-## 什么是 Cordys CRM？
+## 什么是 FLOW？
 
-**Cordys CRM** 是新一代的开源 AI CRM 系统，是集信息化、数字化、智能化于一体的「客户关系管理系统」，由 [飞致云](https://fit2cloud.com/) 匠心出品。
+**FLOW** 是广告下单管理系统，是集信息化、数字化、智能化于一体的「客户关系管理系统」，由 [飞致云](https://fit2cloud.com/) 匠心出品。
 
-<img alt="Cordys CRM Overview" src="https://cordys.cn/images/cordyscrm-202607.png" />
+<img alt="FLOW Overview" src="https://cordys.cn/images/cordyscrm-202607.png" />
 
 ## 核心优势
 
@@ -40,9 +40,9 @@ docker run -d \
   1panel/cordys-crm
 ```
 
-你也可以通过 [1Panel 应用商店](https://cordys.cn/docs/installation/1panel_installtion/) 来安装部署 Cordys CRM。
+你也可以通过 [1Panel 应用商店](https://cordys.cn/docs/installation/1panel_installtion/) 来安装部署 FLOW。
 
-在无法联网的环境中，还可以通过 [离线安装包](https://cordys.cn/docs/installation/offline_installtion/) 来安装部署 Cordys CRM。
+在无法联网的环境中，还可以通过 [离线安装包](https://cordys.cn/docs/installation/offline_installtion/) 来安装部署 FLOW。
 
 ### 访问方式
 
@@ -52,11 +52,11 @@ docker run -d \
 
 ### 联系我们
 
-安装完成后，可以参考 [在线文档](https://cordys.cn/docs/) 来使用 Cordys CRM。
+安装完成后，可以参考 [在线文档](https://cordys.cn/docs/) 来使用 FLOW。
 
-你可以通过下方的微信交流群，与 Cordys CRM 开源项目组进行交流和反馈。
+你可以通过下方的微信交流群，与 FLOW 开源项目组进行交流和反馈。
 
-<image height="150px" width="150px" alt="Cordys CRM QRCode" src="https://resource.fit2cloud.com/1panel/cordys-crm/img/wechat.png?v=20250904" />
+<image height="150px" width="150px" alt="FLOW QRCode" src="https://resource.fit2cloud.com/1panel/cordys-crm/img/wechat.png?v=20250904" />
 
 ## UI 展示
 
@@ -78,10 +78,10 @@ docker run -d \
 ## Roadmap
 
 - [x] 2026.07：[Cordys x WorkBuddy：飞致云 AI CRM 案例发布](https://cordys.cn/blog/fit2cloud-ai-crm-case-study.html) 
-- [x] 2026.06: Cordys CRM 下载量突破 30 万次
+- [x] 2026.06: FLOW 下载量突破 30 万次
 - [x] 2026.05.29：[v1.7.0 新增审批流、审批记录功能](https://github.com/1Panel-dev/CordysCRM/releases/tag/v1.7.0) 发布
 - [x] 2026.03.26：[v1.6.0 新增订单模块、计算组件函数功能增强](https://github.com/1Panel-dev/CordysCRM/releases/tag/v1.6.0) 发布
-- [x] 2026.03.11：[Cordys CRM Skills 正式发布](https://github.com/1Panel-dev/CordysCRM-skills)
+- [x] 2026.03.11：[FLOW Skills 正式发布](https://github.com/1Panel-dev/CordysCRM-skills)
 - [x] 2026.01.29：[v1.5.0 新增工商抬头管理、发票管理、回款管理](https://github.com/1Panel-dev/CordysCRM/releases/tag/v1.5.0)
 - [x] 2025.12.18：[v1.4.0 新增标讯、报价和合同模块](https://github.com/1Panel-dev/CordysCRM/releases/tag/v1.4.0)
 - [x] 2025.12.12：[v1.3.6](https://github.com/1Panel-dev/CordysCRM/releases/tag/v1.3.6) 发布
@@ -94,7 +94,7 @@ docker run -d \
 - [x] 2025.10.17：[v1.2.3](https://github.com/1Panel-dev/CordysCRM/releases/tag/v1.2.3) 发布
 - [x] 2025.10.11：[v1.2.2](https://github.com/1Panel-dev/CordysCRM/releases/tag/v1.2.2) 发布
 - [x] 2025.09.26：[v1.2.1](https://github.com/1Panel-dev/CordysCRM/releases/tag/v1.2.1) 发布
-- [x] 2025.09.22：Cordys CRM 下载量突破 10 万次
+- [x] 2025.09.22：FLOW 下载量突破 10 万次
 - [x] 2025.09.19：[v1.2.0](https://github.com/1Panel-dev/CordysCRM/releases/tag/v1.2.0) 发布，开放 MCP Server，并完成和 MaxKB 的对接
 - [x] 2025.09.12：[v1.1.9](https://github.com/1Panel-dev/CordysCRM/releases/tag/v1.1.9) 发布
 - [x] 2025.09.05：[v1.1.8](https://github.com/1Panel-dev/CordysCRM/releases/tag/v1.1.8) 发布
@@ -127,9 +127,9 @@ docker run -d \
 
 本仓库遵循 [FIT2CLOUD Open Source License](LICENSE) 开源协议，该许可证本质上是 GPLv3，但有一些额外的限制。
 
-你可以基于 Cordys CRM 的源代码进行二次开发，但是需要遵守以下规定：
+你可以基于 FLOW 的源代码进行二次开发，但是需要遵守以下规定：
 
-- 不能替换和修改 Cordys CRM 的 Logo 和版权信息；
+- 不能替换和修改 FLOW 的 Logo 和版权信息；
 - 二次开发后的衍生作品必须遵守 GPL V3 的开源义务。
 
 如需商业授权，请联系：`support@fit2cloud.com`。

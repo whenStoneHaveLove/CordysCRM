@@ -47,7 +47,7 @@ start_mcp_after_cordys() {
           log_info "启动内置 MCP 服务 ..."
           /shells/wait-for-it.sh 127.0.0.1:8081 --timeout=120 --strict
 
-          log_info "Cordys CRM 已就绪，启动 MCP..."
+          log_info "FLOW 已就绪，启动 MCP..."
           sh /shells/start-mcp.sh &
           /shells/wait-for-it.sh 127.0.0.1:8082 --timeout=120 --strict
           log_info "MCP 已就绪"
@@ -68,7 +68,7 @@ get_property() {
 # 主函数
 # ------------------------------
 main() {
-    log_info "开始启动 Cordys CRM 环境..."
+    log_info "开始启动 FLOW 环境..."
 
     # 初始化目录
     bash /shells/init-directories.sh
@@ -98,7 +98,7 @@ main() {
     start_mcp_after_cordys &
     sh /shells/start-cordys.sh
 
-    log_info "Cordys CRM 环境启动完成！"
+    log_info "FLOW 环境启动完成！"
 }
 
 # ------------------------------

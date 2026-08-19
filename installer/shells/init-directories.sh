@@ -42,7 +42,7 @@ copy_conf() {
 }
 
 # 应用配置文件
-copy_conf "/installer/conf/cordys-crm.properties" "/opt/cordys/conf/cordys-crm.properties" "Cordys CRM"
+copy_conf "/installer/conf/cordys-crm.properties" "/opt/cordys/conf/cordys-crm.properties" "FLOW"
 copy_conf "/installer/conf/mysql/my.cnf"           "/opt/cordys/conf/mysql/my.cnf"        "MySQL"
 copy_conf "/installer/conf/redis/redis.conf"       "/opt/cordys/conf/redis/redis.conf"    "Redis"
 

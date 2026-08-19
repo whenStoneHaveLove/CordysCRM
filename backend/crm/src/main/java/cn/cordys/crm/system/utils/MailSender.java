@@ -143,7 +143,7 @@ public class MailSender {
         if (StringUtils.length(subject) > 60) {
             subject = subject.substring(0, 59);
         }
-        return "Cordys CRM " + subject;
+        return "FLOW " + subject;
     }
 
 }

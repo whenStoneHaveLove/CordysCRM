@@ -143,7 +143,7 @@ export default {
   'system.personal.plan': 'My plan',
   'system.personal.apiKey': 'API Keys',
   'system.personal.maxTip': 'Up to 5 API Key',
-  'system.personal.apiKeyTip': 'Use API Key to access Cordys CRM API',
+  'system.personal.apiKeyTip': 'Use API Key to access FLOW API',
   'system.personal.validTime': 'Validity',
   'system.personal.setValidTime': 'Set validity',
   'system.personal.forever': 'Permanent',

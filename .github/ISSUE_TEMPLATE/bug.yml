@@ -24,8 +24,8 @@ body:
     validations:
       required: true
     attributes:
-      label: "Cordys CRM 版本"
-      description: "在系统右上角的下拉菜单中选择 `关于` 可查看当前 Cordys CRM 版本。"
+      label: "FLOW 版本"
+      description: "在系统右上角的下拉菜单中选择 `关于` 可查看当前 FLOW 版本。"
   - type: dropdown
     id: database
     validations:

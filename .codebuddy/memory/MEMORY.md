@@ -1,7 +1,7 @@
 # CordysCRM 项目记忆
 
 ## 项目概述
-- **Cordys CRM**：飞致云开源的新一代 AI CRM 系统（GitHub: 1Panel-dev/CordysCRM）
+- **FLOW**：飞致云开源的新一代 AI CRM 系统（GitHub: 1Panel-dev/CordysCRM）
 - **协议**：FIT2CLOUD Open Source License（本质 GPLv3，不可替换 Logo 和版权信息）
 - **当前分支**：dev3.0（基于开源版本二次开发）
 

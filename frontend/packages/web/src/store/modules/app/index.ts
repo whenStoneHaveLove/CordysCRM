@@ -38,7 +38,7 @@ const defaultThemeConfig = {
   customTheme: '#008d91',
 };
 const defaultLoginConfig = {
-  title: 'Cordys CRM',
+  title: 'FLOW',
   icon: [],
   loginLogo: [],
   loginImage: [],

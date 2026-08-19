@@ -162,7 +162,7 @@
                   </div>
                 </div>
                 <div class="flex items-center justify-between">
-                  <div class="text-[12px] leading-[20px] text-[var(--text-n4)]">Cordys CRM</div>
+                  <div class="text-[12px] leading-[20px] text-[var(--text-n4)]">FLOW</div>
                   <div class="text-[12px] leading-[20px] text-[var(--text-n4)]">
                     {{ appStore.versionInfo.copyright }}
                   </div>
