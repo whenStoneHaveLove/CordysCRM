@@ -329,7 +329,12 @@
       const contractLabel = res?.contractName || res?.contractNo || res?.contractId || '-';
       return {
         base: [
-          { label: '订单编号', value: o.orderNo || '-' },
+          {
+            label: '订单编号',
+            value: o.orderNo || '-',
+            link: o.id ? AdvertisingRouteEnum.ADVERTISING_ORDER_DETAIL : undefined,
+            linkId: o.id || id,
+          },
           { label: '订单名称', value: o.orderName || '-' },
           {
             label: t('advertising.approval.column.amount'),
