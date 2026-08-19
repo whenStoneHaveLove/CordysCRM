@@ -643,27 +643,50 @@
     });
   }
 
-  function validate(): boolean {
-    if (!form.orderName) {
-      message.warning(`订单名称 ${t('advertising.order.form.required')}`);
+  /** 校验数据库 NOT NULL 且无默认值的基础字段（草稿/提交都要过，否则后端 500） */
+  function validateRequired(): boolean {
+    const checks: Array<[unknown, string]> = [
+      [form.orderName, t('advertising.order.form.orderName')],
+      [form.businessEntityId, t('advertising.order.form.businessEntityId')],
+      [form.customerId, t('advertising.order.form.customerId')],
+      [form.orderType, t('advertising.order.form.orderType')],
+      [form.totalAmount, t('advertising.order.form.totalAmount')],
+      [form.rebateMode, t('advertising.order.form.rebateMode')],
+      [form.rebateValue, t('advertising.order.form.rebateValue')],
+      [form.mediaPayableAmount, t('advertising.order.form.mediaPayableAmount')],
+      [form.deliveryStartDate, t('advertising.order.form.deliveryStart')],
+      [form.deliveryEndDate, t('advertising.order.form.deliveryEnd')],
+      [form.receiptMethod, t('advertising.order.form.receiptMethod')],
+      [form.paymentMethod, t('advertising.order.form.paymentMethod')],
+    ];
+    const missing = checks.find(([val]) => val === undefined || val === null || val === '');
+    if (missing) {
+      message.warning(`${missing[1]} ${t('advertising.order.form.required')}`);
       return false;
     }
-    if (!form.businessEntityId) {
-      message.warning(`业务主体 ${t('advertising.order.form.required')}`);
-      return false;
-    }
-    if (form.orderType === null || form.orderType === undefined) {
-      message.warning(`订单类型 ${t('advertising.order.form.required')}`);
-      return false;
-    }
+    return true;
+  }
+
+  /** 业务级校验（仅提交时校验） */
+  function validateBusiness(): boolean {
     if (!form.totalAmount || form.totalAmount <= 0) {
-      message.warning(`订单总金额 ${t('advertising.order.form.required')}`);
+      message.warning(`${t('advertising.order.form.totalAmount')} 需大于 0`);
       return false;
     }
-    if (form.mediaPayableAmount === null || form.mediaPayableAmount === undefined || form.mediaPayableAmount < 0) {
-      message.warning(`媒体应付总额 ${t('advertising.order.form.required')}`);
+    if (form.mediaPayableAmount !== null && form.mediaPayableAmount !== undefined && form.mediaPayableAmount < 0) {
+      message.warning(`${t('advertising.order.form.mediaPayableAmount')} 不能为负`);
       return false;
     }
+    if (form.orderType === 10 && !form.contractId) {
+      message.warning('框架合同订单需先关联已生效的框架合同');
+      return false;
+    }
+    return true;
+  }
+
+  function validate(action: 'draft' | 'submit'): boolean {
+    if (!validateRequired()) return false;
+    if (action === 'submit' && !validateBusiness()) return false;
     return true;
   }
 
@@ -877,7 +900,7 @@
   }
 
   async function handleSave(action: 'draft' | 'submit') {
-    if (!validate()) return;
+    if (!validate(action)) return;
     // 提交时校验必传附件（已有 + 新暂存）
     if (action === 'submit') {
       const hasSchedule =
