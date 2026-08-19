@@ -66,7 +66,9 @@
           <n-descriptions-item label="客户名称">{{
             getEntityName('customer', detail.order.customerId) || '-'
           }}</n-descriptions-item>
-          <n-descriptions-item label="行业类别">{{ industryLabelMap[detail.order.industryCode] || detail.order.industryCode || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="行业类别">{{
+            industryLabelMap[detail.order.industryCode ?? ''] || detail.order.industryCode || '-'
+          }}</n-descriptions-item>
           <n-descriptions-item label="签约主体">{{ detail.order.signingEntity || '-' }}</n-descriptions-item>
           <n-descriptions-item label="下游媒体">{{ downstreamMediaNames || '-' }}</n-descriptions-item>
           <n-descriptions-item label="关联合同">{{
