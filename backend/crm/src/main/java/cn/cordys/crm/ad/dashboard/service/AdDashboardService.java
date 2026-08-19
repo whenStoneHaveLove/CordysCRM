@@ -83,7 +83,7 @@ public class AdDashboardService {
                 }
                 Map<String, Object> target = monthMap.get(month);
                 target.put("orderCount", toLong(row.get("orderCount")));
-                target.put("amount", row.get("amount") == null ? BigDecimal.ZERO : row.get("amount"));
+                target.put("amount", row.get("totalAmount") == null ? BigDecimal.ZERO : row.get("totalAmount"));
             }
         }
         return new ArrayList<>(monthMap.values());
