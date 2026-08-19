@@ -371,7 +371,6 @@
     submitAdOrder,
     updateAdOrder,
     uploadAdOrderAttachment,
-    deleteAdOrderAttachment,
   } from '@/api/modules';
   import useUserStore from '@/store/modules/user';
 
