@@ -147,7 +147,15 @@
             <n-tag size="small">{{ attTypeLabel(att.type) }}</n-tag>
             <n-button size="tiny" type="primary" ghost @click.prevent="handlePreviewAtt(att.fileUrl!)"> 预览 </n-button>
             <n-button size="tiny" type="primary" ghost @click.prevent="handleDownloadAtt(att)"> 下载 </n-button>
-            <n-button text size="tiny" type="error" @click="handleDeleteAttachment(att.id)">删除</n-button>
+            <n-button
+              v-if="detail.order.status === 0"
+              text
+              size="tiny"
+              type="error"
+              @click="handleDeleteAttachment(att.id)"
+            >
+              删除
+            </n-button>
           </div>
         </n-space>
 

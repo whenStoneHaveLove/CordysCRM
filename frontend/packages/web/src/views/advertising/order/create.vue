@@ -371,6 +371,7 @@
     submitAdOrder,
     updateAdOrder,
     uploadAdOrderAttachment,
+    deleteAdOrderAttachment,
   } from '@/api/modules';
   import useUserStore from '@/store/modules/user';
 
@@ -897,8 +898,19 @@
         const created = await createAdOrder(payload);
         newOrderId = created.id || (created as any).order?.id;
       }
-      // 上传附件
+      // 上传附件：若本次重新上传了某类型，先删除该类型已存的旧附件（替换语义，避免草稿附件重复）
       if (pendingFiles.value.length > 0 && newOrderId) {
+        const pendingTypes = [...new Set(pendingFiles.value.map((f) => f.type))];
+        for (const t of pendingTypes) {
+          const olds = savedAttachments.value.filter((a) => a.type === t && a.id);
+          for (const o of olds) {
+            try {
+              await deleteAdOrderAttachment(newOrderId, o.id);
+            } catch {
+              // ignore
+            }
+          }
+        }
         await Promise.all(pendingFiles.value.map((f) => uploadAdOrderAttachment(newOrderId, f.type, f.file)));
         pendingFiles.value = []; // 上传完成后清空，避免再次进入/重复上传
       }
