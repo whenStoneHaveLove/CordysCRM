@@ -717,9 +717,15 @@
       }));
       // 编辑回填时，若已选合同不在当前过滤结果中（如未归档或类型不匹配），
       // 追加该选项避免被清空，保证再次保存时关联关系不丢失
-      if (form.contractId && selectedContract.value && !contractOptions.value.some((opt) => opt.value === form.contractId)) {
+      if (
+        form.contractId &&
+        selectedContract.value &&
+        !contractOptions.value.some((opt) => opt.value === form.contractId)
+      ) {
         contractOptions.value.push({
-          label: [selectedContract.value.contractNo, selectedContract.value.contractName].filter(Boolean).join(' ') || selectedContract.value.id,
+          label:
+            [selectedContract.value.contractNo, selectedContract.value.contractName].filter(Boolean).join(' ') ||
+            selectedContract.value.id,
           value: selectedContract.value.id,
         });
       }
@@ -900,16 +906,16 @@
       // 上传附件：若本次重新上传了某类型，先删除该类型已存的旧附件（替换语义，避免草稿附件重复）
       if (pendingFiles.value.length > 0 && newOrderId) {
         const pendingTypes = [...new Set(pendingFiles.value.map((f) => f.type))];
-        for (const t of pendingTypes) {
-          const olds = savedAttachments.value.filter((a) => a.type === t && a.id);
-          for (const o of olds) {
-            try {
-              await deleteAdOrderAttachment(newOrderId, o.id);
-            } catch {
+        const staleIds = savedAttachments.value
+          .filter((a) => pendingTypes.includes(a.type) && a.id)
+          .map((a) => a.id as string);
+        await Promise.all(
+          staleIds.map((id) =>
+            deleteAdOrderAttachment(newOrderId, id).catch(() => {
               // ignore
-            }
-          }
-        }
+            })
+          )
+        );
         await Promise.all(pendingFiles.value.map((f) => uploadAdOrderAttachment(newOrderId, f.type, f.file)));
         pendingFiles.value = []; // 上传完成后清空，避免再次进入/重复上传
       }
