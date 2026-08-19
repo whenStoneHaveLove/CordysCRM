@@ -395,7 +395,7 @@ CREATE TABLE ad_report_config
     UNIQUE KEY uk_ad_rc_code_org (report_code, organization_id)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '广告报表配置';
 
--- ---------- sys_user 增加 is_cross_entity 标记（财务/老板全主体可见, L-06） ----------
+-- ---------- sys_user 增加 is_cross_entity 标记（财务/管理组全主体可见, L-06） ----------
 -- 带存在性判断，保证开发循环重跑安全（列已存在则跳过）
 SET @ad_db = DATABASE();
 SET @ad_col_exists = (

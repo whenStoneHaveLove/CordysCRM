@@ -29,7 +29,7 @@
 | 枚举类 | 对应字段 | 取值（code→label） |
 |--------|----------|--------------------|
 | `OrderType` | ad_order.order_type | 10=框架合同 / 20=单笔合同 |
-| `OrderStatus` | ad_order.status | 0=草稿 / 10=待老板审核 / 20=审核通过 / 30=待确认预收款 / 40=待付媒体预付款 / 50=执行中 / 60=变更审核中 / 70=执行完成 / 80=结算中 / 90=已归档 / 100=已作废 |
+| `OrderStatus` | ad_order.status | 0=草稿 / 10=待管理组审核 / 20=审核通过 / 30=待确认预收款 / 40=待付媒体预付款 / 50=执行中 / 60=变更审核中 / 70=执行完成 / 80=结算中 / 90=已归档 / 100=已作废 |
 | `ReceiptMethod` | ad_order.receipt_method | 10=预付款 / 20=账期 |
 | `PaymentMethod` | ad_order.payment_method | 10=预付媒体 / 20=后付媒体 |
 | `PaymentPostpayTrigger` | ad_order.payment_postpay_trigger | 10=收到上游全款后 / 20=执行完成X天后 |

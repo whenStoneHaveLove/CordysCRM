@@ -28,7 +28,7 @@ public class AdUserEntityContext {
     private SysUserCrossEntityMapper sysUserCrossEntityMapper;
 
     /**
-     * 用户是否为跨主体可见（财务/老板）。
+     * 用户是否为跨主体可见（财务/管理组）。
      */
     public boolean isCrossEntity(String userId) {
         if (userId == null) {

@@ -6,7 +6,7 @@ import lombok.Data;
 /**
  * 用印审批请求（M5，POST /api/ad/seal/{contractId}/approve|reject 或合同 approve-seal/reject-seal 共用）。
  *
- * <p>老板(ROLE_BOSS)审批：通过时填实际盖章份数；驳回时填驳回备注。</p>
+ * <p>管理组(ROLE_BOSS)审批：通过时填实际盖章份数；驳回时填驳回备注。</p>
  */
 @Data
 public class AdSealApproveRequest {

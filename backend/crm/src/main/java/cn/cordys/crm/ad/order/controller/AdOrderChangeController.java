@@ -63,7 +63,7 @@ public class AdOrderChangeController {
 
     @PostMapping("/{id}/approve")
     @CsPermission(PermissionConstants.AD_ORDER_CHANGE_APPROVE)
-    @Operation(summary = "老板审批通过（改单→已审批，父单仍锁定）")
+    @Operation(summary = "管理组审批通过（改单→已审批，父单仍锁定）")
     public AdOrderChange approve(@PathVariable("id") String id,
                                  @RequestBody(required = false) AdOrderChangeApproveRequest request) {
         return adOrderChangeService.approve(id, request, userId(), orgId());
@@ -71,7 +71,7 @@ public class AdOrderChangeController {
 
     @PostMapping("/{id}/reject")
     @CsPermission(PermissionConstants.AD_ORDER_CHANGE_REJECT)
-    @Operation(summary = "老板驳回（改单→已驳回，父单恢复执行中50，保留数据 L-21）")
+    @Operation(summary = "管理组驳回（改单→已驳回，父单恢复执行中50，保留数据 L-21）")
     public AdOrderChange reject(@PathVariable("id") String id,
                                 @RequestBody(required = false) AdOrderChangeApproveRequest request) {
         return adOrderChangeService.reject(id, request, userId(), orgId());

@@ -95,7 +95,7 @@ public class AdContractController {
 
     @PutMapping("/{id}/approve-archive")
     @CsPermission(PermissionConstants.AD_CONTRACT_ARCHIVE_APPROVE)
-    @Operation(summary = "归档审批通过（用印状态→已归档，老板操作）")
+    @Operation(summary = "归档审批通过（用印状态→已归档，管理组操作）")
     public AdContract approveArchive(@PathVariable("id") String id, @RequestBody(required = false) Map<String, String> body) {
         String remark = body == null ? null : body.get("remark");
         return adContractService.approveArchive(id, remark, userId(), orgId());
@@ -103,7 +103,7 @@ public class AdContractController {
 
     @PutMapping("/{id}/reject-archive")
     @CsPermission(PermissionConstants.AD_CONTRACT_ARCHIVE_APPROVE)
-    @Operation(summary = "归档审批驳回（用印状态→归档审批驳回，老板操作）")
+    @Operation(summary = "归档审批驳回（用印状态→归档审批驳回，管理组操作）")
     public AdContract rejectArchive(@PathVariable("id") String id, @RequestBody(required = false) Map<String, String> body) {
         String remark = body == null ? null : body.get("remark");
         return adContractService.rejectArchive(id, remark, userId(), orgId());

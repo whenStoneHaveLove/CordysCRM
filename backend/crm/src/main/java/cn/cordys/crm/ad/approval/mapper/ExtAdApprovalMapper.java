@@ -12,7 +12,7 @@ import java.util.Map;
  *
  * <p>六类待审单据及其状态条件：</p>
  * <ul>
- *   <li>订单：ad_order.status = 10（待老板审核）</li>
+ *   <li>订单：ad_order.status = 10（待管理组审核）</li>
  *   <li>改单：ad_order_change.status = 10（已提交）</li>
  *   <li>用印：ad_seal_record.status = 0（审批中）</li>
  *   <li>归档：ad_contract.seal_status = 40（归档审批中）</li>

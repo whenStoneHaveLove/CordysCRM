@@ -28,12 +28,12 @@ export default function useAdOrderChangeApi(CDR: CordysAxios) {
     return CDR.post<AdOrderChange>({ url: `${AdOrderChangeSubmitUrl}/${id}/submit` });
   }
 
-  // 老板审批通过
+  // 管理组审批通过
   function approveAdOrderChange(id: string, data?: AdOrderChangeApproveParams) {
     return CDR.post<AdOrderChange>({ url: `${AdOrderChangeApproveUrl}/${id}/approve`, data });
   }
 
-  // 老板驳回
+  // 管理组驳回
   function rejectAdOrderChange(id: string, data?: AdOrderChangeApproveParams) {
     return CDR.post<AdOrderChange>({ url: `${AdOrderChangeRejectUrl}/${id}/reject`, data });
   }

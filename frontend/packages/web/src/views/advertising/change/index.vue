@@ -18,7 +18,9 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">{{ t('advertising.order.reset') }}</n-button>
-        <n-button type="primary" @click="goCreate">{{ t('advertising.change.new') }}</n-button>
+        <n-button v-permission="['AD_ORDER_CHANGE:CREATE']" type="primary" @click="goCreate">{{
+          t('advertising.change.new')
+        }}</n-button>
       </n-space>
     </n-card>
 
@@ -45,6 +47,7 @@
   import type { AdOrderChangeListItem, AdOrderChangePageParams } from '@lib/shared/models/advertising';
 
   import { getAdOrderChangePage, submitAdOrderChange } from '@/api/modules';
+  import { hasPermission } from '@/utils/permission';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
@@ -176,7 +179,7 @@
                 { size: 'small', onClick: () => openDetail(row) },
                 { default: () => t('advertising.change.detail') }
               ),
-              row.status === 0
+              row.status === 0 && hasPermission('AD_ORDER_CHANGE:SUBMIT')
                 ? h(
                     NButton,
                     { size: 'small', type: 'primary', onClick: () => handleSubmit(row) },

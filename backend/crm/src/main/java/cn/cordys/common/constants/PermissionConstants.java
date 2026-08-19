@@ -366,7 +366,7 @@ public class PermissionConstants {
     public static final String AD_WORKBENCH_READ = "AD_WORKBENCH:READ";
     /** 媒介板块待办可见权限 */
     public static final String AD_WORKBENCH_MEDIA = "AD_WORKBENCH:MEDIA";
-    /** 老板板块待办可见权限 */
+    /** 管理组板块待办可见权限 */
     public static final String AD_WORKBENCH_BOSS = "AD_WORKBENCH:BOSS";
     /** 财务板块待办可见权限 */
     public static final String AD_WORKBENCH_FINANCE = "AD_WORKBENCH:FINANCE";

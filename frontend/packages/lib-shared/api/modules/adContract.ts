@@ -50,7 +50,7 @@ export default function useAdContractApi(CDR: CordysAxios) {
     return CDR.put<AdContractInfo>({ url: `${AdContractUpdateUrl}/${id}/submit-archive`, data: { fileUrl } });
   }
 
-  // 归档审批通过（老板）
+  // 归档审批通过（管理组）
   function approveArchive(id: string, remark?: string) {
     return CDR.put<AdContractInfo>({
       url: `${AdContractUpdateUrl}/${id}/approve-archive`,
@@ -58,7 +58,7 @@ export default function useAdContractApi(CDR: CordysAxios) {
     });
   }
 
-  // 归档审批驳回（老板）
+  // 归档审批驳回（管理组）
   function rejectArchive(id: string, remark?: string) {
     return CDR.put<AdContractInfo>({
       url: `${AdContractUpdateUrl}/${id}/reject-archive`,

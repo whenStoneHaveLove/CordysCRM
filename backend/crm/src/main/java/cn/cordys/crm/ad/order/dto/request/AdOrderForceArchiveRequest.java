@@ -6,7 +6,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 /**
- * 强制归档请求（M2 POST /api/ad/order/{id}/force-archive，老板执行，L-13）。
+ * 强制归档请求（M2 POST /api/ad/order/{id}/force-archive，管理组执行，L-13）。
  */
 @Data
 public class AdOrderForceArchiveRequest {

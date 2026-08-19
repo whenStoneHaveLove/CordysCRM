@@ -48,12 +48,12 @@ export default function useAdOrderApi(CDR: CordysAxios) {
     return CDR.post<AdOrderInfo>({ url: `${AdOrderSubmitUrl}/${id}/submit` });
   }
 
-  // 老板审核（通过 10→20 / 驳回 10→0）
+  // 管理组审核（通过 10→20 / 驳回 10→0）
   function approveAdOrder(id: string, data: AdOrderApproveParams) {
     return CDR.post<AdOrderInfo>({ url: `${AdOrderApproveUrl}/${id}/approve`, data });
   }
 
-  // 老板驳回（10→0）
+  // 管理组驳回（10→0）
   function rejectAdOrder(id: string, data: AdOrderApproveParams) {
     return CDR.post<AdOrderInfo>({ url: `${AdOrderRejectUrl}/${id}/reject`, data });
   }
@@ -68,7 +68,7 @@ export default function useAdOrderApi(CDR: CordysAxios) {
     return CDR.post<AdOrderInfo>({ url: `${AdOrderVoidUrl}/${id}/void`, data });
   }
 
-  // 强制归档（80→90，老板，带坏账金额）
+  // 强制归档（80→90，管理组，带坏账金额）
   function forceArchiveAdOrder(id: string, data: AdOrderForceArchiveParams) {
     return CDR.post<AdOrderInfo>({ url: `${AdOrderForceArchiveUrl}/${id}/force-archive`, data });
   }

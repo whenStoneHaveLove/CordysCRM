@@ -6,7 +6,7 @@
 --        - AD_RECEIPT:*（收款单，5个：READ/CREATE/UPDATE/DELETE/APPROVE）
 --        - AD_PAYOUT:*（付款单，5个：READ/CREATE/UPDATE/DELETE/APPROVE）
 --   2) 订单新增动作权限：AD_ORDER:CONFIRM_EXECUTE（确认执行，媒介操作）
---   3) 合同新增归档审批权限：AD_CONTRACT:ARCHIVE_APPROVE（双盖审核，老板操作）
+--   3) 合同新增归档审批权限：AD_CONTRACT:ARCHIVE_APPROVE（双盖审核，管理组操作）
 --   4) 幂等：INSERT ... SELECT ... WHERE NOT EXISTS；删除旧码用 DELETE（幂等）。
 --   5) 三处一致红线：本脚本 == PermissionConstants.java == 前端 permission.json / meta.permissions。
 -- ============================================================
@@ -27,7 +27,7 @@ WHERE permission_id IN (
 );
 
 -- ------------------------------------------------------------
--- 1) org_admin / ROLE_BOSS —— 授予全部新权限（管理员/老板）
+-- 1) org_admin / ROLE_BOSS —— 授予全部新权限（管理员/管理组）
 -- ------------------------------------------------------------
 INSERT INTO sys_role_permission (id, role_id, permission_id)
 SELECT UUID_SHORT(), r.role_id, c.code

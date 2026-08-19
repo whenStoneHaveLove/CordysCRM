@@ -54,7 +54,7 @@ import java.util.Set;
  *   <li>§6.2/§8 状态联动：提交时父单 EXECUTING(50) → CHANGE_APPROVING(60)（锁定）；
  *       执行/驳回后父单恢复 EXECUTING(50)。</li>
  *   <li>L-24 改单禁止变更 {@code order_type}（框架↔单笔不可改），提交时校验。</li>
- *   <li>L-14 审批开关：{@code ad.order.approval.enabled}（默认 true）；关闭时提交直达审批通过(跳过老板审批)。</li>
+ *   <li>L-14 审批开关：{@code ad.order.approval.enabled}（默认 true）；关闭时提交直达审批通过(跳过管理组审批)。</li>
  *   <li>L-04 资金侧：执行时按新应收对比已收/已开票，置红冲标记(needs_red_invoice)，
  *       并记录应退款/待补收/待补开至订单操作日志（支付记录由 M4 负责）。</li>
  *   <li>L-21 驳回保留数据：驳回仅回退状态，不删除任何附件/快照。</li>
@@ -178,7 +178,7 @@ public class AdOrderChangeService {
     }
 
     /**
-     * 老板审批通过：已提交(10) → 审批通过(20)；父单保持锁定(60)，待执行时应用。
+     * 管理组审批通过：已提交(10) → 审批通过(20)；父单保持锁定(60)，待执行时应用。
      */
     @OperationLog(module = "AD_ORDER_CHANGE", action = "APPROVE", targetId = "#id")
     public AdOrderChange approve(String id, AdOrderChangeApproveRequest request, String userId, String orgId) {
@@ -201,7 +201,7 @@ public class AdOrderChangeService {
     }
 
     /**
-     * 老板驳回：已提交(10) → 已驳回(30)；父单 CHANGE_APPROVING(60) → EXECUTING(50) 恢复（保留数据 L-21）。
+     * 管理组驳回：已提交(10) → 已驳回(30)；父单 CHANGE_APPROVING(60) → EXECUTING(50) 恢复（保留数据 L-21）。
      */
     @OperationLog(module = "AD_ORDER_CHANGE", action = "REJECT", targetId = "#id")
     public AdOrderChange reject(String id, AdOrderChangeApproveRequest request, String userId, String orgId) {

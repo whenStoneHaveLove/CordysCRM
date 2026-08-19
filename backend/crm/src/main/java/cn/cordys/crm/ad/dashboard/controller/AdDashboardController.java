@@ -33,7 +33,7 @@ public class AdDashboardController {
 
     @GetMapping("/todo")
     @CsPermission(PermissionConstants.AD_WORKBENCH_READ)
-    @Operation(summary = "分角色工作台待办聚合（媒介/老板/财务）")
+    @Operation(summary = "分角色工作台待办聚合（媒介/管理组/财务）")
     public AdWorkbenchTodoResponse todo() {
         return adDashboardService.workbenchTodo(orgId());
     }

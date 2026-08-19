@@ -12,8 +12,8 @@
 --   2) 权威码：AD_ORDER_CHANGE:* 与 AD_SEAL:*（替代旧 AD_ORDER:CHANGE / AD_CONTRACT:SEAL_*）。
 --      旧码已废弃，本脚本不写入任何废弃码。
 --   3) 角色授权：
---        - org_admin           ：授予全部 AD_* 权限（管理员/老板视角，前端菜单完整显示）
---        - ROLE_BOSS(老板)     ：授予全部 AD_* 权限（与 §3.3 老板列一致）
+--        - org_admin           ：授予全部 AD_* 权限（管理员/管理组视角，前端菜单完整显示）
+--        - ROLE_BOSS(管理组)     ：授予全部 AD_* 权限（与 §3.3 管理组列一致）
 --        - ROLE_FINANCE(财务)  ：按 §3.3 财务列授予（全模块查看 + 收付款相关动作 + 归档）
 --        - ROLE_MEDIA(媒介)    ：按 §3.3 媒介列授予（新建编辑/提交/改单申请/用印申请/合同资源客户CRUD + 全模块查看）
 --   4) 幂等：sys_role_permission 无 (role_id, permission_id) 唯一键，故使用
@@ -102,7 +102,7 @@ WHERE NOT EXISTS (
 );
 
 -- ============================================================
--- 2) ROLE_BOSS(老板) —— 按 §3.3 老板列授予全部 AD_* 权限
+-- 2) ROLE_BOSS(管理组) —— 按 §3.3 管理组列授予全部 AD_* 权限
 -- ============================================================
 INSERT INTO sys_role_permission (id, role_id, permission_id)
 SELECT UUID_SHORT(), 'ROLE_BOSS', c.code FROM (

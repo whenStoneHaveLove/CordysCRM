@@ -80,7 +80,7 @@ public class AdOrderController {
 
     @PostMapping("/{id}/approve")
     @CsPermission(PermissionConstants.AD_ORDER_APPROVE)
-    @Operation(summary = "老板审核（通过 10→20 / 驳回 10→0）")
+    @Operation(summary = "管理组审核（通过 10→20 / 驳回 10→0）")
     public AdOrder approve(@PathVariable("id") String id, @RequestBody AdOrderApproveRequest request) {
         return adOrderService.approve(id, request, userId(), orgId());
     }
@@ -101,7 +101,7 @@ public class AdOrderController {
 
     @PostMapping("/{id}/force-archive")
     @CsPermission(PermissionConstants.AD_ORDER_FORCE_ARCHIVE)
-    @Operation(summary = "强制归档（80→90，老板，带坏账金额 L-13）")
+    @Operation(summary = "强制归档（80→90，管理组，带坏账金额 L-13）")
     public AdOrder forceArchive(@PathVariable("id") String id, @RequestBody AdOrderForceArchiveRequest request) {
         return adOrderService.forceArchive(id, request, userId(), orgId());
     }

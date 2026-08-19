@@ -3,7 +3,7 @@
 
 <mapper namespace="cn.cordys.crm.ad.approval.mapper.ExtAdApprovalMapper">
 
-    <!-- 订单待审批：status=10（待老板审核） -->
+    <!-- 订单待审批：status=10（待管理组审核） -->
     <select id="pendingOrders" resultType="java.util.HashMap">
         SELECT
             o.id,

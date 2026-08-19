@@ -298,7 +298,7 @@ export default {
   'advertising.workbench.greeting.afternoon': '下午好',
   'advertising.workbench.greeting.evening': '晚上好',
   'advertising.workbench.card.media': '媒介待办',
-  'advertising.workbench.card.boss': '老板待办',
+  'advertising.workbench.card.boss': '管理组待办',
   'advertising.workbench.card.finance': '财务待办',
   'advertising.workbench.empty': '暂无待办',
   'advertising.workbench.stat.activeOrder': '进行中订单',

@@ -127,7 +127,7 @@ public class DingTalkUser {
     private Boolean admin;
 
     /**
-     * 是否老板
+     * 是否管理组
      */
     private Boolean boss;
 

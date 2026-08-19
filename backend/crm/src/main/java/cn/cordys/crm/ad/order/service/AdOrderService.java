@@ -70,7 +70,7 @@ import java.util.stream.Collectors;
  *   <li>L-21 驳回/作废 保留附件（不删除）。</li>
  *   <li>L-26 执行完成 需 ≥1 份关联合同。</li>
  *   <li>L-08 逾期自动流转：执行中(50) 且 投放结束日 已过 → 结算中(80)（由 guarded job 触发）。</li>
- *   <li>L-13 强制归档：老板执行，带坏账金额。</li>
+ *   <li>L-13 强制归档：管理组执行，带坏账金额。</li>
  *   <li>L-27 作废红冲标记：已开票则置 needs_red_invoice=1。</li>
  *   <li>L-02/L-11/L-28 金额规则见 {@link AdAmountCalculator}。</li>
  * </ul>
@@ -249,7 +249,7 @@ public class AdOrderService {
     }
 
     /**
-     * 老板审核：通过 10→45（待执行）；驳回 10→0（保留附件 L-21）。
+     * 管理组审核：通过 10→45（待执行）；驳回 10→0（保留附件 L-21）。
      */
     @OperationLog(module = "AD_ORDER", action = "APPROVE", targetId = "#id")
     public AdOrder approve(String id, AdOrderApproveRequest request, String userId, String orgId) {
@@ -324,7 +324,7 @@ public class AdOrderService {
     }
 
     /**
-     * 强制归档：80→90（老板执行，L-13 带坏账金额）。
+     * 强制归档：80→90（管理组执行，L-13 带坏账金额）。
      */
     @OperationLog(module = "AD_ORDER", action = "FORCE_ARCHIVE", targetId = "#id")
     public AdOrder forceArchive(String id, AdOrderForceArchiveRequest request, String userId, String orgId) {
