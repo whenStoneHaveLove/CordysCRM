@@ -66,7 +66,7 @@
           <n-descriptions-item label="客户名称">{{
             getEntityName('customer', detail.order.customerId) || '-'
           }}</n-descriptions-item>
-          <n-descriptions-item label="行业类别">{{ detail.order.industryCode || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="行业类别">{{ industryLabelMap[detail.order.industryCode] || detail.order.industryCode || '-' }}</n-descriptions-item>
           <n-descriptions-item label="签约主体">{{ detail.order.signingEntity || '-' }}</n-descriptions-item>
           <n-descriptions-item label="下游媒体">{{ downstreamMediaNames || '-' }}</n-descriptions-item>
           <n-descriptions-item label="关联合同">{{
@@ -298,6 +298,7 @@
     forceArchiveAdOrder,
     getAdBusinessEntityPage,
     getAdCustomerPage,
+    getAdDictPage,
     getAdDownstreamMediaPage,
     getAdOrderDetail,
     submitAdOrder,
@@ -419,6 +420,22 @@
       const res = await getAdDownstreamMediaPage({ current: 1, pageSize: 200 });
       (res.list || []).forEach((it: any) => {
         if (it.id) downstreamMediaNameCache[it.id] = it.name || '';
+      });
+    } catch {
+      // 静默失败
+    }
+  }
+
+  /** 行业类别字典缓存：dictValue → dictLabel */
+  const industryLabelMap = reactive<Record<string, string>>({});
+
+  /** 加载行业类别字典 */
+  async function loadIndustryDict() {
+    try {
+      const res = await getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' });
+      (res.list || []).forEach((it: any) => {
+        const value = it.dictValue || it.id;
+        if (value) industryLabelMap[value] = it.dictLabel || value;
       });
     } catch {
       // 静默失败
@@ -731,7 +748,13 @@
   }
 
   onMounted(async () => {
-    await Promise.all([fetchDetail(), loadUserMap(), loadEntityNames(), loadDownstreamMediaNames()]);
+    await Promise.all([
+      fetchDetail(),
+      loadUserMap(),
+      loadEntityNames(),
+      loadDownstreamMediaNames(),
+      loadIndustryDict(),
+    ]);
   });
 </script>
 
