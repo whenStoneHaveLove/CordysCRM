@@ -41,6 +41,9 @@ public class AdOrderChange extends BaseModel {
     @Schema(description = "审批备注")
     private String approveRemark;
 
+    @Schema(description = "改单前订单主状态(用于改单结束后恢复订单原状态流转)")
+    private Integer orderStatusBefore;
+
     @Schema(description = "组织(租户)id")
     private String organizationId;
 

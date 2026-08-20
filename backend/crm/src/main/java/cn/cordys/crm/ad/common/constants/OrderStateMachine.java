@@ -18,7 +18,8 @@ import java.util.List;
  * <p>简化后的主状态（8 个）：
  * <ul>
  *   <li>草稿(0) → 审批中(10) → 待执行(45) → 执行中(50) → 结算中(80) → 已归档(90)</li>
- *   <li>改单：执行中(50) → 改单审核中(60) → 执行中(50)</li>
+ *   <li>改单：不改变订单主状态流转，仅老板审核变更字段；改单提交时记录订单原状态，
+ *       驳回/执行后恢复订单原状态（允许改单的状态：待执行(45)/执行中(50)/结算中(80)）。</li>
  *   <li>作废：除已归档(90)外均可作废(100)</li>
  * </ul>
  * </p>
@@ -28,6 +29,7 @@ import java.util.List;
  *   <li>L-14 审批开关：开关关闭时提交(0)直达待执行(45)。</li>
  *   <li>审批通过后不再有「财务前置」推导，直接进入待执行(45)。</li>
  *   <li>执行中(50)到期后由定时任务流转到结算中(80)；结算中满足归档条件后自动归档(90)。</li>
+ *   <li>改单：发起改单时订单切入改单审核中(60)（停留态），并记录改单前状态；驳回/执行后恢复改单前状态。</li>
  * </ul>
  * </p>
  */
@@ -81,10 +83,12 @@ public final class OrderStateMachine {
             new Transition(PENDING_BOSS_APPROVAL, PENDING_EXECUTE, TRIGGER_APPROVE, PermissionConstants.AD_ORDER_APPROVE),
             // 确认执行
             new Transition(PENDING_EXECUTE, EXECUTING, TRIGGER_CONFIRM_EXECUTE, PermissionConstants.AD_ORDER_CONFIRM_EXECUTE),
-            // 改单（申请/通过/驳回，权限码归属 AD_ORDER_CHANGE）
+            // 改单：发起改单时订单切入改单审核中(60)，并记录改单前状态；审批通过仍停在 60，驳回/执行后恢复改单前状态
+            new Transition(PENDING_EXECUTE, CHANGE_APPROVING, TRIGGER_APPLY_CHANGE, PermissionConstants.AD_ORDER_CHANGE_SUBMIT),
             new Transition(EXECUTING, CHANGE_APPROVING, TRIGGER_APPLY_CHANGE, PermissionConstants.AD_ORDER_CHANGE_SUBMIT),
+            new Transition(SETTLEMENT, CHANGE_APPROVING, TRIGGER_APPLY_CHANGE, PermissionConstants.AD_ORDER_CHANGE_SUBMIT),
+            new Transition(CHANGE_APPROVING, PENDING_EXECUTE, TRIGGER_CHANGE_REJECTED, PermissionConstants.AD_ORDER_CHANGE_REJECT),
             new Transition(CHANGE_APPROVING, EXECUTING, TRIGGER_CHANGE_APPROVED, PermissionConstants.AD_ORDER_CHANGE_APPROVE),
-            new Transition(CHANGE_APPROVING, EXECUTING, TRIGGER_CHANGE_REJECTED, PermissionConstants.AD_ORDER_CHANGE_REJECT),
             // 到期自动结算 / 自动归档（系统级）
             new Transition(EXECUTING, SETTLEMENT, TRIGGER_AUTO_OVERDUE, ROLE_SYSTEM),
             new Transition(SETTLEMENT, ARCHIVED, TRIGGER_AUTO_ARCHIVE, ROLE_SYSTEM),
@@ -119,6 +123,16 @@ public final class OrderStateMachine {
             return true;
         }
         return TRANSITIONS.stream().anyMatch(t -> t.from() == from && t.to() == to);
+    }
+
+    /**
+     * 是否允许对指定订单状态发起改单。
+     *
+     * <p>改单不改变订单主状态流转，仅老板审核变更字段，审核结束恢复订单原状态。
+     * 允许改单的订单状态：待执行(45)/执行中(50)/结算中(80)；其余（草稿/审批中/改单审核中(已废弃)/已归档/已作废）不可。</p>
+     */
+    public static boolean canApplyChange(int status) {
+        return status == PENDING_EXECUTE || status == EXECUTING || status == SETTLEMENT;
     }
 
     /**

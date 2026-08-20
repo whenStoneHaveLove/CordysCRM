@@ -7,7 +7,8 @@ import lombok.Getter;
  *
  * <p>状态码采用 10 倍数间隔编码（与 {@link OrderStateMachine} 一致），标识改单生命周期：
  * 草稿(0) → 已提交/变更审核中(10) → 审批通过(20) → 已执行(40)；驳回(30) 为终态之一。
- * 与父订单锁定状态联动：提交时父单 EXECUTING(50) → CHANGE_APPROVING(60)，执行/驳回后恢复 50。</p>
+ * 与父订单联动：发起改单时父单切入改单审核中(60)并记录改单前状态(orderStatusBefore)，
+ * 审批/执行/驳回后父单恢复为改单前状态。</p>
  */
 @Getter
 public enum AdOrderChangeStatus {

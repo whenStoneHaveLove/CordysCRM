@@ -308,8 +308,8 @@
     orderLoading.value = true;
     try {
       const res = await getAdOrderPage({ current: 1, pageSize: 200 });
-      // 可提交改单的订单：排除 草稿(0)/已归档(90)/已作废(100)/改单审核中(60)
-      const excluded = [0, 60, 90, 100];
+      // 可提交改单的订单：仅 待执行(45)/执行中(50)/结算中(80)；排除 草稿(0)/审批中(10)/改单审核中(60)/已归档(90)/已作废(100)
+      const excluded = [0, 10, 60, 90, 100];
       orderOptions.value = (res.list || [])
         .filter((o: AdOrderListItem) => !excluded.includes(o.status ?? 0))
         .map((o: AdOrderListItem) => ({

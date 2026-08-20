@@ -51,8 +51,8 @@ import java.util.Set;
  *
  * <p>关键规则：
  * <ul>
- *   <li>§6.2/§8 状态联动：提交时父单 EXECUTING(50) → CHANGE_APPROVING(60)（锁定）；
- *       执行/驳回后父单恢复 EXECUTING(50)。</li>
+ *   <li>§6.2/§8 状态联动：发起改单时父单切入改单审核中(60)并记录改单前状态(orderStatusBefore)，
+ *       驳回/执行后父单恢复为改单前状态。</li>
  *   <li>L-24 改单禁止变更 {@code order_type}（框架↔单笔不可改），提交时校验。</li>
  *   <li>L-14 审批开关：{@code ad.order.approval.enabled}（默认 true）；关闭时提交直达审批通过(跳过管理组审批)。</li>
  *   <li>L-04 资金侧：执行时按新应收对比已收/已开票，置红冲标记(needs_red_invoice)，
@@ -147,7 +147,8 @@ public class AdOrderChangeService {
     // ===================== 提交流转 =====================
 
     /**
-     * 提交改单：草稿(0) → 已提交(10) [L-14 关闭时直达审批通过(20)]；父单 EXECUTING(50) → CHANGE_APPROVING(60) 锁定。
+     * 提交改单：草稿(0) → 已提交(10) [L-14 关闭时直达审批通过(20)]。
+     * 父单主状态切入改单审核中(60)，并记录改单前订单状态(orderStatusBefore)，驳回/执行后恢复。
      */
     @OperationLog(module = "AD_ORDER_CHANGE", action = "SUBMIT", targetId = "#id")
     public AdOrderChange submit(String id, String userId, String orgId) {
@@ -156,11 +157,18 @@ public class AdOrderChangeService {
             throw new GenericException("仅草稿状态可提交");
         }
         AdOrder order = requireOrder(change.getOrderId());
-        if (!OrderStateMachine.canTransit(order.getStatus(), OrderStateMachine.CHANGE_APPROVING, approvalEnabled)) {
-            throw new GenericException("当前订单状态(" + order.getStatus() + ")不可发起改单");
+        if (!OrderStateMachine.canApplyChange(order.getStatus())) {
+            throw new GenericException("当前订单状态(" + order.getStatus() + ")不可发起改单，仅待执行/执行中/结算中可改单");
         }
         assertRole(PermissionConstants.AD_ORDER_CHANGE_SUBMIT);
         int fromOrder = order.getStatus();
+        // 记录改单前订单状态，订单切入改单审核中(60)（停留态），改单结束后恢复
+        change.setOrderStatusBefore(fromOrder);
+        change.setUpdateUser(userId);
+        change.setUpdateTime(System.currentTimeMillis());
+        orderChangeMapper.update(change);
+
+        // 父单主状态切入改单审核中(60)
         order.setStatus(OrderStateMachine.CHANGE_APPROVING);
         order.setUpdateUser(userId);
         order.setUpdateTime(System.currentTimeMillis());
@@ -178,7 +186,7 @@ public class AdOrderChangeService {
     }
 
     /**
-     * 管理组审批通过：已提交(10) → 审批通过(20)；父单保持锁定(60)，待执行时应用。
+     * 管理组审批通过：已提交(10) → 审批通过(20)；订单主状态保持改单审核中(60)（停留态，待执行时恢复）。
      */
     @OperationLog(module = "AD_ORDER_CHANGE", action = "APPROVE", targetId = "#id")
     public AdOrderChange approve(String id, AdOrderChangeApproveRequest request, String userId, String orgId) {
@@ -188,6 +196,7 @@ public class AdOrderChangeService {
         }
         assertRole(PermissionConstants.AD_ORDER_CHANGE_APPROVE);
         AdOrder order = requireOrder(change.getOrderId());
+        // 订单主状态保持改单审核中(60)，不改回原状态
         change.setStatus(AdOrderChangeStatus.APPROVED.getCode());
         change.setApproverId(userId);
         change.setApprovedAt(new Date());
@@ -195,13 +204,15 @@ public class AdOrderChangeService {
         change.setUpdateUser(userId);
         change.setUpdateTime(System.currentTimeMillis());
         orderChangeMapper.update(change);
+        Integer before = change.getOrderStatusBefore();
+        int from = before != null ? before : order.getStatus();
         recordOrderLog(order, OrderStateMachine.TRIGGER_CHANGE_APPROVED,
-                OrderStateMachine.CHANGE_APPROVING, OrderStateMachine.CHANGE_APPROVING, userId, orgId);
+                OrderStateMachine.CHANGE_APPROVING, from, userId, orgId);
         return change;
     }
 
     /**
-     * 管理组驳回：已提交(10) → 已驳回(30)；父单 CHANGE_APPROVING(60) → EXECUTING(50) 恢复（保留数据 L-21）。
+     * 管理组驳回：已提交(10) → 已驳回(30)；父单恢复改单前状态（保留数据 L-21）。
      */
     @OperationLog(module = "AD_ORDER_CHANGE", action = "REJECT", targetId = "#id")
     public AdOrderChange reject(String id, AdOrderChangeApproveRequest request, String userId, String orgId) {
@@ -219,19 +230,21 @@ public class AdOrderChangeService {
         change.setUpdateUser(userId);
         change.setUpdateTime(System.currentTimeMillis());
         orderChangeMapper.update(change);
-        if (fromOrder == OrderStateMachine.CHANGE_APPROVING) {
-            order.setStatus(OrderStateMachine.EXECUTING);
+        // 改单驳回：订单从 60 恢复为改单前状态
+        Integer before = change.getOrderStatusBefore();
+        if (before != null) {
+            order.setStatus(before);
             order.setUpdateUser(userId);
             order.setUpdateTime(System.currentTimeMillis());
             adOrderMapper.update(order);
             recordOrderLog(order, OrderStateMachine.TRIGGER_CHANGE_REJECTED, fromOrder,
-                    OrderStateMachine.EXECUTING, userId, orgId);
+                    before, userId, orgId);
         }
         return change;
     }
 
     /**
-     * 执行改单：审批通过(20) → 已执行(40)。应用快照 + 金额重算 + L-04 资金侧；父单 CHANGE_APPROVING(60) → EXECUTING(50)。
+     * 执行改单：审批通过(20) → 已执行(40)。应用快照 + 金额重算 + L-04 资金侧；父单从改单审核中(60)恢复改单前状态。
      */
     @OperationLog(module = "AD_ORDER_CHANGE", action = "EXECUTE", targetId = "#id")
     public AdOrderChange execute(String id, String userId, String orgId) {
@@ -248,18 +261,20 @@ public class AdOrderChangeService {
         applyAfter(order, after);
         // 2) 金额重算（L-02/L-11/L-28）
         amountCalculator.computeAmounts(order);
-        // 4) 父单解锁 60 → 50
-        order.setStatus(OrderStateMachine.EXECUTING);
+        // 3) 父单从改单审核中(60)恢复为改单前状态
+        Integer before = change.getOrderStatusBefore();
+        int restoreTo = before != null ? before : fromOrder;
+        order.setStatus(restoreTo);
         order.setUpdateUser(userId);
         order.setUpdateTime(System.currentTimeMillis());
         adOrderMapper.update(order);
-        // 5) 改单 → 已执行
+        // 4) 改单 → 已执行
         change.setStatus(AdOrderChangeStatus.EXECUTED.getCode());
         change.setUpdateUser(userId);
         change.setUpdateTime(System.currentTimeMillis());
         orderChangeMapper.update(change);
         recordOrderLog(order, ACTION_CHANGE_EXECUTED, fromOrder,
-                OrderStateMachine.EXECUTING, userId, orgId);
+                restoreTo, userId, orgId);
         return change;
     }
 
