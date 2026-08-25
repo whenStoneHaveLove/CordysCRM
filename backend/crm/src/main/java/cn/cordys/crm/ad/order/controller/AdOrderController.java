@@ -102,7 +102,11 @@ public class AdOrderController {
     public void export(@RequestBody AdOrderPageRequest request, HttpServletResponse response) {
         List<AdOrderListResponse> data = adOrderService.exportList(request, userId(), orgId());
         List<List<String>> head = buildExportHead(request);
-        List<List<Object>> rows = buildExportRows(head, data);
+        List<ExportHeadDTO> headList = request.getHeadList();
+        if (headList == null || headList.isEmpty()) {
+            headList = buildDefaultHeadList();
+        }
+        List<List<Object>> rows = buildExportRows(headList, data);
         try {
             response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             response.setCharacterEncoding("UTF-8");
@@ -175,7 +179,7 @@ public class AdOrderController {
     }
 
     /**
-     * 导出表头：前端有传则按前端 key/title；否则使用与列表页一致的默认列。
+     * 导出表头：前端有传则按前端 key/title；否则使用与列表页一致的默认列（兜底用字段 key 构建）。
      */
     private List<List<String>> buildExportHead(AdOrderPageRequest request) {
         List<List<String>> head = new ArrayList<>();
@@ -184,8 +188,8 @@ public class AdOrderController {
                 head.add(Arrays.asList(h.getTitle()));
             }
         } else {
-            for (String title : DEFAULT_HEAD_TITLES) {
-                head.add(Arrays.asList(title));
+            for (String key : DEFAULT_HEAD_KEYS) {
+                head.add(Arrays.asList(key));
             }
         }
         return head;
@@ -193,14 +197,17 @@ public class AdOrderController {
 
     /**
      * 每行数据按 headList 的 key 顺序，调用对应取值器；没有的列跳过。
+     * 优先用字段 key 匹配，找不到再用中文 title 兜底（兼容历史调用）。
      */
-    private List<List<Object>> buildExportRows(List<List<String>> head, List<AdOrderListResponse> data) {
+    private List<List<Object>> buildExportRows(List<ExportHeadDTO> headList, List<AdOrderListResponse> data) {
         List<List<Object>> rows = new ArrayList<>();
         for (AdOrderListResponse r : data) {
             List<Object> row = new ArrayList<>();
-            for (List<String> colHead : head) {
-                String title = colHead.get(0);
-                Function<AdOrderListResponse, Object> mapper = HEAD_VALUE_MAPPER.get(title);
+            for (ExportHeadDTO h : headList) {
+                Function<AdOrderListResponse, Object> mapper = HEAD_VALUE_MAPPER.get(h.getKey());
+                if (mapper == null) {
+                    mapper = HEAD_VALUE_MAPPER.get(h.getTitle());
+                }
                 Object value = mapper == null ? null : mapper.apply(r);
                 row.add(value == null ? "" : value);
             }
@@ -210,14 +217,25 @@ public class AdOrderController {
     }
 
     /**
-     * 默认导出列（与前端列表页保持一致，排除操作列）。
+     * 默认导出列（字段 key，与前端列表页保持一致，排除操作列）。
      */
-    private static final List<String> DEFAULT_HEAD_TITLES = Arrays.asList(
-            "订单编号", "订单名称", "业务主体", "客户", "订单类型", "状态",
-            "订单总金额", "应收金额", "应付金额", "返点金额",
-            "收款方式", "付款方式", "投放起始日", "投放结束日", "创建时间",
-            "收款状态", "付款状态", "合同状态"
+    private static final List<String> DEFAULT_HEAD_KEYS = Arrays.asList(
+            "orderNo", "orderName", "businessEntityName", "customerName", "orderType", "status",
+            "totalAmount", "receivableAmount", "mediaPayableAmount", "rebateAmount",
+            "receiptMethod", "paymentMethod", "deliveryStartDate", "deliveryEndDate", "createTime",
+            "receiptDone", "paymentDone", "missingContract"
     );
+
+    /**
+     * 兜底表头：前端未传 headList 时，用默认字段 key 构造 ExportHeadDTO 列表。
+     */
+    private List<ExportHeadDTO> buildDefaultHeadList() {
+        List<ExportHeadDTO> list = new ArrayList<>();
+        for (String key : DEFAULT_HEAD_KEYS) {
+            list.add(new ExportHeadDTO(key, key, null));
+        }
+        return list;
+    }
 
     /**
      * 标题 → 取值函数映射。可读值转换（金额去科学计数法、日期格式化、状态中文等）。
@@ -226,63 +244,64 @@ public class AdOrderController {
             new HashMap<>();
 
     static {
-        HEAD_VALUE_MAPPER.put("订单编号", AdOrderListResponse::getOrderNo);
-        HEAD_VALUE_MAPPER.put("订单名称", AdOrderListResponse::getOrderName);
-        HEAD_VALUE_MAPPER.put("业务主体", AdOrderListResponse::getBusinessEntityName);
-        HEAD_VALUE_MAPPER.put("客户", AdOrderListResponse::getCustomerName);
-        HEAD_VALUE_MAPPER.put("订单类型", r -> {
+        // key 统一用字段名（与前端 headList.key 一致），避免列名（中文 title）变更导致取值失败
+        HEAD_VALUE_MAPPER.put("orderNo", AdOrderListResponse::getOrderNo);
+        HEAD_VALUE_MAPPER.put("orderName", AdOrderListResponse::getOrderName);
+        HEAD_VALUE_MAPPER.put("businessEntityName", AdOrderListResponse::getBusinessEntityName);
+        HEAD_VALUE_MAPPER.put("customerName", AdOrderListResponse::getCustomerName);
+        HEAD_VALUE_MAPPER.put("orderType", r -> {
             if (r.getOrderType() == null) return "";
             return OrderType.labelOf(r.getOrderType());
         });
-        HEAD_VALUE_MAPPER.put("状态", r -> {
+        HEAD_VALUE_MAPPER.put("status", r -> {
             if (r.getStatus() == null) return "";
             return OrderStatus.labelOf(r.getStatus());
         });
-        HEAD_VALUE_MAPPER.put("订单总金额", r -> {
+        HEAD_VALUE_MAPPER.put("totalAmount", r -> {
             if (r.getTotalAmount() == null) return "";
             return r.getTotalAmount().toPlainString();
         });
-        HEAD_VALUE_MAPPER.put("应收金额", r -> {
+        HEAD_VALUE_MAPPER.put("receivableAmount", r -> {
             if (r.getReceivableAmount() == null) return "";
             return r.getReceivableAmount().toPlainString();
         });
-        HEAD_VALUE_MAPPER.put("应付金额", r -> {
+        HEAD_VALUE_MAPPER.put("mediaPayableAmount", r -> {
             if (r.getMediaPayableAmount() == null) return "";
             return r.getMediaPayableAmount().toPlainString();
         });
-        HEAD_VALUE_MAPPER.put("返点金额", r -> {
+        HEAD_VALUE_MAPPER.put("rebateAmount", r -> {
             if (r.getRebateAmount() == null) return "";
             return r.getRebateAmount().toPlainString();
         });
-        HEAD_VALUE_MAPPER.put("收款方式", r -> {
+        HEAD_VALUE_MAPPER.put("receiptMethod", r -> {
             if (r.getReceiptMethod() == null) return "";
             return ReceiptMethod.labelOf(r.getReceiptMethod());
         });
-        HEAD_VALUE_MAPPER.put("付款方式", r -> {
+        HEAD_VALUE_MAPPER.put("paymentMethod", r -> {
             if (r.getPaymentMethod() == null) return "";
             return PaymentMethod.labelOf(r.getPaymentMethod());
         });
-        HEAD_VALUE_MAPPER.put("投放起始", r -> {
+        HEAD_VALUE_MAPPER.put("deliveryStartDate", r -> {
             if (r.getDeliveryStartDate() == null) return "";
             return new SimpleDateFormat("yyyy-MM-dd").format(r.getDeliveryStartDate());
         });
-        HEAD_VALUE_MAPPER.put("投放结束", r -> {
+        HEAD_VALUE_MAPPER.put("deliveryEndDate", r -> {
             if (r.getDeliveryEndDate() == null) return "";
             return new SimpleDateFormat("yyyy-MM-dd").format(r.getDeliveryEndDate());
         });
-        HEAD_VALUE_MAPPER.put("创建时间", r -> {
+        HEAD_VALUE_MAPPER.put("createTime", r -> {
             if (r.getCreateTime() == null) return "";
             return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(r.getCreateTime()));
         });
-        HEAD_VALUE_MAPPER.put("收款状态", r -> {
+        HEAD_VALUE_MAPPER.put("receiptDone", r -> {
             if (r.getReceiptDone() == null) return "";
             return r.getReceiptDone() == 1 ? "已收款" : "未收款";
         });
-        HEAD_VALUE_MAPPER.put("付款状态", r -> {
+        HEAD_VALUE_MAPPER.put("paymentDone", r -> {
             if (r.getPaymentDone() == null) return "";
             return r.getPaymentDone() == 1 ? "已支付" : "未支付";
         });
-        HEAD_VALUE_MAPPER.put("合同状态", r -> {
+        HEAD_VALUE_MAPPER.put("missingContract", r -> {
             if (r.getMissingContract() == null) return "";
             return r.getMissingContract() == 1 ? "未提交" : "已提交";
         });
