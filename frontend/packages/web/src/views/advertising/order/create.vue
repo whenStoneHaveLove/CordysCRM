@@ -95,9 +95,72 @@
               </n-form-item-gi>
             </n-grid>
 
-            <!-- 3. 收款方式（上游） -->
+            <!-- 3. 金额与返点 -->
             <n-divider title-placement="left">
-              <span class="section-title">3. 收款方式（上游）</span>
+              <span class="section-title">3. 金额与返点</span>
+            </n-divider>
+            <n-grid :cols="2" :x-gap="16">
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.totalAmount')" path="totalAmount">
+                <n-input-number v-model:value="form.totalAmount" :min="0" :precision="2" style="width: 100%" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.noRebateAmount')">
+                <n-input-number v-model:value="form.noRebateAmount" :min="0" :precision="2" style="width: 100%" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.rebateMode')">
+                <n-radio-group v-model:value="form.rebateMode" name="rebateMode">
+                  <n-radio :value="10">比例</n-radio>
+                  <n-radio :value="20">固定金额</n-radio>
+                </n-radio-group>
+              </n-form-item-gi>
+              <n-form-item-gi v-if="form.rebateMode === 10" :span="1" :label="t('advertising.order.form.rebateRatio')">
+                <n-input-number v-model:value="form.rebateValue" :min="0" :max="100" :precision="2" style="width: 100%">
+                  <template #suffix>%</template>
+                </n-input-number>
+              </n-form-item-gi>
+              <n-form-item-gi
+                v-else-if="form.rebateMode === 20"
+                :span="1"
+                :label="t('advertising.order.form.rebateAmount')"
+              >
+                <n-input-number v-model:value="form.rebateValue" :min="0" :precision="2" style="width: 100%" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.rebateAmountAuto')">
+                <span class="readonly-field">
+                  {{ formatMoney(autoCalc.rebateAmount) }}
+                </span>
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.receivableAmount')">
+                <span class="readonly-field">
+                  {{ formatMoney(autoCalc.receivableAmount) }}
+                </span>
+              </n-form-item-gi>
+            </n-grid>
+
+            <!-- 4. 投放信息 -->
+            <n-divider title-placement="left">
+              <span class="section-title">4. 投放信息</span>
+            </n-divider>
+            <n-grid :cols="2" :x-gap="16">
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.deliveryStart')">
+                <n-date-picker v-model:value="form.deliveryStartDate" type="date" style="width: 100%" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.deliveryEnd')">
+                <n-date-picker v-model:value="form.deliveryEndDate" type="date" style="width: 100%" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.deliveryVolume')">
+                <n-input v-model:value="form.deliveryVolume" placeholder="投放量+单位" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="1" :label="t('advertising.order.form.currency')">
+                <n-input v-model:value="form.currency" placeholder="币种，默认 CNY" />
+              </n-form-item-gi>
+              <n-form-item-gi :span="2" :label="t('advertising.order.form.remark')">
+                <n-input v-model:value="form.remark" type="textarea" placeholder="备注" />
+              </n-form-item-gi>
+            </n-grid>
+
+            <!-- 5. 收款方式（上游） -->
+            <n-divider title-placement="left">
+              <span class="section-title">5. 收款方式（上游）</span>
             </n-divider>
             <n-grid :cols="2" :x-gap="16">
               <n-form-item-gi :span="2" :label="t('advertising.order.form.receiptMethod')" path="receiptMethod">
@@ -148,9 +211,9 @@
               </n-form-item-gi>
             </n-grid>
 
-            <!-- 4. 付款方式（下游客户） -->
+            <!-- 6. 付款方式（下游客户） -->
             <n-divider title-placement="left">
-              <span class="section-title">4. 付款方式（下游客户）</span>
+              <span class="section-title">6. 付款方式（下游客户）</span>
             </n-divider>
             <n-grid :cols="2" :x-gap="16">
               <n-form-item-gi :span="2" :label="t('advertising.order.form.paymentMethod')" path="paymentMethod">
@@ -209,69 +272,6 @@
                   <n-input-number v-model:value="form.paymentPostpayDays" :min="0" style="width: 100%" />
                 </n-form-item-gi>
               </template>
-            </n-grid>
-
-            <!-- 5. 金额与返点 -->
-            <n-divider title-placement="left">
-              <span class="section-title">5. 金额与返点</span>
-            </n-divider>
-            <n-grid :cols="2" :x-gap="16">
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.totalAmount')" path="totalAmount">
-                <n-input-number v-model:value="form.totalAmount" :min="0" :precision="2" style="width: 100%" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.noRebateAmount')">
-                <n-input-number v-model:value="form.noRebateAmount" :min="0" :precision="2" style="width: 100%" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.rebateMode')">
-                <n-radio-group v-model:value="form.rebateMode" name="rebateMode">
-                  <n-radio :value="10">比例</n-radio>
-                  <n-radio :value="20">固定金额</n-radio>
-                </n-radio-group>
-              </n-form-item-gi>
-              <n-form-item-gi v-if="form.rebateMode === 10" :span="1" :label="t('advertising.order.form.rebateRatio')">
-                <n-input-number v-model:value="form.rebateValue" :min="0" :max="100" :precision="2" style="width: 100%">
-                  <template #suffix>%</template>
-                </n-input-number>
-              </n-form-item-gi>
-              <n-form-item-gi
-                v-else-if="form.rebateMode === 20"
-                :span="1"
-                :label="t('advertising.order.form.rebateAmount')"
-              >
-                <n-input-number v-model:value="form.rebateValue" :min="0" :precision="2" style="width: 100%" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.rebateAmountAuto')">
-                <span class="readonly-field">
-                  {{ formatMoney(autoCalc.rebateAmount) }}
-                </span>
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.receivableAmount')">
-                <span class="readonly-field">
-                  {{ formatMoney(autoCalc.receivableAmount) }}
-                </span>
-              </n-form-item-gi>
-            </n-grid>
-
-            <!-- 6. 投放信息 -->
-            <n-divider title-placement="left">
-              <span class="section-title">6. 投放信息</span>
-            </n-divider>
-            <n-grid :cols="2" :x-gap="16">
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.deliveryStart')">
-                <n-date-picker v-model:value="form.deliveryStartDate" type="date" style="width: 100%" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.deliveryEnd')">
-                <n-date-picker v-model:value="form.deliveryEndDate" type="date" style="width: 100%" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.deliveryVolume')">
-                <n-input v-model:value="form.deliveryVolume" placeholder="投放量+单位" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.currency')">
-                <n-input v-model:value="form.currency" placeholder="币种，默认 CNY" />
-              </n-form-item-gi>
-              <n-form-item-gi :span="2" :label="t('advertising.order.form.remark')">
-                <n-input v-model:value="form.remark" type="textarea" placeholder="备注" />
-              </n-form-item-gi>
             </n-grid>
 
             <!-- 7. 附件与合同 -->
