@@ -79,12 +79,20 @@
       <template #footer>
         <n-space justify="end">
           <n-button @click="goBack">{{ t('advertising.order.form.cancel') }}</n-button>
-          <n-button type="primary" :loading="saving" @click="handleSave(false)">{{
-            t('advertising.order.form.save')
-          }}</n-button>
-          <n-button type="primary" :loading="saving" @click="handleSave(true)">{{
-            t('advertising.change.submit')
-          }}</n-button>
+          <n-button
+            v-permission="['AD_ORDER_CHANGE:CREATE']"
+            type="primary"
+            :loading="saving"
+            @click="handleSave(false)"
+            >{{ t('advertising.order.form.save') }}</n-button
+          >
+          <n-button
+            v-if="hasPermission('AD_ORDER_CHANGE:CREATE') && hasPermission('AD_ORDER_CHANGE:SUBMIT')"
+            type="primary"
+            :loading="saving"
+            @click="handleSave(true)"
+            >{{ t('advertising.change.submit') }}</n-button
+          >
         </n-space>
       </template>
     </n-card>
@@ -133,6 +141,7 @@
     getAdUpstreamAgentPage,
     submitAdOrderChange,
   } from '@/api/modules';
+  import { hasPermission } from '@/utils/permission';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 

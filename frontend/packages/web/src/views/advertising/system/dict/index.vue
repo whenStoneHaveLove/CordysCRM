@@ -20,7 +20,9 @@
           <n-button type="primary" @click="handleSearch">查询</n-button>
           <n-button @click="handleReset">{{ t('advertising.businessEntity.form.cancel') }}</n-button>
         </n-space>
-        <n-button type="primary" @click="openCreate">{{ t('advertising.system.dict.new') }}</n-button>
+        <n-button v-permission="['AD_DICT:CREATE']" type="primary" @click="openCreate">{{
+          t('advertising.system.dict.new')
+        }}</n-button>
       </n-space>
     </n-card>
 
@@ -59,9 +61,13 @@
       <template #footer>
         <n-space justify="end">
           <n-button @click="showModal = false">{{ t('advertising.businessEntity.form.cancel') }}</n-button>
-          <n-button type="primary" :loading="saving" @click="handleSave">{{
-            t('advertising.businessEntity.form.save')
-          }}</n-button>
+          <n-button
+            v-permission="[editId ? 'AD_DICT:UPDATE' : 'AD_DICT:CREATE']"
+            type="primary"
+            :loading="saving"
+            @click="handleSave"
+            >{{ t('advertising.businessEntity.form.save') }}</n-button
+          >
         </n-space>
       </template>
     </n-modal>
@@ -69,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, h, reactive, ref } from 'vue';
+  import { computed, h, reactive, ref, resolveDirective, withDirectives } from 'vue';
   import {
     NButton,
     NCard,
@@ -96,6 +102,7 @@
 
   const { t } = useI18n();
   const message = useMessage();
+  const permissionDirective = resolveDirective('permission');
 
   const statusOptions = AdDictStatusOptions;
 
@@ -257,10 +264,13 @@
       width: 100,
       fixed: 'right' as const,
       render: (row) =>
-        h(
-          NButton,
-          { size: 'small', type: 'primary', onClick: () => openEdit(row) },
-          { default: () => t('advertising.businessEntity.edit') }
+        withDirectives(
+          h(
+            NButton,
+            { size: 'small', type: 'primary', onClick: () => openEdit(row) },
+            { default: () => t('advertising.businessEntity.edit') }
+          ),
+          [[permissionDirective, ['AD_DICT:UPDATE']]]
         ),
     },
   ];

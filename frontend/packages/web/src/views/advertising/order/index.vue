@@ -53,7 +53,9 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">{{ t('advertising.order.reset') }}</n-button>
-        <n-button v-permission="['AD_ORDER:CREATE']" type="primary" @click="goCreate">{{ t('advertising.order.new') }}</n-button>
+        <n-button v-permission="['AD_ORDER:CREATE']" type="primary" @click="goCreate">{{
+          t('advertising.order.new')
+        }}</n-button>
       </n-space>
     </n-card>
 
@@ -72,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-  import { h, onMounted, reactive, ref } from 'vue';
+  import { h, onMounted, reactive, ref, resolveDirective, withDirectives } from 'vue';
   import { useRouter } from 'vue-router';
   import { NButton, NCard, NDataTable, NDatePicker, NInput, NSelect, NSpace, NTag, useMessage } from 'naive-ui';
 
@@ -99,6 +101,7 @@
   const { t } = useI18n();
   const router = useRouter();
   const message = useMessage();
+  const permissionDirective = resolveDirective('permission');
 
   const statusOptions = AdOrderStatusOptions;
   const orderTypeOptions = AdOrderTypeOptions;
@@ -284,7 +287,10 @@
         h(
           NTag,
           { type: row.receiptDone === 1 ? 'success' : 'warning' },
-          { default: () => (row.receiptDone === 1 ? t('advertising.common.received') : t('advertising.common.pendingReceipt')) }
+          {
+            default: () =>
+              row.receiptDone === 1 ? t('advertising.common.received') : t('advertising.common.pendingReceipt'),
+          }
         ),
     },
     {
@@ -296,7 +302,10 @@
         h(
           NTag,
           { type: row.paymentDone === 1 ? 'success' : 'warning' },
-          { default: () => (row.paymentDone === 1 ? t('advertising.common.paid') : t('advertising.common.pendingPayment')) }
+          {
+            default: () =>
+              row.paymentDone === 1 ? t('advertising.common.paid') : t('advertising.common.pendingPayment'),
+          }
         ),
     },
     {
@@ -326,10 +335,13 @@
                 { default: () => t('advertising.order.detail') }
               ),
               row.status === 0
-                ? h(
-                    NButton,
-                    { size: 'small', type: 'primary', onClick: () => openEdit(row) },
-                    { default: () => t('advertising.order.edit') }
+                ? withDirectives(
+                    h(
+                      NButton,
+                      { size: 'small', type: 'primary', onClick: () => openEdit(row) },
+                      { default: () => t('advertising.order.edit') }
+                    ),
+                    [[permissionDirective, ['AD_ORDER:CREATE']]]
                   )
                 : null,
             ],

@@ -130,6 +130,7 @@
     rejectAdSeal,
     rejectArchive,
   } from '@/api/modules';
+  import { hasPermission } from '@/utils/permission';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
@@ -244,6 +245,46 @@
       fetchData();
     } catch (e) {
       message.error((e as Error).message || '操作失败');
+    }
+  }
+
+  // 各类型「审批通过」对应后端权限码
+  function approvePermissionOf(type?: string): string {
+    switch (type) {
+      case 'order':
+        return 'AD_ORDER:APPROVE';
+      case 'change':
+        return 'AD_ORDER_CHANGE:APPROVE';
+      case 'seal':
+        return 'AD_SEAL:APPROVE';
+      case 'archive':
+        return 'AD_CONTRACT:ARCHIVE_APPROVE';
+      case 'receipt':
+        return 'AD_RECEIPT:APPROVE';
+      case 'payout':
+        return 'AD_PAYOUT:APPROVE';
+      default:
+        return '';
+    }
+  }
+
+  // 各类型「驳回」对应后端权限码（archive/receipt/payout 通过/驳回共用同一权限码）
+  function rejectPermissionOf(type?: string): string {
+    switch (type) {
+      case 'order':
+        return 'AD_ORDER:REJECT';
+      case 'change':
+        return 'AD_ORDER_CHANGE:REJECT';
+      case 'seal':
+        return 'AD_SEAL:REJECT';
+      case 'archive':
+        return 'AD_CONTRACT:ARCHIVE_APPROVE';
+      case 'receipt':
+        return 'AD_RECEIPT:APPROVE';
+      case 'payout':
+        return 'AD_PAYOUT:APPROVE';
+      default:
+        return '';
     }
   }
 
@@ -518,16 +559,20 @@
                 { size: 'small', onClick: () => openDetail(row) },
                 { default: () => t('advertising.approval.detail') }
               ),
-              h(
-                NButton,
-                { size: 'small', type: 'primary', onClick: () => handleApprove(row) },
-                { default: () => t('advertising.approval.approve') }
-              ),
-              h(
-                NButton,
-                { size: 'small', type: 'error', onClick: () => openReject(row) },
-                { default: () => t('advertising.approval.reject') }
-              ),
+              hasPermission(approvePermissionOf(row.type))
+                ? h(
+                    NButton,
+                    { size: 'small', type: 'primary', onClick: () => handleApprove(row) },
+                    { default: () => t('advertising.approval.approve') }
+                  )
+                : null,
+              hasPermission(rejectPermissionOf(row.type))
+                ? h(
+                    NButton,
+                    { size: 'small', type: 'error', onClick: () => openReject(row) },
+                    { default: () => t('advertising.approval.reject') }
+                  )
+                : null,
             ],
           }
         ),

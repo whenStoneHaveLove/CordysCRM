@@ -8,10 +8,16 @@
           </div>
           <n-space>
             <n-button @click="goBack">{{ t('advertising.order.form.cancel') }}</n-button>
-            <n-button @click="handleSave('draft')">{{ t('advertising.order.form.saveDraft') }}</n-button>
-            <n-button type="primary" :loading="saving" @click="handleSave('submit')">{{
-              t('advertising.order.form.submit')
+            <n-button v-permission="['AD_ORDER:CREATE']" @click="handleSave('draft')">{{
+              t('advertising.order.form.saveDraft')
             }}</n-button>
+            <n-button
+              v-if="hasPermission('AD_ORDER:CREATE') && hasPermission('AD_ORDER:SUBMIT')"
+              type="primary"
+              :loading="saving"
+              @click="handleSave('submit')"
+              >{{ t('advertising.order.form.submit') }}</n-button
+            >
           </n-space>
         </n-space>
 
@@ -373,6 +379,7 @@
     uploadAdOrderAttachment,
   } from '@/api/modules';
   import useUserStore from '@/store/modules/user';
+  import { hasPermission } from '@/utils/permission';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 

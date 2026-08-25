@@ -10,10 +10,30 @@
         </template>
         <template #header-extra>
           <n-space>
-            <n-button v-if="detail.change.status === 0" type="primary" @click="handleSubmit">提交</n-button>
-            <n-button v-if="detail.change.status === 10" type="primary" @click="handleApprove">审批通过</n-button>
-            <n-button v-if="detail.change.status === 10" @click="handleReject">驳回</n-button>
-            <n-button v-if="detail.change.status === 20" type="warning" @click="handleExecute">执行</n-button>
+            <n-button
+              v-if="detail.change.status === 0"
+              v-permission="['AD_ORDER_CHANGE:SUBMIT']"
+              type="primary"
+              @click="handleSubmit"
+              >提交</n-button
+            >
+            <n-button
+              v-if="detail.change.status === 10"
+              v-permission="['AD_ORDER_CHANGE:APPROVE']"
+              type="primary"
+              @click="handleApprove"
+              >审批通过</n-button
+            >
+            <n-button v-if="detail.change.status === 10" v-permission="['AD_ORDER_CHANGE:REJECT']" @click="handleReject"
+              >驳回</n-button
+            >
+            <n-button
+              v-if="detail.change.status === 20"
+              v-permission="['AD_ORDER_CHANGE:SUBMIT']"
+              type="warning"
+              @click="handleExecute"
+              >执行</n-button
+            >
             <n-button @click="goBack">返回</n-button>
           </n-space>
         </template>
