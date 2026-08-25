@@ -214,7 +214,7 @@ public class AdOrderController {
      */
     private static final List<String> DEFAULT_HEAD_TITLES = Arrays.asList(
             "订单编号", "订单名称", "业务主体", "客户", "订单类型", "状态",
-            "订单总金额", "应收金额", "媒体应付总额", "返点金额",
+            "订单总金额", "应收金额", "应付金额", "返点金额",
             "收款方式", "付款方式", "投放起始日", "投放结束日", "创建时间",
             "收款状态", "付款状态", "合同状态"
     );
@@ -246,7 +246,7 @@ public class AdOrderController {
             if (r.getReceivableAmount() == null) return "";
             return r.getReceivableAmount().toPlainString();
         });
-        HEAD_VALUE_MAPPER.put("媒体应付", r -> {
+        HEAD_VALUE_MAPPER.put("应付金额", r -> {
             if (r.getMediaPayableAmount() == null) return "";
             return r.getMediaPayableAmount().toPlainString();
         });

@@ -28,7 +28,7 @@ export default {
   'advertising.order.column.status': 'Status',
   'advertising.order.column.totalAmount': 'Total Amount',
   'advertising.order.column.receivable': 'Receivable',
-  'advertising.order.column.mediaPayable': 'Media Payable',
+  'advertising.order.column.mediaPayable': 'Amount Payable',
   'advertising.order.column.rebate': 'Rebate',
   'advertising.order.column.receiptMethod': 'Receipt Method',
   'advertising.order.column.paymentMethod': 'Payment Method',
