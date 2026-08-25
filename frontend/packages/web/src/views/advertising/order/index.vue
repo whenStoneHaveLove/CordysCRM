@@ -108,8 +108,8 @@
   const receiptMethodOptions = AdReceiptMethodOptions;
   const paymentMethodOptions = AdPaymentMethodOptions;
   const missingContractOptions = [
-    { label: t('advertising.common.yes'), value: 1 },
-    { label: t('advertising.common.no'), value: 0 },
+    { label: t('advertising.common.unsubmitted'), value: 1 },
+    { label: t('advertising.common.submitted'), value: 0 },
   ];
 
   const loading = ref(false);
@@ -289,7 +289,7 @@
           { type: row.receiptDone === 1 ? 'success' : 'warning' },
           {
             default: () =>
-              row.receiptDone === 1 ? t('advertising.common.received') : t('advertising.common.pendingReceipt'),
+              row.receiptDone === 1 ? t('advertising.common.received') : t('advertising.common.unreceived'),
           }
         ),
     },
@@ -304,19 +304,19 @@
           { type: row.paymentDone === 1 ? 'success' : 'warning' },
           {
             default: () =>
-              row.paymentDone === 1 ? t('advertising.common.paid') : t('advertising.common.pendingPayment'),
+              row.paymentDone === 1 ? t('advertising.common.paid') : t('advertising.common.unpaid'),
           }
         ),
     },
     {
       key: 'missingContract',
-      title: t('advertising.order.column.missingContract'),
+      title: t('advertising.order.column.contractStatus'),
       width: 90,
       fixed: 'right' as const,
       render: (row) =>
         row.missingContract === 1
-          ? h(NTag, { type: 'warning' }, { default: () => t('advertising.common.yes') })
-          : h('span', t('advertising.common.no')),
+          ? h(NTag, { type: 'warning' }, { default: () => t('advertising.common.unsubmitted') })
+          : h(NTag, { type: 'success' }, { default: () => t('advertising.common.submitted') }),
     },
     {
       key: 'action',
