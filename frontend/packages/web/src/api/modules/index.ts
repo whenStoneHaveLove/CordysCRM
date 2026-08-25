@@ -897,6 +897,7 @@ export const {
   confirmExecuteAdOrder,
   voidAdOrder,
   forceArchiveAdOrder,
+  exportAdOrder,
 } = adOrderApi;
 
 export const {
@@ -991,5 +992,3 @@ export const { createAdCustomer, updateAdCustomer, getAdCustomerDetail, getAdCus
   adCustomerApi;
 
 export const { uploadAdOrderAttachment, getAdOrderAttachments, deleteAdOrderAttachment } = adOrderAttachmentApi;
-
-

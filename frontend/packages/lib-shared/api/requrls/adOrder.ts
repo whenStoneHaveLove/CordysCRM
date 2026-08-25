@@ -9,3 +9,4 @@ export const AdOrderRejectUrl = '/api/ad/order';
 export const AdOrderConfirmExecuteUrl = '/api/ad/order';
 export const AdOrderVoidUrl = '/api/ad/order';
 export const AdOrderForceArchiveUrl = '/api/ad/order';
+export const AdOrderExportUrl = '/api/ad/order/export';

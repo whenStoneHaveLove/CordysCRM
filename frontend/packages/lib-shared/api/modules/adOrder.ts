@@ -10,6 +10,7 @@ import {
   AdOrderConfirmExecuteUrl,
   AdOrderVoidUrl,
   AdOrderForceArchiveUrl,
+  AdOrderExportUrl,
 } from '@lib/shared/api/requrls/adOrder';
 import type {
   AdOrderSaveParams,
@@ -73,6 +74,15 @@ export default function useAdOrderApi(CDR: CordysAxios) {
     return CDR.post<AdOrderInfo>({ url: `${AdOrderForceArchiveUrl}/${id}/force-archive`, data });
   }
 
+  // 导出订单（按筛选条件，同步流式返回 Excel 文件；返回原生响应以便读取 blob，自动携带 X-AUTH-TOKEN/CSRF-TOKEN）
+  function exportAdOrder(data: AdOrderPageParams) {
+    return CDR.post<any>({
+      url: AdOrderExportUrl,
+      data,
+      responseType: 'blob',
+    }, { isReturnNativeResponse: true, isTransformResponse: false });
+  }
+
   return {
     createAdOrder,
     updateAdOrder,
@@ -84,5 +94,6 @@ export default function useAdOrderApi(CDR: CordysAxios) {
     confirmExecuteAdOrder,
     voidAdOrder,
     forceArchiveAdOrder,
+    exportAdOrder,
   };
 }

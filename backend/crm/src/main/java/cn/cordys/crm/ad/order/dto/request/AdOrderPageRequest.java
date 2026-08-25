@@ -1,6 +1,7 @@
 package cn.cordys.crm.ad.order.dto.request;
 
 import cn.cordys.common.dto.BasePageRequest;
+import cn.cordys.common.dto.ExportHeadDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -19,6 +20,9 @@ public class AdOrderPageRequest extends BasePageRequest {
 
     @Schema(description = "主体隔离过滤：可见业务主体集合；null 表示跨主体全量")
     private List<String> entityIds;
+
+    @Schema(description = "导出表头（key+title），仅导出接口使用")
+    private List<ExportHeadDTO> headList;
 
     @Schema(description = "主状态")
     private Integer status;

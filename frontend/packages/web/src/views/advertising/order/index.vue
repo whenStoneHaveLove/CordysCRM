@@ -53,6 +53,7 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">{{ t('advertising.order.reset') }}</n-button>
+        <n-button v-permission="['AD_ORDER:EXPORT']" :loading="exporting" @click="handleExport">导出</n-button>
         <n-button v-permission="['AD_ORDER:CREATE']" type="primary" @click="goCreate">{{
           t('advertising.order.new')
         }}</n-button>
@@ -91,7 +92,7 @@
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type { AdOrderListItem, AdOrderPageParams } from '@lib/shared/models/advertising';
 
-  import { getAdOrderPage } from '@/api/modules';
+  import { exportAdOrder, getAdOrderPage } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
@@ -303,8 +304,7 @@
           NTag,
           { type: row.paymentDone === 1 ? 'success' : 'warning' },
           {
-            default: () =>
-              row.paymentDone === 1 ? t('advertising.common.paid') : t('advertising.common.unpaid'),
+            default: () => (row.paymentDone === 1 ? t('advertising.common.paid') : t('advertising.common.unpaid')),
           }
         ),
     },
@@ -366,6 +366,61 @@
   }
   function goCreate() {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_ORDER_CREATE });
+  }
+
+  const exporting = ref(false);
+
+  // 导出列 = 列表所有列（排除「详情」操作列），title 取中文表头
+  function buildExportHeadList() {
+    return columns.filter((c) => c.key !== 'action').map((c) => ({ key: String(c.key), title: String(c.title) }));
+  }
+
+  /**
+   * 触发浏览器下载：从 CDR 原生响应中取出 blob -> URL.createObjectURL -> 临时 a.click() -> revoke
+   */
+  async function downloadExcel(res: any) {
+    const blob: Blob = res.data;
+    if (!blob || blob.size === 0) {
+      throw new Error('导出文件为空');
+    }
+    const dispo: string = res.headers?.['content-disposition'] || res.headers?.get?.('content-disposition') || '';
+    const filenameMatch = /filename\*?=(?:UTF-8'')?["']?([^;"']+)/i.exec(dispo);
+    const filename = filenameMatch ? decodeURIComponent(filenameMatch[1]) : '广告订单.xlsx';
+
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+  }
+
+  async function handleExport() {
+    exporting.value = true;
+    try {
+      const params: AdOrderPageParams = {
+        current: pagination.page,
+        pageSize: pagination.pageSize,
+        keyword: searchForm.keyword || undefined,
+        status: searchForm.status,
+        orderType: searchForm.orderType,
+        receiptMethod: searchForm.receiptMethod,
+        paymentMethod: searchForm.paymentMethod,
+        missingContract: searchForm.missingContract,
+        deliveryStartFrom: deliveryRange.value?.[0] ?? null,
+        deliveryStartTo: deliveryRange.value?.[1] ?? null,
+        headList: buildExportHeadList(),
+      };
+      const res = await exportAdOrder(params);
+      await downloadExcel(res);
+      message.success('导出成功，浏览器已开始下载');
+    } catch (e) {
+      message.error((e as Error).message || '导出失败');
+    } finally {
+      exporting.value = false;
+    }
   }
 
   function applyQuery() {

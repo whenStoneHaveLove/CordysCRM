@@ -21,6 +21,8 @@ export interface AdOrderPageParams {
   missingContract?: number | null;
   deliveryStartFrom?: number | null;
   deliveryStartTo?: number | null;
+  /** 导出表头（key+title），仅导出接口使用 */
+  headList?: { key: string; title: string }[];
   [key: string]: any;
 }
 

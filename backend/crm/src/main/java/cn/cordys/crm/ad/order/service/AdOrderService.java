@@ -222,6 +222,24 @@ public class AdOrderService {
         return PageUtils.setPageInfoWithOption(page, list, null);
     }
 
+    /**
+     * 导出全量列表（与 {@link #page} 共用同一套筛选/主体隔离逻辑，仅绕过分页）。
+     */
+    public List<AdOrderListResponse> exportList(AdOrderPageRequest request, String userId, String orgId) {
+        request.setOrganizationId(orgId);
+        request.setEntityIds(entityPermissionProvider.buildEntityFilter());
+        request.setCurrent(1);
+        request.setPageSize(100000);
+        List<AdOrderListResponse> list = extAdOrderMapper.pageList(request);
+        for (AdOrderListResponse r : list) {
+            r.setOrderTypeLabel(OrderType.labelOf(r.getOrderType()));
+            r.setStatusLabel(OrderStatus.labelOf(r.getStatus()));
+            r.setReceiptMethodLabel(ReceiptMethod.labelOf(r.getReceiptMethod()));
+            r.setPaymentMethodLabel(PaymentMethod.labelOf(r.getPaymentMethod()));
+        }
+        return list;
+    }
+
     // ===================== 状态流转 =====================
 
     /**
