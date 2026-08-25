@@ -40,7 +40,7 @@ public class AdDashboardController {
 
     @GetMapping("/summary")
     @CsPermission(PermissionConstants.AD_WORKBENCH_READ)
-    @Operation(summary = "工作台首页数据概览（订单数/应收/媒体应付/待收/待付 + 月度趋势）")
+    @Operation(summary = "工作台首页数据概览（订单数/应收/应付/待收/待付 + 月度趋势）")
     public AdDashboardSummaryResponse summary() {
         return adDashboardService.dashboardSummary(orgId());
     }

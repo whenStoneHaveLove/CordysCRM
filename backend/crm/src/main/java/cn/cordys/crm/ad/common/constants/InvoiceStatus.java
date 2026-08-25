@@ -3,7 +3,7 @@ package cn.cordys.crm.ad.common.constants;
 import lombok.Getter;
 
 /**
- * 资金进度枚举（开票/收款/媒体付款，0未/10部分/20全额，V3.1 §13.4）。
+ * 资金进度枚举（开票/收款/付款，0未/10部分/20全额，V3.1 §13.4）。
  */
 @Getter
 public enum InvoiceStatus {

@@ -66,7 +66,7 @@ class AdSupportTicketServiceTest {
         MockedStatic<SessionUtils> sessionMock = mockStatic(SessionUtils.class);
         SessionUser mockUser = mock(SessionUser.class);
         RoleDataScopeDTO roleDto = mock(RoleDataScopeDTO.class);
-        when(roleDto.getName()).thenReturn("媒体运营");
+        when(roleDto.getName()).thenReturn("运营");
         when(mockUser.getRoles()).thenReturn(List.of(roleDto));
         sessionMock.when(SessionUtils::getUser).thenReturn(mockUser);
         return sessionMock;

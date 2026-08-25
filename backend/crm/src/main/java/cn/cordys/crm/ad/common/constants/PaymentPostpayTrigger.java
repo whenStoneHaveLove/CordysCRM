@@ -3,7 +3,7 @@ package cn.cordys.crm.ad.common.constants;
 import lombok.Getter;
 
 /**
- * 媒体后付触发枚举（V3.1 §13.4）。
+ * 后付触发枚举（V3.1 §13.4）。
  */
 @Getter
 public enum PaymentPostpayTrigger {

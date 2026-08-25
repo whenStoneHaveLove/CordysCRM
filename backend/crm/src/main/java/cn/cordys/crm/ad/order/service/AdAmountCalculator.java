@@ -13,7 +13,7 @@ import java.math.RoundingMode;
  * <ul>
  *   <li>L-02 应收 = 总额 - 返点；返点 = 比例(应收基数×比例%) 或 固定。</li>
  *   <li>L-11 预收金额基数 = 应收；比例或固定（固定时比例字段存放固定额）。</li>
- *   <li>L-28 媒体预付金额基数 = 媒体应付；比例或固定。</li>
+ *   <li>L-28 预付金额基数 = 应付；比例或固定。</li>
  * </ul>
  *
  * <p>同时提供 L-05 财务前置矩阵：依据收款方式 + 付款方式推导目标状态与所需财务步骤。</p>
@@ -44,7 +44,7 @@ public class AdAmountCalculator {
         order.setRebateAmount(rebate);
         order.setReceivableAmount(total.subtract(rebate));
 
-        // 媒体应付总额：前端未传则默认等于总额
+        // 应付总额：前端未传则默认等于总额
         if (order.getMediaPayableAmount() == null) {
             order.setMediaPayableAmount(total);
         }
@@ -55,7 +55,7 @@ public class AdAmountCalculator {
                 : calcByMode(order.getReceiptPrepayMode(), nvl(order.getReceivableAmount()), nvl(order.getReceiptPrepayRatio()));
         order.setReceiptPrepayAmount(receiptPrepay);
 
-        // L-28 媒体预付金额（基数=媒体应付）
+        // L-28 预付金额（基数=应付）
         BigDecimal mediaPrepay = order.getPaymentPrepayMode() != null && order.getPaymentPrepayMode() == 20
                 ? nvl(order.getPaymentPrepayAmount())
                 : calcByMode(order.getPaymentPrepayMode(), nvl(order.getMediaPayableAmount()), nvl(order.getPaymentPrepayRatio()));

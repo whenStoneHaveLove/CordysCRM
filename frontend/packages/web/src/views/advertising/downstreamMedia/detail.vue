@@ -17,8 +17,8 @@
 
         <n-divider title-placement="left">基本信息</n-divider>
         <n-descriptions label-placement="left" :column="3" bordered size="small">
-          <n-descriptions-item label="媒体名称">{{ detail.media?.name || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="媒体类型">{{ detail.mediaTypeLabel || detail.media?.mediaType || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="名称">{{ detail.media?.name || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="类型">{{ detail.mediaTypeLabel || detail.media?.mediaType || '-' }}</n-descriptions-item>
           <n-descriptions-item label="覆盖渠道">{{ detail.media?.channel || '-' }}</n-descriptions-item>
           <n-descriptions-item label="刊例价">{{ detail.media?.rateCard || '-' }}</n-descriptions-item>
           <n-descriptions-item label="折扣政策">{{ detail.media?.discountPolicy || '-' }}</n-descriptions-item>

@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * 广告字典控制器（V3.1 §5.3 / §4.3，B-4 后端补齐）。
  *
- * <p>运营可维护的枚举项（行业/媒体类型/用印类型/收付款方式等）。
+ * <p>运营可维护的枚举项（行业/类型/用印类型/收付款方式等）。
  * 接口级权限由 {@link CsPermission} 依据 {@link PermissionConstants} 的 AD_DICT_* 码校验。</p>
  */
 @Tag(name = "广告字典")

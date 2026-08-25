@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * 广告付款单（一个订单对应一个付款单，可勾选多个媒体）。
+ * 广告付款单（一个订单对应一个付款单，可勾选多个）。
  */
 @Data
 @Table(name = "ad_payment")
@@ -33,7 +33,7 @@ public class AdPayout extends BaseModel {
     @Schema(description = "状态:0草稿/10待审核/20审核通过/30驳回")
     private Integer status = 0;
 
-    @Schema(description = "勾选的媒体id列表(JSON数组，默认全部)")
+    @Schema(description = "勾选的id列表(JSON数组，默认全部)")
     private String mediaIds;
 
     @Schema(description = "凭证")

@@ -66,7 +66,7 @@ public class AdReportService {
         }
     }
 
-    /** 报表-应收应付：应收总额 vs 媒体应付总额（B-6）。 */
+    /** 报表-应收应付：应收总额 vs 应付总额（B-6）。 */
     public Map<String, BigDecimal> receivablePayable(String orgId) {
         return extAdReportMapper.receivablePayable(orgId);
     }
@@ -76,7 +76,7 @@ public class AdReportService {
         return extAdReportMapper.collection(orgId);
     }
 
-    /** 报表-媒体投放：已付媒体款（B-6）。 */
+    /** 报表-投放：已付款（B-6）。 */
     public Map<String, BigDecimal> mediaInvestment(String orgId) {
         return extAdReportMapper.mediaInvestment(orgId);
     }

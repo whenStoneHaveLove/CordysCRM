@@ -83,14 +83,14 @@
               <n-form-item-gi :span="1" :label="t('advertising.order.form.agentOrderNo')">
                 <n-input v-model:value="form.agentOrderNo" placeholder="代理订单号" />
               </n-form-item-gi>
-              <n-form-item-gi :span="2" label="下游媒体">
+              <n-form-item-gi :span="2" label="下游客户">
                 <n-select
                   v-model:value="form.downstreamMediaIds"
                   :options="downstreamMediaOptions"
                   filterable
                   multiple
                   clearable
-                  placeholder="请选择下游媒体（至少选一个）"
+                  placeholder="请选择下游客户（至少选一个）"
                 />
               </n-form-item-gi>
             </n-grid>
@@ -102,7 +102,7 @@
             <n-grid :cols="2" :x-gap="16">
               <n-form-item-gi :span="2" :label="t('advertising.order.form.receiptMethod')" path="receiptMethod">
                 <n-radio-group v-model:value="form.receiptMethod" name="receiptMethod">
-                  <n-radio :value="10">预付款</n-radio>
+                  <n-radio :value="10">预收</n-radio>
                   <n-radio :value="20">执行后账期</n-radio>
                 </n-radio-group>
               </n-form-item-gi>
@@ -148,15 +148,15 @@
               </n-form-item-gi>
             </n-grid>
 
-            <!-- 4. 付款方式（下游媒体） -->
+            <!-- 4. 付款方式（下游客户） -->
             <n-divider title-placement="left">
-              <span class="section-title">4. 付款方式（下游媒体）</span>
+              <span class="section-title">4. 付款方式（下游客户）</span>
             </n-divider>
             <n-grid :cols="2" :x-gap="16">
               <n-form-item-gi :span="2" :label="t('advertising.order.form.paymentMethod')" path="paymentMethod">
                 <n-radio-group v-model:value="form.paymentMethod" name="paymentMethod">
-                  <n-radio :value="10">预付媒体</n-radio>
-                  <n-radio :value="20">后付媒体</n-radio>
+                  <n-radio :value="10">预付</n-radio>
+                  <n-radio :value="20">后付</n-radio>
                 </n-radio-group>
               </n-form-item-gi>
               <n-form-item-gi :span="1" :label="t('advertising.order.form.mediaPayableAmount')">
@@ -167,7 +167,7 @@
                   <n-select
                     v-model:value="form.paymentPrepayMode"
                     :options="prepayModeOptions"
-                    placeholder="媒体预付模式"
+                    placeholder="预付模式"
                   />
                 </n-form-item-gi>
                 <n-form-item-gi
@@ -585,7 +585,7 @@
       }
     }
   );
-  // 比例模式下，实时计算媒体预付金额（媒体应付 × 比例%）
+  // 比例模式下，实时计算预付金额（应付 × 比例%）
   watch(
     [() => form.paymentPrepayMode, () => form.paymentPrepayRatio, () => form.mediaPayableAmount],
     ([mode, ratio, base]) => {
@@ -788,7 +788,7 @@
     }
   );
 
-  // 媒体应付总额默认联动订单总额，可手动改
+  // 应付总额默认联动订单总额，可手动改
   watch(
     () => form.totalAmount,
     (val) => {

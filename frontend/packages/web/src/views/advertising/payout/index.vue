@@ -72,7 +72,7 @@
         <n-form-item label="类型">
           <n-select v-model:value="form.type" :options="typeOptions" />
         </n-form-item>
-        <n-form-item v-if="mediaOptions.length > 0" label="付款媒体">
+        <n-form-item v-if="mediaOptions.length > 0" label="付款">
           <n-checkbox-group v-model:value="form.mediaIds">
             <n-space vertical>
               <n-checkbox v-for="m in mediaOptions" :key="m.value" :value="m.value" :label="m.label" />

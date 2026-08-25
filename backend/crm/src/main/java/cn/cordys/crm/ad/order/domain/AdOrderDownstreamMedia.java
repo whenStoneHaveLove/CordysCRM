@@ -5,8 +5,8 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 /**
- * 订单-下游媒体中间表。
- * 一个订单可关联多个下游媒体，一个下游媒体可被多个订单关联。
+ * 订单-下游客户中间表。
+ * 一个订单可关联多个下游客户，一个下游客户可被多个订单关联。
  * 注意：不继承 BaseModel，因为表里没有 create_user/update_user/update_time 列。
  */
 @Data
@@ -19,7 +19,7 @@ public class AdOrderDownstreamMedia {
     @Schema(description = "订单id")
     private String orderId;
 
-    @Schema(description = "下游媒体id")
+    @Schema(description = "下游客户id")
     private String downstreamMediaId;
 
     @Schema(description = "组织(租户)id")

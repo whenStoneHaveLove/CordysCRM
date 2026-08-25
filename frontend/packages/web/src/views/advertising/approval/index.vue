@@ -382,7 +382,7 @@
             value: o.totalAmount != null ? fmtAmount(o.totalAmount) : '-',
           },
           { label: '应收金额', value: o.receivableAmount != null ? fmtAmount(o.receivableAmount) : '-' },
-          { label: '媒体应付', value: o.mediaPayableAmount != null ? fmtAmount(o.mediaPayableAmount) : '-' },
+          { label: '应付', value: o.mediaPayableAmount != null ? fmtAmount(o.mediaPayableAmount) : '-' },
           {
             label: '投放周期',
             value: o.deliveryStartDate && o.deliveryEndDate ? `${o.deliveryStartDate} ~ ${o.deliveryEndDate}` : '-',

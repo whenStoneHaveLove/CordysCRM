@@ -56,7 +56,7 @@ public class AdOrderSaveRequest {
     @Schema(description = "不记返金额，默认 0")
     private BigDecimal noRebateAmount = BigDecimal.ZERO;
 
-    @Schema(description = "媒体应付总额(下游口径,L-28)")
+    @Schema(description = "应付总额(下游口径,L-28)")
     private BigDecimal mediaPayableAmount;
 
     @Schema(description = "投放起始日")
@@ -71,7 +71,7 @@ public class AdOrderSaveRequest {
     @Schema(description = "备注")
     private String remark;
 
-    @Schema(description = "收款方式:10预付款/20账期")
+    @Schema(description = "收款方式:10预收/20账期")
     private Integer receiptMethod;
 
     @Schema(description = "预收模式:10比例/20固定(L-25)")
@@ -89,19 +89,19 @@ public class AdOrderSaveRequest {
     @Schema(description = "账期天数(账期时必填)")
     private Integer receiptAccountPeriodDays;
 
-    @Schema(description = "付款方式:10预付媒体/20后付媒体")
+    @Schema(description = "付款方式:10预付/20后付")
     private Integer paymentMethod;
 
-    @Schema(description = "媒体预付模式:10比例/20固定")
+    @Schema(description = "预付模式:10比例/20固定")
     private Integer paymentPrepayMode;
 
-    @Schema(description = "媒体预付比例%(mode=10时填)")
+    @Schema(description = "预付比例%(mode=10时填)")
     private BigDecimal paymentPrepayRatio;
 
-    @Schema(description = "媒体预付固定金额(mode=20时填)")
+    @Schema(description = "预付固定金额(mode=20时填)")
     private BigDecimal paymentPrepayAmount;
 
-    @Schema(description = "媒体预付截止日")
+    @Schema(description = "预付截止日")
     private Date paymentPrepayDeadline;
 
     @Schema(description = "后付触发:10收到上游全款/20执行完成X天(L-05)")
@@ -113,6 +113,6 @@ public class AdOrderSaveRequest {
     @Schema(description = "币种，默认 CNY")
     private String currency = "CNY";
 
-    @Schema(description = "下游媒体id列表(至少选一个)")
+    @Schema(description = "下游客户id列表(至少选一个)")
     private List<String> downstreamMediaIds;
 }

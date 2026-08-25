@@ -134,14 +134,14 @@ public class AdDownstreamMediaService {
     private AdDownstreamMedia requireMedia(String id) {
         AdDownstreamMedia media = mediaMapper.selectByPrimaryKey(id);
         if (media == null || (media.getDeleted() != null && media.getDeleted() == 1)) {
-            throw new GenericException("下游媒体不存在");
+            throw new GenericException("下游客户不存在");
         }
         return media;
     }
 
     private void validate(AdDownstreamMediaSaveRequest request) {
         if (request.getName() == null || request.getName().isBlank()) {
-            throw new GenericException("媒体名称不能为空");
+            throw new GenericException("名称不能为空");
         }
     }
 }

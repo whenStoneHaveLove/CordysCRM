@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * 纯逻辑单测（NO Spring）：锁定媒体付款进度枚举 {@link MediaPaymentStatus} 的状态推导契约
+ * 纯逻辑单测（NO Spring）：锁定付款进度枚举 {@link MediaPaymentStatus} 的状态推导契约
  * （V3.1 §6.3/§13.4，对应 L-28 「media_paid_amount >= media_payable_amount → 全额付(20)」口径，
  * 且无应付金额/已付为零时不触发除零）。
  */

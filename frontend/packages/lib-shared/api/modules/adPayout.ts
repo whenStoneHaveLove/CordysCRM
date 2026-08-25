@@ -47,7 +47,7 @@ export default function useAdPayoutApi(CDR: CordysAxios) {
     return CDR.get<number>({ url: `${AdPayoutRemainingUrl}/${orderId}` });
   }
 
-  // 订单的下游媒体列表（付款勾选用，含媒体名称）
+  // 订单的下游客户列表（付款勾选用，含名称）
   function getAdPayoutMedia(orderId: string) {
     return CDR.get<Array<{ id: string; mediaId?: string; mediaName?: string }>>({
       url: `${AdPayoutMediaUrl}/${orderId}`,

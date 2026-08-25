@@ -42,7 +42,7 @@ public class AdPayoutDetailResponse {
     @Schema(description = "状态标签")
     private String statusLabel;
 
-    @Schema(description = "勾选的媒体id列表(JSON)")
+    @Schema(description = "勾选的id列表(JSON)")
     private String mediaIds;
 
     @Schema(description = "凭证")

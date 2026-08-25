@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 
 /**
- * 广告字典表（V3.1 §5.3/§4.3）。可运营维护的枚举项（行业/媒体类型/用印类型/收付款方式等）。
+ * 广告字典表（V3.1 §5.3/§4.3）。可运营维护的枚举项（行业/类型/用印类型/收付款方式等）。
  */
 @Data
 @Table(name = "ad_dict")

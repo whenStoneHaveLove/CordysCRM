@@ -7,8 +7,8 @@ import lombok.Getter;
  */
 @Getter
 public enum PaymentMethod {
-    PREPAY_MEDIA(10, "预付媒体"),
-    POSTPAY_MEDIA(20, "后付媒体");
+    PREPAY_MEDIA(10, "预付"),
+    POSTPAY_MEDIA(20, "后付");
 
     private final int code;
     private final String label;

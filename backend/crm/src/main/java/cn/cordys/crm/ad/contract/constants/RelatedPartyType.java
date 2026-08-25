@@ -8,13 +8,13 @@ import java.util.Map;
  * <ul>
  *   <li>10 = 客户</li>
  *   <li>20 = 上游代理</li>
- *   <li>30 = 下游媒体</li>
+ *   <li>30 = 下游客户</li>
  * </ul>
  */
 public enum RelatedPartyType {
     CUSTOMER(10, "客户"),
     UPSTREAM_AGENT(20, "上游代理"),
-    DOWNSTREAM_MEDIA(30, "下游媒体");
+    DOWNSTREAM_MEDIA(30, "下游客户");
 
     private final int code;
     private final String label;

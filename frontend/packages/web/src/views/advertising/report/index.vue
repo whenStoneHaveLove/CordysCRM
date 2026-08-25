@@ -89,7 +89,7 @@
         </n-spin>
       </n-card>
 
-      <!-- 媒体投放 -->
+      <!-- 投放 -->
       <n-card :title="t('advertising.report.card.media')" :bordered="false">
         <n-spin :show="loading">
           <report-item

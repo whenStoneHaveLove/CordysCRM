@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class AdDownstreamMediaDetailResponse {
 
-    @Schema(description = "媒体信息")
+    @Schema(description = "信息")
     private AdDownstreamMedia media;
 
     @Schema(description = "状态标签")
@@ -16,7 +16,7 @@ public class AdDownstreamMediaDetailResponse {
     @Schema(description = "合作状态标签")
     private String cooperationStatusLabel;
 
-    @Schema(description = "媒体类型标签")
+    @Schema(description = "类型标签")
     private String mediaTypeLabel;
 
     @Schema(description = "业务主体名称")

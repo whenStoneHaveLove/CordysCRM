@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 /**
- * 付款单选媒体下拉查询（JOIN 媒体字典填充名称）。
+ * 付款单选下拉查询（JOIN 字典填充名称）。
  * XML 与本接口同目录。
  */
 @Mapper

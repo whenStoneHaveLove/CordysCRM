@@ -251,7 +251,7 @@ const contractManagement: AppRouteRecordRaw = {
 };
 
 /**
- * 资源管理（父模块）：上游代理 / 下游媒体 / 客户信息 / 业务主体
+ * 资源管理（父模块）：上游代理 / 下游客户 / 客户信息 / 业务主体
  */
 const resourceManagement: AppRouteRecordRaw = {
   path: '/advertising/resource-management',

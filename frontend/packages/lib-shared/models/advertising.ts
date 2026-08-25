@@ -36,7 +36,7 @@ export interface AdOrderSaveParams {
   orderType?: number;
   /** 关联合同id（框架订单必选框架合同；单笔订单可后补） */
   contractId?: string;
-  /** 下游媒体id列表 */
+  /** 下游客户id列表 */
   downstreamMediaIds?: string[];
   upstreamAgentId?: string;
   agentOrderNo?: string;
@@ -658,7 +658,7 @@ export interface AdDashboardSummary {
   activeOrderCount?: number;
   /** 应收总额。 */
   totalReceivable?: number;
-  /** 媒体应付总额。 */
+  /** 应付总额。 */
   totalMediaPayable?: number;
   /** 待收款金额。 */
   pendingReceivable?: number;

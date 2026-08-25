@@ -52,19 +52,19 @@ public class AdOrderListResponse {
     @Schema(description = "应收金额")
     private BigDecimal receivableAmount;
 
-    @Schema(description = "媒体应付总额")
+    @Schema(description = "应付总额")
     private BigDecimal mediaPayableAmount;
 
     @Schema(description = "返点金额")
     private BigDecimal rebateAmount;
 
-    @Schema(description = "收款方式:10预付款/20账期")
+    @Schema(description = "收款方式:10预收/20账期")
     private Integer receiptMethod;
 
     @Schema(description = "收款方式标签")
     private String receiptMethodLabel;
 
-    @Schema(description = "付款方式:10预付媒体/20后付媒体")
+    @Schema(description = "付款方式:10预付/20后付")
     private Integer paymentMethod;
 
     @Schema(description = "付款方式标签")

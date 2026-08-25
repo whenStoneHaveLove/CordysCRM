@@ -37,7 +37,7 @@ public class AdContractSaveRequest {
     @Schema(description = "关联方id")
     private String relatedPartyId;
 
-    @Schema(description = "关联方类型:10客户/20上游代理/30下游媒体")
+    @Schema(description = "关联方类型:10客户/20上游代理/30下游客户")
     private Integer relatedPartyType;
 
     @Schema(description = "关联订单id列表(统一走 ad_order_contract 中间表，支持一对多)")

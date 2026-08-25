@@ -84,14 +84,14 @@ public class AdPayoutController {
 
     @GetMapping("/remaining/{orderId}")
     @CsPermission(PermissionConstants.AD_PAYOUT_READ)
-    @Operation(summary = "订单剩余应付金额（媒体应付-已付）")
+    @Operation(summary = "订单剩余应付金额（应付-已付）")
     public BigDecimal remainingPayable(@PathVariable("orderId") String orderId) {
         return adPayoutService.remainingPayable(orderId, userId(), orgId());
     }
 
     @GetMapping("/media/{orderId}")
     @CsPermission(PermissionConstants.AD_PAYOUT_READ)
-    @Operation(summary = "订单的下游媒体列表（付款勾选用，含媒体名称）")
+    @Operation(summary = "订单的下游客户列表（付款勾选用，含名称）")
     public List<AdPayoutMediaOptionResponse> listMedia(@PathVariable("orderId") String orderId) {
         return adPayoutService.listMedia(orderId, userId(), orgId());
     }

@@ -31,7 +31,7 @@ CREATE TABLE ad_receipt
 
 CREATE INDEX idx_ad_receipt_order ON ad_receipt (order_id);
 
--- ---------- 付款单（一个订单对应一个付款单，可勾选多个媒体） ----------
+-- ---------- 付款单（一个订单对应一个付款单，可勾选多个） ----------
 DROP TABLE IF EXISTS ad_payment;
 CREATE TABLE ad_payment
 (
@@ -42,7 +42,7 @@ CREATE TABLE ad_payment
     `payment_time`    DATE        COMMENT '付款时间',
     `type`            TINYINT     NOT NULL DEFAULT 10 COMMENT '10普通付款/20坏账',
     `status`          TINYINT     NOT NULL DEFAULT 0 COMMENT '0草稿/10待审核/20审核通过/30驳回',
-    `media_ids`       JSON        COMMENT '勾选的媒体id列表(默认全部)',
+    `media_ids`       JSON        COMMENT '勾选的id列表(默认全部)',
     `voucher_url`     VARCHAR(512) COMMENT '凭证',
     `approve_user`    VARCHAR(32) COMMENT '审批人',
     `approve_time`    BIGINT      COMMENT '审批时间',

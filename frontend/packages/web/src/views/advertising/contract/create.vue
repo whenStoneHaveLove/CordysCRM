@@ -225,7 +225,7 @@
   });
 
   /** 根据合同方向过滤关联方类型选项：
-   *  上游(10) → 客户 + 上游代理；下游(20) → 下游媒体 */
+   *  上游(10) → 客户 + 上游代理；下游(20) → 下游客户 */
   const filteredRelatedPartyTypeOptions = computed(() => {
     if (form.contractDirection === AdContractDirectionEnum.UPSTREAM) {
       return relatedPartyTypeOptions.filter(
@@ -321,7 +321,7 @@
   }
 
   /** 关联方选项：依据 relatedPartyType 决定数据源
-   *  10 客户 → 客户表；20 上游代理 / 30 下游媒体 → 资源表(resourceType 对应) */
+   *  10 客户 → 客户表；20 上游代理 / 30 下游客户 → 资源表(resourceType 对应) */
   async function loadRelatedPartyOptions(type?: number | null) {
     if (type === 10) {
       try {

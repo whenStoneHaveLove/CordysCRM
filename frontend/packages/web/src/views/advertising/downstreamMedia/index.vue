@@ -4,7 +4,7 @@
       <n-space align="end" wrap>
         <n-input
           v-model:value="searchForm.keyword"
-          placeholder="搜索媒体名称"
+          placeholder="搜索名称"
           clearable
           style="width: 200px"
           @keyup.enter="handleSearch"
@@ -25,7 +25,7 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">重置</n-button>
-        <n-button v-permission="['AD_DOWNSTREAM_MEDIA:CREATE']" type="primary" @click="openCreate">新建媒体</n-button>
+        <n-button v-permission="['AD_DOWNSTREAM_MEDIA:CREATE']" type="primary" @click="openCreate">新建</n-button>
       </n-space>
     </n-card>
 
@@ -42,15 +42,15 @@
 
     <n-modal
       v-model:show="modal.show"
-      :title="modal.editId ? '编辑下游媒体' : '新建下游媒体'"
+      :title="modal.editId ? '编辑下游客户' : '新建下游客户'"
       preset="card"
       style="width: 600px"
     >
       <n-form ref="formRef" :model="form" label-placement="left" label-width="100">
-        <n-form-item label="媒体名称" required>
-          <n-input v-model:value="form.name" placeholder="请输入媒体名称" />
+        <n-form-item label="名称" required>
+          <n-input v-model:value="form.name" placeholder="请输入名称" />
         </n-form-item>
-        <n-form-item label="媒体类型">
+        <n-form-item label="类型">
           <n-select v-model:value="form.mediaType" :options="mediaTypeOptions" placeholder="请选择" />
         </n-form-item>
         <n-form-item label="覆盖渠道">
@@ -285,7 +285,7 @@ async function handleEnable(row: any) {
 }
 
 const columns: DataTableColumn<any>[] = [
-  { key: 'name', title: '媒体名称', minWidth: 140, ellipsis: { tooltip: true } },
+  { key: 'name', title: '名称', minWidth: 140, ellipsis: { tooltip: true } },
   { key: 'mediaTypeLabel', title: '类型', width: 100 },
   { key: 'channel', title: '覆盖渠道', width: 120, ellipsis: { tooltip: true } },
   { key: 'rateCard', title: '刊例价', width: 100 },
@@ -346,7 +346,7 @@ const columns: DataTableColumn<any>[] = [
 
 async function handleSave() {
   if (!form.name) {
-    message.warning('媒体名称不能为空');
+    message.warning('名称不能为空');
     return;
   }
   saving.value = true;

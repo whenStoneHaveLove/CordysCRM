@@ -29,9 +29,9 @@
 | 枚举类 | 对应字段 | 取值（code→label） |
 |--------|----------|--------------------|
 | `OrderType` | ad_order.order_type | 10=框架合同 / 20=单笔合同 |
-| `OrderStatus` | ad_order.status | 0=草稿 / 10=待管理组审核 / 20=审核通过 / 30=待确认预收款 / 40=待付媒体预付款 / 50=执行中 / 60=变更审核中 / 70=执行完成 / 80=结算中 / 90=已归档 / 100=已作废 |
+| `OrderStatus` | ad_order.status | 0=草稿 / 10=待管理组审核 / 20=审核通过 / 30=待确认预收款 / 40=待付预付款 / 50=执行中 / 60=变更审核中 / 70=执行完成 / 80=结算中 / 90=已归档 / 100=已作废 |
 | `ReceiptMethod` | ad_order.receipt_method | 10=预付款 / 20=账期 |
-| `PaymentMethod` | ad_order.payment_method | 10=预付媒体 / 20=后付媒体 |
+| `PaymentMethod` | ad_order.payment_method | 10=预付 / 20=后付 |
 | `PaymentPostpayTrigger` | ad_order.payment_postpay_trigger | 10=收到上游全款后 / 20=执行完成X天后 |
 | `InvoiceStatus` | ad_order.invoice_status | 0=未开 / 10=部分 / 20=全额 |
 | （同 0/10/20 语义） | ad_order.receipt_status | 0=未收 / 10=部分 / 20=全额 |
@@ -40,11 +40,11 @@
 | `ContractType` | ad_contract.contract_type | 10=框架 / 20=单笔 |
 | `SealStatus` | ad_contract.seal_status | 0=未申请 / 10=审批中 / 20=已用印 / 30=已驳回 |
 | `BusinessEntityStatus` | ad_business_entity.status | 10=启用 / 20=停用 |
-| `ResourceType` | ad_resource.resource_type | 10=上游代理 / 20=下游媒体 |
+| `ResourceType` | ad_resource.resource_type | 10=上游代理 / 20=下游客户 |
 | `CustomerStatus`（M6） | ad_customer.status（DDL 暂缺） | 0=活跃 / 10=非活跃 / 20=黑名单 |
 | `CustomerLevel`（M6） | ad_customer.customer_level（DDL 暂缺） | 10=VIP / 20=普通 / 30=潜力 |
 | （DDL 注释，无独立枚举类） | ad_order.rebate_mode / receipt_prepay_mode / payment_prepay_mode | 10=比例 / 20=固定金额 |
-| （DDL 注释，无独立枚举类） | ad_contract.related_party_type | 10=客户 / 20=上游代理 / 30=下游媒体 |
+| （DDL 注释，无独立枚举类） | ad_contract.related_party_type | 10=客户 / 20=上游代理 / 30=下游客户 |
 | （DDL 注释，无独立枚举类） | ad_seal_record.seal_type | 10=公章 / 20=合同章 |
 | （DDL 注释，无独立枚举类） | ad_contract.status | 10=生效 / 20=失效 / 30=已作废 |
 | （DDL 注释，无独立枚举类） | ad_resource.status | 10=正常 / 20=停用 |
@@ -75,7 +75,7 @@
 | no_rebate_amount | 不记返金额 | 数值 | 否(自由输入) | — | 系统 | 默认0 |
 | rebate_amount | 返点金额 | 数值 | 系统自动 | — | 系统 | 后端计算 |
 | receivable_amount | 应收金额 | 数值 | 系统自动 | — | 系统 | =总额-返点，计算 |
-| media_payable_amount | 媒体应付总额 | 数值 | 否(自由输入) | — | **是** | NOT NULL（下游口径） |
+| media_payable_amount | 应付总额 | 数值 | 否(自由输入) | — | **是** | NOT NULL（下游口径） |
 | delivery_start_date | 投放起始日 | 日期 | 否(自由输入) | — | **是** | NOT NULL |
 | delivery_end_date | 投放结束日 | 日期 | 否(自由输入) | — | **是** | NOT NULL |
 | delivery_volume | 投放量+单位 | 自由文本 | 否(自由输入) | — | 否 | 可空 |
@@ -88,19 +88,19 @@
 | receipt_account_period_days | 账期天数 | 数值 | 否(自由输入) | — | 否 | 收款=账期时必填 |
 | account_period_start_date | 账期起算日 | 日期 | 否(自由输入) | — | 否 | 可空 |
 | account_period_end_date | 账期到期日 | 日期 | 系统自动 | — | 系统 | 计算 |
-| payment_method | 付款方式 | 枚举值 | **是(静态枚举)** | PaymentMethod | **是** | 10预付媒体/20后付媒体 |
-| payment_prepay_mode | 媒体预付模式 | 枚举值 | **是(静态枚举)** | DDL注释(10比例/20固定) | 否 | 付款=预付媒体时必填 |
-| payment_prepay_ratio | 媒体预付比例% | 数值 | 否(自由输入) | — | 否 | 条件必填 |
-| payment_prepay_amount | 媒体预付金额 | 数值 | 否(自由输入) | — | 否 | 条件必填 |
-| payment_prepay_deadline | 媒体预付截止日 | 日期 | 否(自由输入) | — | 否 | 可空 |
-| payment_postpay_trigger | 后付触发 | 枚举值 | **是(静态枚举)** | PaymentPostpayTrigger | 否 | 付款=后付媒体时必填 |
+| payment_method | 付款方式 | 枚举值 | **是(静态枚举)** | PaymentMethod | **是** | 10预付/20后付 |
+| payment_prepay_mode | 预付模式 | 枚举值 | **是(静态枚举)** | DDL注释(10比例/20固定) | 否 | 付款=预付时必填 |
+| payment_prepay_ratio | 预付比例% | 数值 | 否(自由输入) | — | 否 | 条件必填 |
+| payment_prepay_amount | 预付金额 | 数值 | 否(自由输入) | — | 否 | 条件必填 |
+| payment_prepay_deadline | 预付截止日 | 日期 | 否(自由输入) | — | 否 | 可空 |
+| payment_postpay_trigger | 后付触发 | 枚举值 | **是(静态枚举)** | PaymentPostpayTrigger | 否 | 付款=后付时必填 |
 | payment_postpay_days | 后付X天 | 数值 | 否(自由输入) | — | 否 | trigger=20时必填 |
 | invoice_status | 开票进度 | 枚举值 | 系统自动 | InvoiceStatus | 系统 | 默认0未开 |
 | receipt_status | 收款进度 | 枚举值 | 系统自动 | 0/10/20语义 | 系统 | 默认0未收 |
-| media_payment_status | 媒体付款进度 | 枚举值 | 系统自动 | MediaPaymentStatus | 系统 | 默认0待付 |
+| media_payment_status | 付款进度 | 枚举值 | 系统自动 | MediaPaymentStatus | 系统 | 默认0待付 |
 | invoiced_amount | 已开票累计 | 数值 | 系统自动 | — | 系统 | 默认0 |
 | received_amount | 已收款累计 | 数值 | 系统自动 | — | 系统 | 默认0 |
-| media_paid_amount | 已付媒体款累计 | 数值 | 系统自动 | — | 系统 | 默认0 |
+| media_paid_amount | 已付款累计 | 数值 | 系统自动 | — | 系统 | 默认0 |
 | bad_debt_amount | 坏账金额 | 数值 | 否(自由输入) | — | 否 | 可空（后期） |
 | needs_red_invoice | 需红冲标记 | 枚举值(0/1) | 否(开关,默认0) | — | 系统 | 布尔开关，非下拉 |
 | currency | 币种 | 自由文本 | 否(自由输入) | — | 系统 | 默认 CNY（建议字典化） |
@@ -127,7 +127,7 @@
 | business_entity_id | 业务主体 | ID外键 | **是(需fetch数据)** | ad_business_entity | **是** | 回存主体ID |
 | contract_direction | 合同方向 | 枚举值 | **是(静态枚举)** | ContractDirection | **是** | 10上游/20下游 |
 | contract_type | 合同类型 | 枚举值 | **是(静态枚举)** | ContractType | **是** | 10框架/20单笔 |
-| related_party_type | 关联方类型 | 枚举值 | **是(静态枚举)** | DDL注释(10客户/20上游代理/30下游媒体) | **是** | 决定 related_party_id 取数表 |
+| related_party_type | 关联方类型 | 枚举值 | **是(静态枚举)** | DDL注释(10客户/20上游代理/30下游客户) | **是** | 决定 related_party_id 取数表 |
 | related_party_id | 关联方 | ID外键 | **是(需fetch数据)** | ad_customer 或 ad_resource(取决于上一项) | **是** | 回存客户/资源ID |
 | order_id | 关联订单 | ID外键 | **是(需fetch数据)** | ad_order | 否 | 单笔合同时必填 |
 | signing_entity | 签约主体 | 自由文本 | 否(自由输入) | — | 否 | 可空 |
@@ -169,9 +169,9 @@
 | 字段(列名) | 中文含义 | 存储方式 | 应选下拉? | 下拉数据来源 | 必填? | 备注 |
 |------------|----------|----------|-----------|--------------|-------|------|
 | id | 主键 | 系统填充 | 系统自动 | — | 系统 | UUID |
-| resource_type | 资源类型 | 枚举值 | **是(静态枚举)** | ResourceType(10上游代理/20下游媒体) | **是** | NOT NULL |
+| resource_type | 资源类型 | 枚举值 | **是(静态枚举)** | ResourceType(10上游代理/20下游客户) | **是** | NOT NULL |
 | name | 名称 | 自由文本 | 否(自由输入) | — | **是** | NOT NULL |
-| media_type | 媒体类型 | 字典code | **是(需fetch数据)** | ad_dict(dict_code=media_type) | 否 | 资源类型=媒体时填 |
+| media_type | 类型 | 字典code | **是(需fetch数据)** | ad_dict(dict_code=media_type) | 否 | 资源类型=时填 |
 | channel | 渠道 | 自由文本 | 否(自由输入) | — | 否 | 可空 |
 | rate_card | 刊例价 | 自由文本 | 否(自由输入) | — | 否 | 可空 |
 | discount_policy | 折扣政策 | 自由文本 | 否(自由输入) | — | 否 | 可空 |

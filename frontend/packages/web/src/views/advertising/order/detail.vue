@@ -70,7 +70,7 @@
             industryLabelMap[detail.order.industryCode ?? ''] || detail.order.industryCode || '-'
           }}</n-descriptions-item>
           <n-descriptions-item label="签约主体">{{ detail.order.signingEntity || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="下游媒体">{{ downstreamMediaNames || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="下游客户">{{ downstreamMediaNames || '-' }}</n-descriptions-item>
           <n-descriptions-item label="关联合同">{{
             [detail.contractNo, detail.contractName].filter(Boolean).join(' ') || '-'
           }}</n-descriptions-item>
@@ -95,7 +95,7 @@
           }}</n-descriptions-item>
           <n-descriptions-item label="应收金额">{{ fmtAmount(detail.order.receivableAmount) }}</n-descriptions-item>
           <n-descriptions-item label="返点金额">{{ fmtAmount(detail.order.rebateAmount) }}</n-descriptions-item>
-          <n-descriptions-item label="媒体应付">{{ fmtAmount(detail.order.mediaPayableAmount) }}</n-descriptions-item>
+          <n-descriptions-item label="应付">{{ fmtAmount(detail.order.mediaPayableAmount) }}</n-descriptions-item>
           <n-descriptions-item :label="t('advertising.order.detail.amount.received')">{{
             fmtAmount(detail.order.receivedAmount)
           }}</n-descriptions-item>
@@ -413,10 +413,10 @@
     }
   }
 
-  /** 下游媒体名称缓存 */
+  /** 下游客户名称缓存 */
   const downstreamMediaNameCache = reactive<Record<string, string>>({});
 
-  /** 加载下游媒体名称到缓存 */
+  /** 加载下游客户名称到缓存 */
   async function loadDownstreamMediaNames() {
     try {
       const res = await getAdDownstreamMediaPage({ current: 1, pageSize: 200 });
@@ -444,7 +444,7 @@
     }
   }
 
-  /** 下游媒体名称（逗号分隔） */
+  /** 下游客户名称（逗号分隔） */
   const downstreamMediaNames = computed(() => {
     const ids = detail.value?.downstreamMediaIds;
     if (!ids || ids.length === 0) return '';

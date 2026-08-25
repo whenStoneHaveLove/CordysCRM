@@ -7,7 +7,7 @@ import lombok.Getter;
  */
 @Getter
 public enum ReceiptMethod {
-    PREPAY(10, "预付款"),
+    PREPAY(10, "预收"),
     ACCOUNT_PERIOD(20, "账期");
 
     private final int code;

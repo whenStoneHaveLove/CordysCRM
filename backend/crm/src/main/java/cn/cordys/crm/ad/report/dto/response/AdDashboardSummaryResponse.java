@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * 工作台首页数据概览响应。
  *
- * <p>聚合「进行中订单数 + 应收/媒体应付总额 + 待收/待付款」5 个核心指标，以及近 12 个月订单趋势。
+ * <p>聚合「进行中订单数 + 应收/应付总额 + 待收/待付款」5 个核心指标，以及近 12 个月订单趋势。
  * 金额口径遵循「收款/付款单审核通过后该订单的钱即结束」规则：</p>
  * <ul>
  *   <li>待收款 = SUM(receivable_amount - received_amount) WHERE receipt_done=0（收款单未审核通过）</li>
@@ -26,7 +26,7 @@ public class AdDashboardSummaryResponse {
     @Schema(description = "应收总额（未作废订单）")
     private BigDecimal totalReceivable;
 
-    @Schema(description = "媒体应付总额（未作废订单）")
+    @Schema(description = "应付总额（未作废订单）")
     private BigDecimal totalMediaPayable;
 
     @Schema(description = "待收款金额（收款单未审核通过的订单）")

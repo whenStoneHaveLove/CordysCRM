@@ -9,10 +9,10 @@ public class AdDownstreamMediaSaveRequest {
     @Schema(description = "id(编辑时必填)")
     private String id;
 
-    @Schema(description = "媒体名称", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "名称", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    @Schema(description = "媒体类型")
+    @Schema(description = "类型")
     private String mediaType;
 
     @Schema(description = "覆盖渠道")

@@ -36,10 +36,10 @@ public class AdOrderPageRequest extends BasePageRequest {
     @Schema(description = "订单类型:10框架合同/20单笔合同")
     private Integer orderType;
 
-    @Schema(description = "收款方式:10预付款/20账期")
+    @Schema(description = "收款方式:10预收/20账期")
     private Integer receiptMethod;
 
-    @Schema(description = "付款方式:10预付媒体/20后付媒体")
+    @Schema(description = "付款方式:10预付/20后付")
     private Integer paymentMethod;
 
     @Schema(description = "关键字（订单号/客户名）")

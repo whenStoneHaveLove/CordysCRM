@@ -80,7 +80,7 @@ export default defineConfig({
           unitPrecision: 5, // 转换后保留的小数位数
           selectorBlackList: ['.no-rem'], // 忽略的选择器，例如 `.no-rem` 类名的样式不会被转换
           replace: true, // 替换规则，而不是添加回退
-          mediaQuery: false, // 是否允许在媒体查询中转换
+          mediaQuery: false, // 是否允许在查询中转换
           minPixelValue: 2, // 小于或等于 2px 的值不转换为 rem
         }),
         tailwindcss(),

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "下游媒体")
+@Tag(name = "下游客户")
 @RestController
 @RequestMapping("/api/ad/downstream-media")
 public class AdDownstreamMediaController {
@@ -31,35 +31,35 @@ public class AdDownstreamMediaController {
 
     @PostMapping
     @CsPermission(PermissionConstants.AD_DOWNSTREAM_MEDIA_CREATE)
-    @Operation(summary = "新建下游媒体")
+    @Operation(summary = "新建下游客户")
     public AdDownstreamMedia create(@RequestBody AdDownstreamMediaSaveRequest request) {
         return mediaService.create(request, userId(), orgId());
     }
 
     @PutMapping
     @CsPermission(PermissionConstants.AD_DOWNSTREAM_MEDIA_UPDATE)
-    @Operation(summary = "编辑下游媒体")
+    @Operation(summary = "编辑下游客户")
     public AdDownstreamMedia update(@RequestBody AdDownstreamMediaSaveRequest request) {
         return mediaService.update(request, userId(), orgId());
     }
 
     @GetMapping("/{id}")
     @CsPermission(PermissionConstants.AD_DOWNSTREAM_MEDIA_READ)
-    @Operation(summary = "下游媒体详情")
+    @Operation(summary = "下游客户详情")
     public AdDownstreamMediaDetailResponse detail(@PathVariable("id") String id) {
         return mediaService.detail(id, userId(), orgId());
     }
 
     @PostMapping("/page")
     @CsPermission(PermissionConstants.AD_DOWNSTREAM_MEDIA_READ)
-    @Operation(summary = "下游媒体分页")
+    @Operation(summary = "下游客户分页")
     public PagerWithOption<List<AdDownstreamMediaListResponse>> page(@RequestBody AdDownstreamMediaPageRequest request) {
         return mediaService.page(request, userId(), orgId());
     }
 
     @DeleteMapping("/{id}")
     @CsPermission(PermissionConstants.AD_DOWNSTREAM_MEDIA_DELETE)
-    @Operation(summary = "删除下游媒体")
+    @Operation(summary = "删除下游客户")
     public void delete(@PathVariable("id") String id) {
         mediaService.delete(id, userId(), orgId());
     }

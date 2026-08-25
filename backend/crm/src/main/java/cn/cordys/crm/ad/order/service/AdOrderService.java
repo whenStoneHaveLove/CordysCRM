@@ -134,7 +134,7 @@ public class AdOrderService {
         adOrderMapper.insert(order);
         // 关联合同：框架订单必选框架合同；单笔订单可后补
         syncOrderContract(order.getId(), request.getContractId(), request.getOrderType(), userId, orgId);
-        // 关联下游媒体
+        // 关联下游客户
         syncOrderDownstreamMedia(order.getId(), request.getDownstreamMediaIds(), userId, orgId);
         return order;
     }
@@ -161,7 +161,7 @@ public class AdOrderService {
         adOrderMapper.update(order);
         // 同步合同关联
         syncOrderContract(order.getId(), request.getContractId(), request.getOrderType(), userId, orgId);
-        // 同步下游媒体
+        // 同步下游客户
         syncOrderDownstreamMedia(order.getId(), request.getDownstreamMediaIds(), userId, orgId);
         return order;
     }
@@ -181,7 +181,7 @@ public class AdOrderService {
         List<AdOrderContract> orderContracts = orderContractMapper.selectByOrderId(id);
         String contractId = orderContracts.isEmpty() ? null : orderContracts.get(0).getContractId();
 
-        // 下游媒体 id 列表
+        // 下游客户 id 列表
         List<AdOrderDownstreamMedia> downstreamMedias = orderDownstreamMediaMapper.selectByOrderId(id);
         List<String> downstreamMediaIds = downstreamMedias.stream()
                 .map(AdOrderDownstreamMedia::getDownstreamMediaId)
@@ -544,13 +544,13 @@ public class AdOrderService {
     }
 
     /**
-     * 同步订单与下游媒体的关联到 ad_order_downstream_media 中间表。
+     * 同步订单与下游客户的关联到 ad_order_downstream_media 中间表。
      * 全量替换：先逻辑删除旧的关联，再插入新的关联。
      * 注意：由于唯一键 (order_id, downstream_media_id) 不区分 deleted，
      * 插入前先检查已存在记录（含已删除），若存在则复用（设 deleted=0）。
      */
     private void syncOrderDownstreamMedia(String orderId, List<String> downstreamMediaIds, String userId, String orgId) {
-        // 先逻辑删除该订单的所有现有下游媒体关联
+        // 先逻辑删除该订单的所有现有下游客户关联
         List<AdOrderDownstreamMedia> existing = orderDownstreamMediaMapper.selectByOrderId(orderId);
         for (AdOrderDownstreamMedia odm : existing) {
             odm.setDeleted(1);

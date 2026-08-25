@@ -19,7 +19,7 @@ public class AdPayoutSaveRequest {
     @Schema(description = "关联订单")
     private String orderId;
 
-    @Schema(description = "付款金额（默认=媒体应付-已付）")
+    @Schema(description = "付款金额（默认=应付-已付）")
     private BigDecimal amount;
 
     @Schema(description = "付款时间")
@@ -28,7 +28,7 @@ public class AdPayoutSaveRequest {
     @Schema(description = "类型:10普通付款/20坏账")
     private Integer type;
 
-    @Schema(description = "勾选的媒体id列表")
+    @Schema(description = "勾选的id列表")
     private List<String> mediaIds;
 
     @Schema(description = "凭证")

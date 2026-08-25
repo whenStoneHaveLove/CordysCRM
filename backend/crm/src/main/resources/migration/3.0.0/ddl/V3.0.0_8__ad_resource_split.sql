@@ -25,8 +25,8 @@ CREATE TABLE ad_upstream_agent
 CREATE TABLE ad_downstream_media
 (
     `id`              VARCHAR(32)  NOT NULL COMMENT 'id',
-    `name`            VARCHAR(128) NOT NULL COMMENT '媒体名称',
-    `media_type`      VARCHAR(64)  NULL COMMENT '媒体类型',
+    `name`            VARCHAR(128) NOT NULL COMMENT '名称',
+    `media_type`      VARCHAR(64)  NULL COMMENT '类型',
     `channel`         VARCHAR(128) NULL COMMENT '覆盖渠道',
     `rate_card`       VARCHAR(512) NULL COMMENT '刊例价',
     `discount_policy` VARCHAR(512) NULL COMMENT '折扣政策',
@@ -42,4 +42,4 @@ CREATE TABLE ad_downstream_media
     `update_time`     BIGINT       NULL COMMENT '更新时间',
     `update_user`     VARCHAR(32)  NULL COMMENT '修改人',
     PRIMARY KEY (id)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '下游媒体';
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '下游客户';

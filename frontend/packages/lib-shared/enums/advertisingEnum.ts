@@ -73,7 +73,7 @@ export enum AdReceiptMethodEnum {
   ACCOUNT_PERIOD = 20,
 }
 export const AdReceiptMethodLabel: Record<number, string> = {
-  [AdReceiptMethodEnum.PREPAY]: '预付款',
+  [AdReceiptMethodEnum.PREPAY]: '预收',
   [AdReceiptMethodEnum.ACCOUNT_PERIOD]: '账期',
 };
 export const AdReceiptMethodOptions = Object.keys(AdReceiptMethodLabel).map((k) => ({
@@ -87,15 +87,15 @@ export enum AdPaymentMethodEnum {
   POSTPAY_MEDIA = 20,
 }
 export const AdPaymentMethodLabel: Record<number, string> = {
-  [AdPaymentMethodEnum.PREPAY_MEDIA]: '预付媒体',
-  [AdPaymentMethodEnum.POSTPAY_MEDIA]: '后付媒体',
+  [AdPaymentMethodEnum.PREPAY_MEDIA]: '预付',
+  [AdPaymentMethodEnum.POSTPAY_MEDIA]: '后付',
 };
 export const AdPaymentMethodOptions = Object.keys(AdPaymentMethodLabel).map((k) => ({
   label: AdPaymentMethodLabel[Number(k)],
   value: Number(k),
 }));
 
-/** 媒体后付触发。 */
+/** 后付触发。 */
 export enum AdPostpayTriggerEnum {
   ON_UPSTREAM_FULL_PAID = 10,
   ON_EXECUTION_COMPLETED_DAYS = 20,
@@ -109,7 +109,7 @@ export const AdPostpayTriggerOptions = Object.keys(AdPostpayTriggerLabel).map((k
   value: Number(k),
 }));
 
-/** 比例 / 固定金额模式（返点、预收、媒体预付共用）。 */
+/** 比例 / 固定金额模式（返点、预收、预付共用）。 */
 export enum AdModeEnum {
   RATIO = 10,
   FIXED = 20,
@@ -268,7 +268,7 @@ export enum AdRelatedPartyTypeEnum {
 export const AdRelatedPartyTypeLabel: Record<number, string> = {
   [AdRelatedPartyTypeEnum.CUSTOMER]: '客户',
   [AdRelatedPartyTypeEnum.UPSTREAM_AGENT]: '上游代理',
-  [AdRelatedPartyTypeEnum.DOWNSTREAM_MEDIA]: '下游媒体',
+  [AdRelatedPartyTypeEnum.DOWNSTREAM_MEDIA]: '下游客户',
 };
 export const AdRelatedPartyTypeOptions = Object.keys(AdRelatedPartyTypeLabel).map((k) => ({
   label: AdRelatedPartyTypeLabel[Number(k)],
@@ -432,9 +432,9 @@ export const AD_ORDER_CHANGE_FIELD_META: AdChangeFieldMeta[] = [
   { field: 'receiptPrepayDeadline', label: '预收截止日', type: 'date' },
   { field: 'receiptAccountPeriodDays', label: '账期天数', type: 'number' },
   { field: 'paymentMethod', label: '付款方式', type: 'number', control: 'enum-paymentMethod' },
-  { field: 'paymentPrepayMode', label: '媒体预付模式', type: 'number', control: 'enum-prepayMode' },
-  { field: 'paymentPrepayRatio', label: '媒体预付比例%', type: 'number' },
-  { field: 'paymentPrepayDeadline', label: '媒体预付截止日', type: 'date' },
+  { field: 'paymentPrepayMode', label: '预付模式', type: 'number', control: 'enum-prepayMode' },
+  { field: 'paymentPrepayRatio', label: '预付比例%', type: 'number' },
+  { field: 'paymentPrepayDeadline', label: '预付截止日', type: 'date' },
   { field: 'paymentPostpayTrigger', label: '后付触发', type: 'number', control: 'enum-postpayTrigger' },
   { field: 'paymentPostpayDays', label: '后付天数', type: 'number' },
   { field: 'deliveryStartDate', label: '投放起始日', type: 'date' },
@@ -456,7 +456,7 @@ export enum AdResourceTypeEnum {
 }
 export const AdResourceTypeLabel: Record<number, string> = {
   [AdResourceTypeEnum.UPSTREAM_AGENT]: '上游代理',
-  [AdResourceTypeEnum.DOWNSTREAM_MEDIA]: '下游媒体',
+  [AdResourceTypeEnum.DOWNSTREAM_MEDIA]: '下游客户',
 };
 export const AdResourceTypeOptions = Object.keys(AdResourceTypeLabel).map((k) => ({
   label: AdResourceTypeLabel[Number(k)],

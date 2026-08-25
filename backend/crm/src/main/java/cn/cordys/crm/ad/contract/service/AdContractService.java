@@ -314,7 +314,7 @@ public class AdContractService {
         if (request.getRelatedPartyType() == null
                 || (request.getRelatedPartyType() != 10 && request.getRelatedPartyType() != 20
                 && request.getRelatedPartyType() != 30)) {
-            throw new GenericException("关联方类型不合法(10客户/20上游代理/30下游媒体)");
+            throw new GenericException("关联方类型不合法(10客户/20上游代理/30下游客户)");
         }
     }
 

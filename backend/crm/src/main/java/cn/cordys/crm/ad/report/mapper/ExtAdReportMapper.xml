@@ -75,7 +75,7 @@
                AND NOT EXISTS (SELECT 1 FROM ad_order_contract oc WHERE oc.order_id = o.id AND oc.deleted = 0)) AS missingContract
     </select>
 
-    <!-- 报表-应收应付：应收总额 vs 媒体应付总额（B-6） -->
+    <!-- 报表-应收应付：应收总额 vs 应付总额（B-6） -->
     <select id="receivablePayable" resultType="java.util.HashMap">
         SELECT
             IFNULL(SUM(o.receivable_amount), 0)    AS receivableAmount,
@@ -95,7 +95,7 @@
           AND o.deleted = 0
     </select>
 
-    <!-- 报表-媒体投放：已付媒体款（B-6） -->
+    <!-- 报表-投放：已付款（B-6） -->
     <select id="mediaInvestment" resultType="java.util.HashMap">
         SELECT
             IFNULL(SUM(o.media_paid_amount), 0) AS mediaPaidAmount
@@ -121,7 +121,7 @@
         ORDER BY o.create_time DESC
     </select>
 
-    <!-- 工作台首页数据概览：进行中订单数 + 应收/媒体应付总额 + 待收/待付款。
+    <!-- 工作台首页数据概览：进行中订单数 + 应收/应付总额 + 待收/待付款。
          待收/待付仅统计收款单/付款单尚未审核通过的订单（receipt_done=0 / payment_done=0）。 -->
     <select id="dashboardSummary" resultType="java.util.HashMap">
         SELECT

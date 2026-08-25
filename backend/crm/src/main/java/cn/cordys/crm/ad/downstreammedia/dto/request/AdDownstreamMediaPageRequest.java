@@ -11,10 +11,10 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 public class AdDownstreamMediaPageRequest extends BasePageRequest {
 
-    @Schema(description = "关键字(媒体名称)")
+    @Schema(description = "关键字(名称)")
     private String keyword;
 
-    @Schema(description = "媒体类型")
+    @Schema(description = "类型")
     private String mediaType;
 
     @Schema(description = "状态")

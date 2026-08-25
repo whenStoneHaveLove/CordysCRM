@@ -41,7 +41,7 @@ public class ResultResponseBodyAdvice implements ResponseBodyAdvice<Object> {
      *
      * @param body               响应体内容
      * @param methodParameter    当前方法参数
-     * @param mediaType          响应的媒体类型
+     * @param mediaType          响应的类型
      * @param converterType      当前使用的消息转换器类型
      * @param serverHttpRequest  当前的 HTTP 请求
      * @param serverHttpResponse 当前的 HTTP 响应

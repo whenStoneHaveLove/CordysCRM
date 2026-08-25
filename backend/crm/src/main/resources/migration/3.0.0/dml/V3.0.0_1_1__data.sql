@@ -2,7 +2,7 @@
 -- CordysCRM 广告下单系统 V3.1 数据播种（DML）
 -- 版本: 3.0.0  描述: ad_system_v31_data
 -- 说明:
---   1) ad_dict 初始数据(行业/媒体类型/用印类型/收付款方式)
+--   1) ad_dict 初始数据(行业/类型/用印类型/收付款方式)
 --   2) AD_* 权限码播种到 sys_role_permission（授权给 org_admin，admin 用户因此具备全部广告模块权限）
 -- 幂等: 使用 INSERT IGNORE，重跑安全。
 -- 租户 organization_id 取开源基线初始组织 '100001'。
@@ -21,22 +21,22 @@ VALUES
 (UUID_SHORT(), 'industry', '60', '医疗',     NULL, 60, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
 (UUID_SHORT(), 'industry', '70', '房地产',   NULL, 70, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
 (UUID_SHORT(), 'industry', '80', '其他',     NULL, 80, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
--- 媒体类型 media_type
+-- 类型 media_type
 (UUID_SHORT(), 'media_type', '10', '搜索引擎',   NULL, 10, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
 (UUID_SHORT(), 'media_type', '20', '信息流',     NULL, 20, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
 (UUID_SHORT(), 'media_type', '30', '视频',       NULL, 30, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
-(UUID_SHORT(), 'media_type', '40', '社交媒体',   NULL, 40, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
+(UUID_SHORT(), 'media_type', '40', '社交',   NULL, 40, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
 (UUID_SHORT(), 'media_type', '50', '户外',       NULL, 50, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
 (UUID_SHORT(), 'media_type', '60', '其他',       NULL, 60, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
 -- 用印类型 seal_type
 (UUID_SHORT(), 'seal_type', '10', '公章',   NULL, 10, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
 (UUID_SHORT(), 'seal_type', '20', '合同章', NULL, 20, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
 -- 收款方式 receipt_method
-(UUID_SHORT(), 'receipt_method', '10', '预付款', NULL, 10, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
+(UUID_SHORT(), 'receipt_method', '10', '预收', NULL, 10, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
 (UUID_SHORT(), 'receipt_method', '20', '账期',   NULL, 20, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
 -- 付款方式 payment_method
-(UUID_SHORT(), 'payment_method', '10', '预付媒体', NULL, 10, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
-(UUID_SHORT(), 'payment_method', '20', '后付媒体', NULL, 20, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0);
+(UUID_SHORT(), 'payment_method', '10', '预付', NULL, 10, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0),
+(UUID_SHORT(), 'payment_method', '20', '后付', NULL, 20, 10, '100001', UNIX_TIMESTAMP()*1000, UNIX_TIMESTAMP()*1000, 'admin', 'admin', 0);
 
 -- ---------- 2) AD_* 权限码播种 ----------
 -- 授权给 org_admin 角色（admin 用户具备全部广告模块权限位）

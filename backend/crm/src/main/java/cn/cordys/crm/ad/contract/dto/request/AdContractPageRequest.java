@@ -25,7 +25,7 @@ public class AdContractPageRequest extends BasePageRequest {
     @Schema(description = "合同类型:10框架/20单笔")
     private Integer contractType;
 
-    @Schema(description = "关联方类型:10客户/20上游代理/30下游媒体")
+    @Schema(description = "关联方类型:10客户/20上游代理/30下游客户")
     private Integer relatedPartyType;
 
     @Schema(description = "合同状态:10生效/20失效/30已作废")

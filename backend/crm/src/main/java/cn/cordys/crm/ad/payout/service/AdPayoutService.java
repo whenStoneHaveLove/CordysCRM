@@ -37,7 +37,7 @@ import java.util.List;
 /**
  * 广告付款单服务。
  *
- * <p>一个订单对应一个付款单，可勾选多个媒体（默认全部）。流程：新建(草稿)→保存→编辑→提交(待审核)→审核通过/驳回。
+ * <p>一个订单对应一个付款单，可勾选多个（默认全部）。流程：新建(草稿)→保存→编辑→提交(待审核)→审核通过/驳回。
  * 审核通过后：订单 media_paid_amount += amount，并置 payment_done=1。</p>
  */
 @Slf4j
@@ -226,7 +226,7 @@ public class AdPayoutService {
         return b;
     }
 
-    /** 订单剩余应付金额（媒体应付-已付），用于新建时带出默认金额。 */
+    /** 订单剩余应付金额（应付-已付），用于新建时带出默认金额。 */
     public BigDecimal remainingPayable(String orderId, String userId, String orgId) {
         AdOrder order = extAdOrderMapper.selectByPrimaryKey(orderId);
         if (order == null) {
@@ -237,7 +237,7 @@ public class AdPayoutService {
         return payable.subtract(paid);
     }
 
-    /** 订单的下游媒体列表（付款单选择订单时带出供勾选，JOIN 出媒体名称）。 */
+    /** 订单的下游客户列表（付款单选择订单时带出供勾选，JOIN 出名称）。 */
     public List<cn.cordys.crm.ad.payout.dto.response.AdPayoutMediaOptionResponse> listMedia(String orderId, String userId, String orgId) {
         return extAdPayoutMediaOptionMapper.selectMediaOptions(orderId);
     }
@@ -303,7 +303,7 @@ public class AdPayoutService {
         try {
             return JSON.writeValueAsString(mediaIds);
         } catch (Exception e) {
-            throw new GenericException("媒体列表序列化失败");
+            throw new GenericException("列表序列化失败");
         }
     }
 

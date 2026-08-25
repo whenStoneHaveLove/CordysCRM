@@ -2,7 +2,7 @@
 -- CordysCRM 广告下单系统 V3.1 —— 补齐管理员/管理组默认缺失权限（DML）
 -- 版本: 3.0.0  描述: fix_missing_default_permissions
 -- 说明:
---   1) 上游代理、下游媒体、操作日志模块初始化时未授予 org_admin/ROLE_BOSS。
+--   1) 上游代理、下游客户、操作日志模块初始化时未授予 org_admin/ROLE_BOSS。
 --   2) 改单模块 V3.0.0_2 漏授 SUBMIT 权限。
 --   3) 幂等：INSERT ... SELECT ... WHERE NOT EXISTS，重跑安全。
 -- ============================================================
@@ -20,7 +20,7 @@ JOIN (
     SELECT 'AD_UPSTREAM_AGENT:CREATE' UNION ALL
     SELECT 'AD_UPSTREAM_AGENT:UPDATE' UNION ALL
     SELECT 'AD_UPSTREAM_AGENT:DELETE' UNION ALL
-    -- 下游媒体
+    -- 下游客户
     SELECT 'AD_DOWNSTREAM_MEDIA:READ'   UNION ALL
     SELECT 'AD_DOWNSTREAM_MEDIA:CREATE' UNION ALL
     SELECT 'AD_DOWNSTREAM_MEDIA:UPDATE' UNION ALL

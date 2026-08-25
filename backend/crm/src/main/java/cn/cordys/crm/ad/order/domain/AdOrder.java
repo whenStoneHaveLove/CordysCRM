@@ -69,7 +69,7 @@ public class AdOrder extends BaseModel {
     @Schema(description = "应收金额=总额-返点")
     private BigDecimal receivableAmount;
 
-    @Schema(description = "媒体应付总额(下游口径,L-28)")
+    @Schema(description = "应付总额(下游口径,L-28)")
     private BigDecimal mediaPayableAmount;
 
     @Schema(description = "投放起始日")
@@ -87,7 +87,7 @@ public class AdOrder extends BaseModel {
     @Schema(description = "备注")
     private String remark;
 
-    @Schema(description = "收款方式:10预付款/20账期")
+    @Schema(description = "收款方式:10预收/20账期")
     private Integer receiptMethod;
 
     @Schema(description = "预付模式:10比例/20固定(L-25)")
@@ -105,19 +105,19 @@ public class AdOrder extends BaseModel {
     @Schema(description = "账期天数(账期时必填)")
     private Integer receiptAccountPeriodDays;
 
-    @Schema(description = "付款方式:10预付媒体/20后付媒体")
+    @Schema(description = "付款方式:10预付/20后付")
     private Integer paymentMethod;
 
-    @Schema(description = "媒体预付模式:10比例/20固定")
+    @Schema(description = "预付模式:10比例/20固定")
     private Integer paymentPrepayMode;
 
-    @Schema(description = "媒体预付比例%")
+    @Schema(description = "预付比例%")
     private BigDecimal paymentPrepayRatio;
 
-    @Schema(description = "媒体预付金额(基数=media_payable,L-28)")
+    @Schema(description = "预付金额(基数=media_payable,L-28)")
     private BigDecimal paymentPrepayAmount;
 
-    @Schema(description = "媒体预付截止日")
+    @Schema(description = "预付截止日")
     private Date paymentPrepayDeadline;
 
     @Schema(description = "后付触发:10收到上游全款/20执行完成X天(L-05)")
@@ -132,7 +132,7 @@ public class AdOrder extends BaseModel {
     @Schema(description = "收款进度:0未收/10部分/20全额")
     private Integer receiptStatus = 0;
 
-    @Schema(description = "媒体付款进度:0未付/10部分/20全额")
+    @Schema(description = "付款进度:0未付/10部分/20全额")
     private Integer mediaPaymentStatus = 0;
 
     @Schema(description = "收款状态:0待收/1已收")
@@ -147,7 +147,7 @@ public class AdOrder extends BaseModel {
     @Schema(description = "已收款累计(含预收)")
     private BigDecimal receivedAmount = BigDecimal.ZERO;
 
-    @Schema(description = "已付媒体款累计")
+    @Schema(description = "已付款累计")
     private BigDecimal mediaPaidAmount = BigDecimal.ZERO;
 
     @Schema(description = "坏账金额(强制归档,L-13)")

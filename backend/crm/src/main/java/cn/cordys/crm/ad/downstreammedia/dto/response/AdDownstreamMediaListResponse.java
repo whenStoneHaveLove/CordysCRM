@@ -9,13 +9,13 @@ public class AdDownstreamMediaListResponse {
     @Schema(description = "id")
     private String id;
 
-    @Schema(description = "媒体名称")
+    @Schema(description = "名称")
     private String name;
 
-    @Schema(description = "媒体类型")
+    @Schema(description = "类型")
     private String mediaType;
 
-    @Schema(description = "媒体类型标签")
+    @Schema(description = "类型标签")
     private String mediaTypeLabel;
 
     @Schema(description = "覆盖渠道")
