@@ -356,8 +356,8 @@ public class AdPayoutService {
             row.setUpdateTime(now);
             rows.add(row);
         }
-        if (!rows.isEmpty()) {
-            adPaymentMediaMapper.batchInsert(rows);
+        for (final AdPaymentMedia row : rows) {
+            adPaymentMediaMapper.insert(row);
         }
     }
 }
