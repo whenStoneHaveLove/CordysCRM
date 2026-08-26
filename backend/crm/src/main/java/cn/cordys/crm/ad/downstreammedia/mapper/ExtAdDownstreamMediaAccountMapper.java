@@ -22,16 +22,16 @@ public interface ExtAdDownstreamMediaAccountMapper {
     /**
      * 批量查询多个下游客户的账户列表（未删除）。key 为 downstream_media_id。
      */
-    @org.apache.ibatis.annotations.Select("""
-            SELECT id, downstream_media_id, payee_name, bank_name, bank_account, disabled,
-                   organization_id, create_time, update_time, create_user, update_user, deleted
-            FROM ad_downstream_media_account
-            WHERE deleted = 0
-              AND downstream_media_id IN
-              <foreach item='mid' collection='downstreamMediaIds' open='(' separator=',' close=')'>
-                  #{mid}
-              </foreach>
-            ORDER BY create_time ASC, id ASC
-            """)
+    @org.apache.ibatis.annotations.Select("<script>"
+            + "SELECT id, downstream_media_id, payee_name, bank_name, bank_account, disabled,"
+            + " organization_id, create_time, update_time, create_user, update_user, deleted"
+            + " FROM ad_downstream_media_account"
+            + " WHERE deleted = 0"
+            + " AND downstream_media_id IN"
+            + " <foreach item='mid' collection='downstreamMediaIds' open='(' separator=',' close=')'>"
+            + " #{mid}"
+            + " </foreach>"
+            + " ORDER BY create_time ASC, id ASC"
+            + "</script>")
     java.util.List<AdDownstreamMediaAccount> selectByDownstreamMediaIds(@Param("downstreamMediaIds") java.util.List<String> downstreamMediaIds);
 }
