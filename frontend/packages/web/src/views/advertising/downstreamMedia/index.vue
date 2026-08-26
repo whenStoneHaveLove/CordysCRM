@@ -297,15 +297,16 @@
   async function openEdit(row: any) {
     modal.editId = row.id;
     const d = await getAdDownstreamMediaDetail(row.id);
-    form.name = d.name || '';
-    form.mediaType = d.mediaType || null;
-    form.channel = d.channel || '';
-    form.rateCard = d.rateCard || '';
-    form.discountPolicy = d.discountPolicy || '';
-    form.contactPerson = d.contactPerson || '';
-    form.contactPhone = d.contactPhone || '';
-    form.cooperationStatus = d.cooperationStatus ?? 10;
-    form.businessEntityId = d.businessEntityId || null;
+    const m = (d && (d as any).media) || d;
+    form.name = m.name || '';
+    form.mediaType = m.mediaType || null;
+    form.channel = m.channel || '';
+    form.rateCard = m.rateCard || '';
+    form.discountPolicy = m.discountPolicy || '';
+    form.contactPerson = m.contactPerson || '';
+    form.contactPhone = m.contactPhone || '';
+    form.cooperationStatus = m.cooperationStatus ?? 10;
+    form.businessEntityId = m.businessEntityId || null;
     form.accounts = (d.accountList || []).map((a: any) => ({
       id: a.id,
       payeeName: a.payeeName,
