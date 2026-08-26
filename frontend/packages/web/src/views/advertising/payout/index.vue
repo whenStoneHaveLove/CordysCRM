@@ -101,6 +101,15 @@
                     @update:value="recalcAmount"
                   />
                 </n-descriptions-item>
+                <n-descriptions-item label="账户信息" :span="3">
+                  <n-select
+                    v-model:value="mediaAccountDraft[m.mediaId || m.id || '']"
+                    filterable
+                    clearable
+                    :options="accountOptionsOf(m)"
+                    placeholder="选择收款账户"
+                  />
+                </n-descriptions-item>
               </n-descriptions>
             </div>
             <div class="media-summary">
@@ -122,6 +131,13 @@
             :loading="saving"
             @click="handleSave"
             >保存</n-button
+          >
+          <n-button
+            v-permission="[editId ? 'AD_PAYOUT:UPDATE' : 'AD_PAYOUT:CREATE']"
+            type="info"
+            :loading="submitting"
+            @click="handleSubmitModal"
+            >提交</n-button
           >
         </n-space>
       </template>
@@ -210,6 +226,7 @@
               <th style="width: 100px">返点金额</th>
               <th style="width: 100px">实际应付</th>
               <th style="width: 110px">本次付款</th>
+              <th style="width: 200px">收款账户</th>
             </tr>
           </thead>
           <tbody>
@@ -223,6 +240,7 @@
               <td>¥{{ fmtMoney(m.rebateAmount) }}</td>
               <td>¥{{ fmtMoney(m.actualPayable) }}</td>
               <td>¥{{ fmtMoney(m.paidAmount) }}</td>
+              <td>{{ formatAccount(m) }}</td>
             </tr>
           </tbody>
         </n-table>
@@ -307,6 +325,7 @@
 
   const loading = ref(false);
   const saving = ref(false);
+  const submitting = ref(false);
   const list = ref<AdPayoutInfo[]>([]);
   const searchForm = reactive({
     keyword: '',
@@ -381,6 +400,11 @@
     const diff = actual - paid;
     return diff > 0 ? diff : 0;
   }
+  function formatAccount(m: AdPayoutMediaDetailItem): string {
+    if (!m.payeeName && !m.bankName && !m.bankAccount) return '-';
+    const disabled = m.accountDisabled === 1 ? '（停用）' : '';
+    return `${m.payeeName || ''} - ${m.bankName || ''} - ${m.bankAccount || ''}${disabled}`;
+  }
 
   /* ========== 新建/编辑表单状态 ========== */
   interface PayoutForm {
@@ -406,9 +430,25 @@
   const mediaOptions = ref<AdPayoutMediaOption[]>([]);
   // 每客户本次付款草稿（key = mediaId || id）
   const mediaPaidDraft = reactive<Record<string, number>>({});
+  // 每客户所选账户草稿（key = mediaId || id）
+  const mediaAccountDraft = reactive<Record<string, string>>({});
 
   function resetMediaDraft() {
     Object.keys(mediaPaidDraft).forEach((k) => delete mediaPaidDraft[k]);
+    Object.keys(mediaAccountDraft).forEach((k) => delete mediaAccountDraft[k]);
+  }
+
+  function accountOptionsOf(m: AdPayoutMediaOption) {
+    const opts = (m.accountList || []).map((a) => ({
+      label: `${a.payeeName || ''} - ${a.bankName || ''} - ${a.bankAccount || ''}${a.disabled === 1 ? '（停用）' : ''}`,
+      value: a.id || '',
+    }));
+    return opts;
+  }
+
+  function firstAvailableAccountId(m: AdPayoutMediaOption): string {
+    const acc = (m.accountList || []).find((a) => a.disabled !== 1);
+    return acc?.id || '';
   }
 
   async function searchOrders(keyword: string) {
@@ -438,6 +478,7 @@
   /* ========== 新建/编辑 ========== */
   const showModal = ref(false);
   const editId = ref('');
+  const createdId = ref('');
   const modalTitle = computed(() => (editId.value ? '编辑付款单' : '新建付款单'));
 
   async function onOrderChange(orderId: string) {
@@ -452,11 +493,13 @@
       form.amount = Number(remaining ?? 0);
       const media = (await getAdPayoutMedia(orderId)) || [];
       mediaOptions.value = media as AdPayoutMediaOption[];
-      // 新建模式：本次付款默认带出各客户的剩余应付
+      // 新建模式：本次付款默认带出各客户的剩余应付 + 默认回带一条可用账户
       if (!editId.value) {
         mediaOptions.value.forEach((m) => {
           const key = m.mediaId || m.id || '';
-          if (key) mediaPaidDraft[key] = remainingOf(m);
+          if (!key) return;
+          mediaPaidDraft[key] = remainingOf(m);
+          mediaAccountDraft[key] = firstAvailableAccountId(m);
         });
         recalcAmount();
       }
@@ -505,6 +548,8 @@
         const key = d.mediaId || '';
         if (!key) return;
         mediaPaidDraft[key] = Number(d.paidAmount ?? 0);
+        mediaAccountDraft[key] =
+          d.accountId || firstAvailableAccountId(mediaOptions.value.find((m) => (m.mediaId || m.id) === key) || {});
       });
     } catch (e) {
       message.error((e as Error).message || '加载失败');
@@ -537,6 +582,7 @@
             rebateAmount: Number(m.rebateAmount ?? 0),
             actualPayable: Number(m.actualPayable ?? 0),
             paidAmount: paid,
+            accountId: mediaAccountDraft[key] || undefined,
           };
         })
         .filter((d) => d.mediaId);
@@ -555,15 +601,47 @@
         payload.id = editId.value;
         await updateAdPayout(payload);
       } else {
-        await createAdPayout(payload);
+        const res = await createAdPayout(payload);
+        createdId.value = (res as any)?.id || '';
       }
       message.success('保存成功');
       showModal.value = false;
       fetchData();
+      return editId.value ? editId.value : createdId.value;
     } catch (e) {
       message.error((e as Error).message || '保存失败');
+      return '';
     } finally {
       saving.value = false;
+    }
+  }
+
+  /** 模态提交：先保存草稿，校验账户后提交（草稿→待审核）。 */
+  async function handleSubmitModal() {
+    if (mediaOptions.value.length === 0) {
+      message.warning('请先选择关联订单');
+      return;
+    }
+    const unselected = mediaOptions.value.filter((m) => {
+      const key = m.mediaId || m.id || '';
+      return !mediaAccountDraft[key];
+    });
+    if (unselected.length > 0) {
+      message.warning('每个下游客户都必须选择收款账户后才能提交');
+      return;
+    }
+    submitting.value = true;
+    try {
+      const savedId = await handleSave();
+      if (!savedId) return;
+      await submitAdPayout(savedId);
+      message.success('已提交');
+      showModal.value = false;
+      fetchData();
+    } catch (e) {
+      message.error((e as Error).message || '提交失败');
+    } finally {
+      submitting.value = false;
     }
   }
 

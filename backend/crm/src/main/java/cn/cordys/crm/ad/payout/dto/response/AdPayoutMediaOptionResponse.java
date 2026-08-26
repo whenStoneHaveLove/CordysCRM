@@ -1,9 +1,11 @@
 package cn.cordys.crm.ad.payout.dto.response;
 
+import cn.cordys.crm.ad.downstreammedia.dto.response.AdDownstreamMediaAccountItem;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * 付款单选下拉项（订单的下游客户，JOIN ad_downstream_media 填充名称）。
@@ -40,4 +42,7 @@ public class AdPayoutMediaOptionResponse {
 
     @Schema(description = "该客户累计已付金额(含草稿/审核中)")
     private BigDecimal paidAmount;
+
+    @Schema(description = "该下游客户的银行账户列表(可用状态优先)")
+    private List<AdDownstreamMediaAccountItem> accountList;
 }

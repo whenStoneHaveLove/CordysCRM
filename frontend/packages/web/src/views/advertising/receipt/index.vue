@@ -86,6 +86,13 @@
             @click="handleSave"
             >保存</n-button
           >
+          <n-button
+            v-permission="[editId ? 'AD_RECEIPT:UPDATE' : 'AD_RECEIPT:CREATE']"
+            type="info"
+            :loading="submitting"
+            @click="handleSubmitModal"
+            >提交</n-button
+          >
         </n-space>
       </template>
     </n-modal>
@@ -101,8 +108,12 @@
       <template #footer>
         <n-space justify="end">
           <n-button @click="showApprove = false">取消</n-button>
-          <n-button v-permission="['AD_RECEIPT:APPROVE']" type="success" :loading="saving" @click="doApprove('APPROVE')">通过</n-button>
-          <n-button v-permission="['AD_RECEIPT:APPROVE']" type="error" :loading="saving" @click="doApprove('REJECT')">驳回</n-button>
+          <n-button v-permission="['AD_RECEIPT:APPROVE']" type="success" :loading="saving" @click="doApprove('APPROVE')"
+            >通过</n-button
+          >
+          <n-button v-permission="['AD_RECEIPT:APPROVE']" type="error" :loading="saving" @click="doApprove('REJECT')"
+            >驳回</n-button
+          >
         </n-space>
       </template>
     </n-modal>
@@ -316,6 +327,8 @@
   // ---- 新建/编辑 ----
   const showModal = ref(false);
   const editId = ref('');
+  const createdId = ref('');
+  const submitting = ref(false);
   const modalTitle = computed(() => (editId.value ? '编辑收款单' : '新建收款单'));
 
   function resetForm() {
@@ -373,19 +386,38 @@
         payload.id = editId.value;
         await updateAdReceipt(payload);
       } else {
-        await createAdReceipt(payload);
+        const res = await createAdReceipt(payload);
+        createdId.value = (res as any)?.id || '';
       }
       message.success('保存成功');
       showModal.value = false;
       fetchData();
+      return editId.value ? editId.value : createdId.value;
     } catch (e) {
       message.error((e as Error).message || '保存失败');
+      return '';
     } finally {
       saving.value = false;
     }
   }
 
   // ---- 提交 / 审核 ----
+  async function handleSubmitModal() {
+    submitting.value = true;
+    try {
+      const savedId = await handleSave();
+      if (!savedId) return;
+      await submitAdReceipt(savedId);
+      message.success('已提交');
+      showModal.value = false;
+      fetchData();
+    } catch (e) {
+      message.error((e as Error).message || '提交失败');
+    } finally {
+      submitting.value = false;
+    }
+  }
+
   async function handleSubmit(row: AdReceiptInfo) {
     try {
       await submitAdReceipt(row.id!);
@@ -456,7 +488,10 @@
   }
   function goContractDetail(contractId?: string) {
     if (!contractId) return;
-    const { href } = router.resolve({ name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_DETAIL, params: { id: contractId } });
+    const { href } = router.resolve({
+      name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_DETAIL,
+      params: { id: contractId },
+    });
     window.open(href, '_blank');
   }
 

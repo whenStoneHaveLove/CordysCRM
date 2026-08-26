@@ -7,6 +7,7 @@ import cn.cordys.context.OrganizationContext;
 import cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMedia;
 import cn.cordys.crm.ad.downstreammedia.dto.request.AdDownstreamMediaPageRequest;
 import cn.cordys.crm.ad.downstreammedia.dto.request.AdDownstreamMediaSaveRequest;
+import cn.cordys.crm.ad.downstreammedia.dto.response.AdDownstreamMediaAccountItem;
 import cn.cordys.crm.ad.downstreammedia.dto.response.AdDownstreamMediaDetailResponse;
 import cn.cordys.crm.ad.downstreammedia.dto.response.AdDownstreamMediaListResponse;
 import cn.cordys.crm.ad.downstreammedia.service.AdDownstreamMediaService;
@@ -62,5 +63,12 @@ public class AdDownstreamMediaController {
     @Operation(summary = "删除下游客户")
     public void delete(@PathVariable("id") String id) {
         mediaService.delete(id, userId(), orgId());
+    }
+
+    @GetMapping("/{id}/accounts")
+    @CsPermission(PermissionConstants.AD_DOWNSTREAM_MEDIA_READ)
+    @Operation(summary = "查询下游客户银行账户列表")
+    public List<AdDownstreamMediaAccountItem> listAccounts(@PathVariable("id") String id) {
+        return mediaService.listAccounts(id, userId(), orgId());
     }
 }

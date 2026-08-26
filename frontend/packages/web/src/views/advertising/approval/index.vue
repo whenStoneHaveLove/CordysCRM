@@ -87,6 +87,7 @@
                     <th style="width: 90px">返点金额</th>
                     <th style="width: 90px">实际应付</th>
                     <th style="width: 100px">本次付款</th>
+                    <th style="width: 220px">收款账户</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -100,6 +101,7 @@
                     <td>¥{{ fmtPayoutMoney(m.rebateAmount) }}</td>
                     <td>¥{{ fmtPayoutMoney(m.actualPayable) }}</td>
                     <td>¥{{ fmtPayoutMoney(m.paidAmount) }}</td>
+                    <td>{{ formatAccountCell(m) }}</td>
                   </tr>
                 </tbody>
               </n-table>
@@ -142,6 +144,7 @@
     AdApprovalPageResult,
     AdApprovalTodoItem,
     AdApprovalType,
+    AdPayoutMediaDetailItem,
   } from '@lib/shared/models/advertising';
 
   import {
@@ -219,6 +222,11 @@
     if (m.rebateMode === 10) return `${fmtPayoutMoney(m.rebateValue)}%`;
     if (m.rebateMode === 20) return `¥${fmtPayoutMoney(m.rebateValue)}`;
     return '-';
+  }
+  function formatAccountCell(m: AdPayoutMediaDetailItem): string {
+    if (!m.payeeName && !m.bankName && !m.bankAccount) return '-';
+    const disabled = m.accountDisabled === 1 ? '（停用）' : '';
+    return `${m.payeeName || ''} - ${m.bankName || ''} - ${m.bankAccount || ''}${disabled}`;
   }
 
   /* eslint-disable no-use-before-define */

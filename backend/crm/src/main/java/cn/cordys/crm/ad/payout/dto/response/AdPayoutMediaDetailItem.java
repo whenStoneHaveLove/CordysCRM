@@ -43,4 +43,19 @@ public class AdPayoutMediaDetailItem {
 
     @Schema(description = "本次付款金额")
     private BigDecimal paidAmount;
+
+    @Schema(description = "下游客户银行账户id")
+    private String accountId;
+
+    @Schema(description = "收款人全称")
+    private String payeeName;
+
+    @Schema(description = "开户行")
+    private String bankName;
+
+    @Schema(description = "银行账号")
+    private String bankAccount;
+
+    @Schema(description = "账户是否停用:0-启用/1-停用")
+    private Integer accountDisabled;
 }

@@ -1,7 +1,10 @@
 package cn.cordys.crm.ad.downstreammedia.dto.request;
 
+import cn.cordys.crm.ad.downstreammedia.dto.request.AdDownstreamMediaAccountSaveItem;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class AdDownstreamMediaSaveRequest {
@@ -38,4 +41,7 @@ public class AdDownstreamMediaSaveRequest {
 
     @Schema(description = "业务主体")
     private String businessEntityId;
+
+    @Schema(description = "银行账户列表(空表示不改动；传空列表表示清空该客户全部账户)")
+    private List<AdDownstreamMediaAccountSaveItem> accounts;
 }

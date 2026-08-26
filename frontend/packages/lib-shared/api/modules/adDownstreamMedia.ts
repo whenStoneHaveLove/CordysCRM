@@ -1,6 +1,7 @@
 import type { CordysAxios } from '@lib/shared/api/http/Axios';
 import { AdDownstreamMediaUrl, AdDownstreamMediaPageUrl } from '@lib/shared/api/requrls/adDownstreamMedia';
 import type { CommonList } from '@lib/shared/models/common';
+import type { AdDownstreamMediaAccount } from '@lib/shared/models/advertising';
 
 export interface AdDownstreamMediaItem {
     id: string;
@@ -20,6 +21,10 @@ export interface AdDownstreamMediaItem {
     createTime?: number;
 }
 
+export interface AdDownstreamMediaDetail extends AdDownstreamMediaItem {
+    accountList?: AdDownstreamMediaAccount[];
+}
+
 export interface AdDownstreamMediaSaveParams {
     id?: string;
     name?: string;
@@ -32,6 +37,15 @@ export interface AdDownstreamMediaSaveParams {
     cooperationStatus?: number;
     status?: number;
     businessEntityId?: string;
+    accounts?: AdDownstreamMediaAccountSaveItem[];
+}
+
+export interface AdDownstreamMediaAccountSaveItem {
+    id?: string;
+    payeeName?: string;
+    bankName?: string;
+    bankAccount?: string;
+    disabled?: number;
 }
 
 type AdDownstreamMediaPageParams = Record<string, any>;
@@ -45,7 +59,10 @@ export default function useAdDownstreamMediaApi(CDR: CordysAxios) {
         return CDR.put<any>({ url: AdDownstreamMediaUrl, data });
     }
     function getAdDownstreamMediaDetail(id: string) {
-        return CDR.get<any>({ url: `${AdDownstreamMediaUrl}/${id}` });
+        return CDR.get<AdDownstreamMediaDetail>({ url: `${AdDownstreamMediaUrl}/${id}` });
+    }
+    function getAdDownstreamMediaAccounts(id: string) {
+        return CDR.get<AdDownstreamMediaAccount[]>({ url: `${AdDownstreamMediaUrl}/${id}/accounts` });
     }
     function getAdDownstreamMediaPage(data: AdDownstreamMediaPageParams) {
         return CDR.post<AdDownstreamMediaPageResult>({ url: AdDownstreamMediaPageUrl, data }, { ignoreCancelToken: true });
@@ -53,5 +70,5 @@ export default function useAdDownstreamMediaApi(CDR: CordysAxios) {
     function deleteAdDownstreamMedia(id: string) {
         return CDR.delete({ url: `${AdDownstreamMediaUrl}/${id}` });
     }
-    return { createAdDownstreamMedia, updateAdDownstreamMedia, getAdDownstreamMediaDetail, getAdDownstreamMediaPage, deleteAdDownstreamMedia };
+    return { createAdDownstreamMedia, updateAdDownstreamMedia, getAdDownstreamMediaDetail, getAdDownstreamMediaAccounts, getAdDownstreamMediaPage, deleteAdDownstreamMedia };
 }

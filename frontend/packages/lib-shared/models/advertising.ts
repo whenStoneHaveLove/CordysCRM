@@ -1016,6 +1016,22 @@ export interface AdPayoutMediaDetailItem {
   rebateAmount?: number;
   actualPayable?: number;
   paidAmount?: number;
+  accountId?: string;
+  payeeName?: string;
+  bankName?: string;
+  bankAccount?: string;
+  accountDisabled?: number;
+}
+
+/** 下游客户银行账户（详情/下拉用）。 */
+export interface AdDownstreamMediaAccount {
+  id?: string;
+  downstreamMediaId?: string;
+  payeeName?: string;
+  bankName?: string;
+  bankAccount?: string;
+  disabled?: number;
+  createTime?: number;
 }
 
 /** 订单的下游客户列表（带返点信息 + 累计已付，供新建付款单参考）。 */
@@ -1030,6 +1046,7 @@ export interface AdPayoutMediaOption {
   rebateAmount?: number;
   actualPayable?: number;
   paidAmount?: number;
+  accountList?: AdDownstreamMediaAccount[];
 }
 
 export interface AdPayoutApproveParams {

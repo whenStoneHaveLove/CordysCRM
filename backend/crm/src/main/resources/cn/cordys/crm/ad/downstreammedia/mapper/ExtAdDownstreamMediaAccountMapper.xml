@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.cordys.crm.ad.downstreammedia.mapper.ExtAdDownstreamMediaAccountMapper">
+
+    <sql id="Base_Column_List">
+        id, downstream_media_id, payee_name, bank_name, bank_account, disabled,
+        organization_id, create_time, update_time, create_user, update_user, deleted
+    </sql>
+
+    <select id="selectByDownstreamMediaId" resultType="cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMediaAccount">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM ad_downstream_media_account
+        WHERE deleted = 0
+        AND downstream_media_id = #{downstreamMediaId}
+        ORDER BY create_time ASC, id ASC
+    </select>
+
+    <select id="selectFirstAvailable" resultType="cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMediaAccount">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM ad_downstream_media_account
+        WHERE deleted = 0
+        AND disabled = 0
+        AND downstream_media_id = #{downstreamMediaId}
+        ORDER BY create_time ASC, id ASC
+        LIMIT 1
+    </select>
+</mapper>

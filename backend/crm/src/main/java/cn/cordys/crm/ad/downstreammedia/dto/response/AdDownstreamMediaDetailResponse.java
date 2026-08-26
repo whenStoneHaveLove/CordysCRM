@@ -1,8 +1,11 @@
 package cn.cordys.crm.ad.downstreammedia.dto.response;
 
 import cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMedia;
+import cn.cordys.crm.ad.downstreammedia.dto.response.AdDownstreamMediaAccountItem;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class AdDownstreamMediaDetailResponse {
@@ -21,4 +24,7 @@ public class AdDownstreamMediaDetailResponse {
 
     @Schema(description = "业务主体名称")
     private String businessEntityName;
+
+    @Schema(description = "银行账户列表")
+    private List<AdDownstreamMediaAccountItem> accountList;
 }

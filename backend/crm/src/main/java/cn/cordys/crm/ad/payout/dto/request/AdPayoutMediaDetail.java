@@ -40,4 +40,7 @@ public class AdPayoutMediaDetail {
 
     @Schema(description = "本次付款金额")
     private BigDecimal paidAmount;
+
+    @Schema(description = "下游客户银行账户id(ad_downstream_media_account.id)")
+    private String accountId;
 }

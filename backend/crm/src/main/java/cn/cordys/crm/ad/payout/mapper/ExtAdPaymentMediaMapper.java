@@ -20,23 +20,29 @@ public interface ExtAdPaymentMediaMapper {
      */
     @Select("""
             SELECT
-                id                       AS id,
-                payment_id               AS paymentId,
-                order_id                 AS orderId,
-                order_downstream_media_id AS orderDownstreamMediaId,
-                media_id                 AS mediaId,
-                media_name               AS mediaName,
-                payable_amount        AS payableAmount,
-                no_rebate_amount      AS noRebateAmount,
-                rebate_mode           AS rebateMode,
-                rebate_value          AS rebateValue,
-                rebate_amount         AS rebateAmount,
-                actual_payable        AS actualPayable,
-                paid_amount           AS paidAmount
-            FROM ad_payment_media
-            WHERE payment_id = #{paymentId}
-              AND deleted = 0
-            ORDER BY create_time ASC
+                m.id                       AS id,
+                m.payment_id               AS paymentId,
+                m.order_id                 AS orderId,
+                m.order_downstream_media_id AS orderDownstreamMediaId,
+                m.media_id                 AS mediaId,
+                m.media_name               AS mediaName,
+                m.payable_amount        AS payableAmount,
+                m.no_rebate_amount      AS noRebateAmount,
+                m.rebate_mode           AS rebateMode,
+                m.rebate_value          AS rebateValue,
+                m.rebate_amount         AS rebateAmount,
+                m.actual_payable        AS actualPayable,
+                m.paid_amount           AS paidAmount,
+                m.account_id            AS accountId,
+                acc.payee_name          AS payeeName,
+                acc.bank_name           AS bankName,
+                acc.bank_account        AS bankAccount,
+                acc.disabled            AS accountDisabled
+            FROM ad_payment_media m
+            LEFT JOIN ad_downstream_media_account acc ON acc.id = m.account_id AND acc.deleted = 0
+            WHERE m.payment_id = #{paymentId}
+              AND m.deleted = 0
+            ORDER BY m.create_time ASC
             """)
     List<AdPayoutMediaDetailItem> selectByPaymentId(@Param("paymentId") String paymentId);
 

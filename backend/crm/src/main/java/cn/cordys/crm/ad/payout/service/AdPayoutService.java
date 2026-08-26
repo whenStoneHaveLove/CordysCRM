@@ -65,6 +65,8 @@ public class AdPayoutService {
     private AdPaymentMediaMapper adPaymentMediaMapper;
     @Resource
     private cn.cordys.crm.ad.payout.mapper.ExtAdPaymentMediaMapper extAdPaymentMediaMapper;
+    @Resource
+    private cn.cordys.crm.ad.downstreammedia.mapper.ExtAdDownstreamMediaAccountMapper extAccountMapper;
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -251,9 +253,40 @@ public class AdPayoutService {
         return payable.subtract(paid);
     }
 
-    /** 订单的下游客户列表（付款单选择订单时带出供勾选，JOIN 出名称）。 */
+    /** 订单的下游客户列表（付款单选择订单时带出供勾选，JOIN 出名称 + 账户）。 */
     public List<cn.cordys.crm.ad.payout.dto.response.AdPayoutMediaOptionResponse> listMedia(String orderId, String userId, String orgId) {
-        return extAdPayoutMediaOptionMapper.selectMediaOptions(orderId);
+        List<cn.cordys.crm.ad.payout.dto.response.AdPayoutMediaOptionResponse> options = extAdPayoutMediaOptionMapper.selectMediaOptions(orderId);
+        List<String> mediaIds = options.stream()
+                .map(cn.cordys.crm.ad.payout.dto.response.AdPayoutMediaOptionResponse::getMediaId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (!mediaIds.isEmpty()) {
+            List<cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMediaAccount> all = extAccountMapper.selectByDownstreamMediaIds(mediaIds);
+            java.util.Map<String, java.util.List<cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMediaAccount>> byMedia = all.stream()
+                    .collect(java.util.stream.Collectors.groupingBy(cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMediaAccount::getDownstreamMediaId));
+            for (cn.cordys.crm.ad.payout.dto.response.AdPayoutMediaOptionResponse opt : options) {
+                if (opt.getMediaId() == null) {
+                    continue;
+                }
+                List<cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMediaAccount> accs = byMedia.get(opt.getMediaId());
+                if (accs == null) {
+                    accs = java.util.Collections.emptyList();
+                }
+                opt.setAccountList(accs.stream().map(a -> {
+                    cn.cordys.crm.ad.downstreammedia.dto.response.AdDownstreamMediaAccountItem item = new cn.cordys.crm.ad.downstreammedia.dto.response.AdDownstreamMediaAccountItem();
+                    item.setId(a.getId());
+                    item.setDownstreamMediaId(a.getDownstreamMediaId());
+                    item.setPayeeName(a.getPayeeName());
+                    item.setBankName(a.getBankName());
+                    item.setBankAccount(a.getBankAccount());
+                    item.setDisabled(a.getDisabled());
+                    item.setCreateTime(a.getCreateTime());
+                    return item;
+                }).toList());
+            }
+        }
+        return options;
     }
 
     /** 分页列表。 */
@@ -349,6 +382,7 @@ public class AdPayoutService {
             row.setRebateAmount(d.getRebateAmount());
             row.setActualPayable(d.getActualPayable());
             row.setPaidAmount(d.getPaidAmount() == null ? BigDecimal.ZERO : d.getPaidAmount());
+            row.setAccountId(d.getAccountId());
             row.setOrganizationId(orgId);
             row.setCreateUser(userId);
             row.setUpdateUser(userId);

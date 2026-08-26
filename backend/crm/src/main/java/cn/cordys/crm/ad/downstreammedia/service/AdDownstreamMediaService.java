@@ -10,10 +10,14 @@ import cn.cordys.crm.ad.common.annotation.OperationLog;
 import cn.cordys.crm.ad.dict.domain.AdDict;
 import cn.cordys.crm.ad.dict.service.AdDictService;
 import cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMedia;
+import cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMediaAccount;
+import cn.cordys.crm.ad.downstreammedia.dto.request.AdDownstreamMediaAccountSaveItem;
 import cn.cordys.crm.ad.downstreammedia.dto.request.AdDownstreamMediaPageRequest;
 import cn.cordys.crm.ad.downstreammedia.dto.request.AdDownstreamMediaSaveRequest;
+import cn.cordys.crm.ad.downstreammedia.dto.response.AdDownstreamMediaAccountItem;
 import cn.cordys.crm.ad.downstreammedia.dto.response.AdDownstreamMediaDetailResponse;
 import cn.cordys.crm.ad.downstreammedia.dto.response.AdDownstreamMediaListResponse;
+import cn.cordys.crm.ad.downstreammedia.mapper.ExtAdDownstreamMediaAccountMapper;
 import cn.cordys.crm.ad.downstreammedia.mapper.ExtAdDownstreamMediaMapper;
 import cn.cordys.mybatis.BaseMapper;
 import com.github.pagehelper.Page;
@@ -39,6 +43,10 @@ public class AdDownstreamMediaService {
     @Resource
     private ExtAdDownstreamMediaMapper extDownstreamMediaMapper;
     @Resource
+    private BaseMapper<AdDownstreamMediaAccount> accountMapper;
+    @Resource
+    private ExtAdDownstreamMediaAccountMapper extAccountMapper;
+    @Resource
     private AdDictService adDictService;
     @Resource
     private AdEntityPermissionProvider entityPermissionProvider;
@@ -55,6 +63,7 @@ public class AdDownstreamMediaService {
         media.setCreateUser(userId);
         media.setCreateTime(System.currentTimeMillis());
         mediaMapper.insert(media);
+        saveAccounts(media.getId(), request.getAccounts(), userId, orgId);
         return media;
     }
 
@@ -68,6 +77,7 @@ public class AdDownstreamMediaService {
         existing.setUpdateUser(userId);
         existing.setUpdateTime(System.currentTimeMillis());
         mediaMapper.update(existing);
+        saveAccounts(existing.getId(), request.getAccounts(), userId, orgId);
         return existing;
     }
 
@@ -86,7 +96,13 @@ public class AdDownstreamMediaService {
             AdBusinessEntity be = businessEntityMapper.selectByPrimaryKey(media.getBusinessEntityId());
             resp.setBusinessEntityName(be == null ? null : be.getName());
         }
+        resp.setAccountList(toAccountItems(extAccountMapper.selectByDownstreamMediaId(id)));
         return resp;
+    }
+
+    public List<AdDownstreamMediaAccountItem> listAccounts(String mediaId, String userId, String orgId) {
+        requireMedia(mediaId);
+        return toAccountItems(extAccountMapper.selectByDownstreamMediaId(mediaId));
     }
 
     public PagerWithOption<List<AdDownstreamMediaListResponse>> page(AdDownstreamMediaPageRequest request, String userId, String orgId) {
@@ -143,5 +159,84 @@ public class AdDownstreamMediaService {
         if (request.getName() == null || request.getName().isBlank()) {
             throw new GenericException("名称不能为空");
         }
+    }
+
+    // ========== 银行账户 ==========
+
+    /**
+     * 保存账户：accounts 为 null 表示本次不改动；传空列表表示清空该客户全部账户；
+     * 列表内的项按 id 是否存在决定新增或更新，列表外的原账户逻辑删除。
+     */
+    private void saveAccounts(String mediaId, List<AdDownstreamMediaAccountSaveItem> accounts, String userId, String orgId) {
+        if (accounts == null) {
+            return;
+        }
+        List<AdDownstreamMediaAccount> existing = extAccountMapper.selectByDownstreamMediaId(mediaId);
+        java.util.Set<String> keepIds = new java.util.HashSet<>();
+        long now = System.currentTimeMillis();
+        for (AdDownstreamMediaAccountSaveItem item : accounts) {
+            if (item.getPayeeName() == null || item.getPayeeName().isBlank()
+                    || item.getBankName() == null || item.getBankName().isBlank()
+                    || item.getBankAccount() == null || item.getBankAccount().isBlank()) {
+                continue;
+            }
+            if (item.getId() != null && !item.getId().isBlank()) {
+                AdDownstreamMediaAccount acc = accountMapper.selectByPrimaryKey(item.getId());
+                if (acc != null && acc.getDeleted() != null && acc.getDeleted() == 0) {
+                    acc.setPayeeName(item.getPayeeName());
+                    acc.setBankName(item.getBankName());
+                    acc.setBankAccount(item.getBankAccount());
+                    acc.setDisabled(item.getDisabled() == null ? 0 : item.getDisabled());
+                    acc.setUpdateUser(userId);
+                    acc.setUpdateTime(now);
+                    accountMapper.update(acc);
+                    keepIds.add(acc.getId());
+                }
+            } else {
+                AdDownstreamMediaAccount acc = new AdDownstreamMediaAccount();
+                acc.setId(IDGenerator.nextStr());
+                acc.setDownstreamMediaId(mediaId);
+                acc.setPayeeName(item.getPayeeName());
+                acc.setBankName(item.getBankName());
+                acc.setBankAccount(item.getBankAccount());
+                acc.setDisabled(item.getDisabled() == null ? 0 : item.getDisabled());
+                acc.setOrganizationId(orgId);
+                acc.setCreateUser(userId);
+                acc.setCreateTime(now);
+                acc.setUpdateUser(userId);
+                acc.setUpdateTime(now);
+                acc.setDeleted(0);
+                accountMapper.insert(acc);
+                keepIds.add(acc.getId());
+            }
+        }
+        // 逻辑删除不在列表内的原账户
+        for (AdDownstreamMediaAccount acc : existing) {
+            if (!keepIds.contains(acc.getId())) {
+                acc.setDeleted(1);
+                acc.setUpdateUser(userId);
+                acc.setUpdateTime(now);
+                accountMapper.update(acc);
+            }
+        }
+    }
+
+    private List<AdDownstreamMediaAccountItem> toAccountItems(List<AdDownstreamMediaAccount> list) {
+        if (list == null) {
+            return java.util.Collections.emptyList();
+        }
+        List<AdDownstreamMediaAccountItem> items = new java.util.ArrayList<>(list.size());
+        for (AdDownstreamMediaAccount acc : list) {
+            AdDownstreamMediaAccountItem item = new AdDownstreamMediaAccountItem();
+            item.setId(acc.getId());
+            item.setDownstreamMediaId(acc.getDownstreamMediaId());
+            item.setPayeeName(acc.getPayeeName());
+            item.setBankName(acc.getBankName());
+            item.setBankAccount(acc.getBankAccount());
+            item.setDisabled(acc.getDisabled());
+            item.setCreateTime(acc.getCreateTime());
+            items.add(item);
+        }
+        return items;
     }
 }
