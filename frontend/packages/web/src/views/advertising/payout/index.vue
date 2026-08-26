@@ -93,7 +93,7 @@
                 <n-descriptions-item label="剩余应付">¥{{ fmtMoney(remainingOf(m)) }}</n-descriptions-item>
                 <n-descriptions-item label="本次付款">
                   <n-input-number
-                    v-model:value="mediaPaidDraft[m.mediaId || m.id]"
+                    v-model:value="mediaPaidDraft[m.mediaId || m.id || '']"
                     :min="0"
                     :precision="2"
                     style="width: 100%"
@@ -213,7 +213,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(m, idx) in detail.mediaDetails" :key="m.id || idx">
+            <tr v-for="(m, idx) in detail.mediaDetails" :key="m.mediaId || m.orderDownstreamMediaId || idx">
               <td>{{ idx + 1 }}</td>
               <td>{{ m.mediaName || m.mediaId || '-' }}</td>
               <td>¥{{ fmtMoney(m.payableAmount) }}</td>
@@ -355,7 +355,7 @@
 
   /* ========== 工具 ========== */
   function fmtMoney(v?: number | null): string {
-    if (v === null || v === undefined || v === '') return '0.00';
+    if (v === null || v === undefined) return '0.00';
     const n = Number(v);
     if (Number.isNaN(n)) return '0.00';
     return n.toFixed(2);

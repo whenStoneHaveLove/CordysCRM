@@ -205,7 +205,7 @@
   >([]);
 
   function fmtPayoutMoney(v?: number | null): string {
-    if (v === null || v === undefined || v === '') return '0.00';
+    if (v === null || v === undefined) return '0.00';
     const n = Number(v);
     if (Number.isNaN(n)) return '0.00';
     return n.toFixed(2);
