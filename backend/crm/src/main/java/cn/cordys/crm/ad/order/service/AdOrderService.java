@@ -33,6 +33,8 @@ import cn.cordys.crm.ad.order.dto.response.AdOrderListResponse;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderChangeMapper;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderContractMapper;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderDownstreamMediaMapper;
+import cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMedia;
+import cn.cordys.crm.ad.downstreammedia.mapper.ExtAdDownstreamMediaMapper;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderMapper;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderAttachmentMapper;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderLogMapper;
@@ -89,6 +91,9 @@ public class AdOrderService {
     private ExtAdOrderContractMapper orderContractMapper;
     @Resource
     private ExtAdOrderDownstreamMediaMapper orderDownstreamMediaMapper;
+
+    @Resource
+    private ExtAdDownstreamMediaMapper downstreamMediaMapper;
     @Resource
     private cn.cordys.mybatis.BaseMapper<AdContract> contractMapper;
     @Resource
@@ -135,7 +140,8 @@ public class AdOrderService {
         // 关联合同：框架订单必选框架合同；单笔订单可后补
         syncOrderContract(order.getId(), request.getContractId(), request.getOrderType(), userId, orgId);
         // 关联下游客户
-        syncOrderDownstreamMedia(order.getId(), request.getDownstreamMediaIds(), userId, orgId);
+        syncOrderDownstreamMedia(order.getId(), request.getDownstreamMediaIds(),
+                request.getDownstreamMediaPayables(), userId, orgId);
         return order;
     }
 
@@ -162,7 +168,8 @@ public class AdOrderService {
         // 同步合同关联
         syncOrderContract(order.getId(), request.getContractId(), request.getOrderType(), userId, orgId);
         // 同步下游客户
-        syncOrderDownstreamMedia(order.getId(), request.getDownstreamMediaIds(), userId, orgId);
+        syncOrderDownstreamMedia(order.getId(), request.getDownstreamMediaIds(),
+                request.getDownstreamMediaPayables(), userId, orgId);
         return order;
     }
 
@@ -187,6 +194,24 @@ public class AdOrderService {
                 .map(AdOrderDownstreamMedia::getDownstreamMediaId)
                 .collect(Collectors.toList());
 
+        // 下游客户付款返点明细
+        List<AdOrderDetailResponse.DownstreamMediaPayableVO> payableVos = downstreamMedias.stream()
+                .map(odm -> {
+                    AdOrderDetailResponse.DownstreamMediaPayableVO vo =
+                            new AdOrderDetailResponse.DownstreamMediaPayableVO();
+                    vo.setDownstreamMediaId(odm.getDownstreamMediaId());
+                    AdDownstreamMedia dm = downstreamMediaMapper.selectByPrimaryKey(odm.getDownstreamMediaId());
+                    vo.setDownstreamMediaName(dm == null ? null : dm.getName());
+                    vo.setPayableAmount(odm.getPayableAmount());
+                    vo.setNoRebateAmount(odm.getNoRebateAmount());
+                    vo.setRebateMode(odm.getRebateMode());
+                    vo.setRebateValue(odm.getRebateValue());
+                    vo.setRebateAmount(odm.getRebateAmount());
+                    vo.setActualPayable(odm.getActualPayable());
+                    return vo;
+                })
+                .collect(Collectors.toList());
+
         AdOrderDetailResponse response = new AdOrderDetailResponse();
         response.setOrder(order);
         response.setContractId(contractId);
@@ -198,6 +223,7 @@ public class AdOrderService {
             }
         }
         response.setDownstreamMediaIds(downstreamMediaIds);
+        response.setDownstreamMediaPayables(payableVos);
         response.setAttachments(attachments);
         response.setChanges(changes);
         response.setLogs(logs);
@@ -549,7 +575,9 @@ public class AdOrderService {
      * 注意：由于唯一键 (order_id, downstream_media_id) 不区分 deleted，
      * 插入前先检查已存在记录（含已删除），若存在则复用（设 deleted=0）。
      */
-    private void syncOrderDownstreamMedia(String orderId, List<String> downstreamMediaIds, String userId, String orgId) {
+    private void syncOrderDownstreamMedia(String orderId, List<String> downstreamMediaIds,
+                                           List<AdOrderSaveRequest.DownstreamMediaPayableDTO> payables,
+                                           String userId, String orgId) {
         // 先逻辑删除该订单的所有现有下游客户关联
         List<AdOrderDownstreamMedia> existing = orderDownstreamMediaMapper.selectByOrderId(orderId);
         for (AdOrderDownstreamMedia odm : existing) {
@@ -559,6 +587,15 @@ public class AdOrderService {
         // 插入新的关联
         if (downstreamMediaIds == null || downstreamMediaIds.isEmpty()) {
             return;
+        }
+        // 明细按下游客户id建立索引，便于回填付款返点字段
+        java.util.Map<String, AdOrderSaveRequest.DownstreamMediaPayableDTO> payableMap = new java.util.HashMap<>();
+        if (payables != null) {
+            for (AdOrderSaveRequest.DownstreamMediaPayableDTO dto : payables) {
+                if (dto != null && dto.getDownstreamMediaId() != null) {
+                    payableMap.put(dto.getDownstreamMediaId(), dto);
+                }
+            }
         }
         long now = System.currentTimeMillis();
         for (String mediaId : downstreamMediaIds) {
@@ -570,6 +607,7 @@ public class AdOrderService {
             if (reused != null) {
                 reused.setDeleted(0);
                 reused.setOrganizationId(orgId);
+                fillPayableFields(reused, payableMap.get(mediaId));
                 orderDownstreamMediaMapper.update(reused);
             } else {
                 AdOrderDownstreamMedia odm = new AdOrderDownstreamMedia();
@@ -579,9 +617,43 @@ public class AdOrderService {
                 odm.setOrganizationId(orgId);
                 odm.setDeleted(0);
                 odm.setCreateTime(now);
+                fillPayableFields(odm, payableMap.get(mediaId));
                 orderDownstreamMediaMapper.insert(odm);
             }
         }
+    }
+
+    /** 把前端传来的付款返点明细写入关联行，并自动计算 rebateAmount/actualPayable */
+    private void fillPayableFields(AdOrderDownstreamMedia odm, AdOrderSaveRequest.DownstreamMediaPayableDTO dto) {
+        if (dto == null) {
+            return;
+        }
+        BigDecimal payable = dto.getPayableAmount();
+        BigDecimal noRebate = dto.getNoRebateAmount() == null ? BigDecimal.ZERO : dto.getNoRebateAmount();
+        Integer rebateMode = dto.getRebateMode();
+        BigDecimal rebateValue = dto.getRebateValue();
+        odm.setPayableAmount(payable);
+        odm.setNoRebateAmount(dto.getNoRebateAmount());
+        odm.setRebateMode(rebateMode);
+        odm.setRebateValue(rebateValue);
+        // 自动计算返点金额与实际应付
+        BigDecimal rebateAmount = BigDecimal.ZERO;
+        if (rebateMode != null && rebateValue != null) {
+            if (rebateMode == 10) {
+                BigDecimal base = (payable == null ? BigDecimal.ZERO : payable)
+                        .subtract(noRebate);
+                if (base.compareTo(BigDecimal.ZERO) < 0) {
+                    base = BigDecimal.ZERO;
+                }
+                rebateAmount = base.multiply(rebateValue)
+                        .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            } else if (rebateMode == 20) {
+                rebateAmount = rebateValue;
+            }
+        }
+        odm.setRebateAmount(rebateAmount);
+        BigDecimal actual = (payable == null ? BigDecimal.ZERO : payable).subtract(rebateAmount);
+        odm.setActualPayable(actual);
     }
 
     private void recordLog(AdOrder order, String action, int from, int to, String userId, String orgId) {

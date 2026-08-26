@@ -115,4 +115,26 @@ public class AdOrderSaveRequest {
 
     @Schema(description = "下游客户id列表(至少选一个)")
     private List<String> downstreamMediaIds;
+
+    @Schema(description = "下游客户付款返点明细(与 downstreamMediaIds 一一对应,可选填)")
+    private List<DownstreamMediaPayableDTO> downstreamMediaPayables;
+
+    /** 单个下游客户的付款返点明细 */
+    @Data
+    public static class DownstreamMediaPayableDTO {
+        @Schema(description = "下游客户id")
+        private String downstreamMediaId;
+
+        @Schema(description = "应付金额")
+        private BigDecimal payableAmount;
+
+        @Schema(description = "不记返金额")
+        private BigDecimal noRebateAmount;
+
+        @Schema(description = "返点方式:10-比例/20-固定金额")
+        private Integer rebateMode;
+
+        @Schema(description = "返点值:比例时存百分比数值,固定金额时存金额")
+        private BigDecimal rebateValue;
+    }
 }

@@ -70,6 +70,8 @@
             industryLabelMap[detail.order.industryCode ?? ''] || detail.order.industryCode || '-'
           }}</n-descriptions-item>
           <n-descriptions-item label="签约主体">{{ detail.order.signingEntity || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="上游代理">{{ upstreamAgentName || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="代理订单号">{{ detail.order.agentOrderNo || '-' }}</n-descriptions-item>
           <n-descriptions-item label="下游客户">{{ downstreamMediaNames || '-' }}</n-descriptions-item>
           <n-descriptions-item label="关联合同">{{
             [detail.contractNo, detail.contractName].filter(Boolean).join(' ') || '-'
@@ -109,6 +111,30 @@
             fmtAmount(detail.order.badDebtAmount)
           }}</n-descriptions-item>
         </n-descriptions>
+
+        <template v-if="detail.downstreamMediaPayables && detail.downstreamMediaPayables.length > 0">
+          <n-divider title-placement="center" class="payable-subtitle-divider">
+            <span class="payable-subtitle">下游客户付款返点明细</span>
+          </n-divider>
+          <div v-for="(p, idx) in detail.downstreamMediaPayables" :key="p.downstreamMediaId" class="payable-card">
+            <div class="payable-card-title">
+              <span class="payable-card-index">{{ idx + 1 }}</span>
+              <span class="payable-card-name">{{ p.downstreamMediaName }}</span>
+            </div>
+            <n-descriptions label-placement="left" :column="3" bordered size="small">
+              <n-descriptions-item label="应付金额">{{ fmtAmount(p.payableAmount) }}</n-descriptions-item>
+              <n-descriptions-item label="不记返金额">{{ fmtAmount(p.noRebateAmount) }}</n-descriptions-item>
+              <n-descriptions-item label="返点方式">
+                {{ p.rebateMode === 10 ? '比例' : p.rebateMode === 20 ? '固定金额' : '-' }}
+              </n-descriptions-item>
+              <n-descriptions-item label="返点值">
+                {{ p.rebateMode === 10 ? fmtAmount(p.rebateValue) + '%' : fmtAmount(p.rebateValue) }}
+              </n-descriptions-item>
+              <n-descriptions-item label="返点金额">{{ fmtAmount(p.rebateAmount) }}</n-descriptions-item>
+              <n-descriptions-item label="实际应付">{{ fmtAmount(p.actualPayable) }}</n-descriptions-item>
+            </n-descriptions>
+          </div>
+        </template>
 
         <n-divider title-placement="left">{{ t('advertising.order.detail.tab.attachment') }}</n-divider>
 
@@ -303,6 +329,7 @@
     getAdDictPage,
     getAdDownstreamMediaPage,
     getAdOrderDetail,
+    getAdUpstreamAgentPage,
     submitAdOrder,
     uploadAdOrderAttachment,
     voidAdOrder,
@@ -449,6 +476,28 @@
     const ids = detail.value?.downstreamMediaIds;
     if (!ids || ids.length === 0) return '';
     return ids.map((id) => downstreamMediaNameCache[id] || id).join('、');
+  });
+
+  /** 上游代理名称缓存 */
+  const upstreamAgentNameCache = reactive<Record<string, string>>({});
+
+  /** 加载上游代理名称到缓存 */
+  async function loadUpstreamAgentNames() {
+    try {
+      const res = await getAdUpstreamAgentPage({ current: 1, pageSize: 200 });
+      (res.list || []).forEach((it: any) => {
+        if (it.id) upstreamAgentNameCache[it.id] = it.name || '';
+      });
+    } catch (e) {
+      // 忽略加载失败
+    }
+  }
+
+  /** 上游代理名称 */
+  const upstreamAgentName = computed(() => {
+    const id = detail.value?.order?.upstreamAgentId;
+    if (!id) return '';
+    return upstreamAgentNameCache[id] || id;
   });
 
   /** 操作记录 action 中文映射 */
@@ -755,6 +804,7 @@
       loadUserMap(),
       loadEntityNames(),
       loadDownstreamMediaNames(),
+      loadUpstreamAgentNames(),
       loadIndustryDict(),
     ]);
   });
@@ -799,5 +849,49 @@
     color: var(--text-n2);
     font-size: 12px;
     margin-top: 4px;
+  }
+  .payable-card {
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--primary-color, #18a058);
+    border-radius: 6px;
+    padding: 14px 16px 4px;
+    margin: 0 0 12px 12px;
+    background: var(--card-color);
+  }
+  .payable-card-title {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-n1);
+  }
+  .payable-card-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color, #18a058);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .payable-card-name {
+    padding-left: 4px;
+  }
+  .payable-subtitle-divider :deep(.n-divider__title) {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-n2, #606266);
+    letter-spacing: 0.5px;
+  }
+  .payable-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-n2, #606266);
   }
 </style>

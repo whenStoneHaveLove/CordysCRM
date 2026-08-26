@@ -372,7 +372,9 @@
 
   // 导出列 = 列表所有列（排除「详情」操作列），title 取中文表头
   function buildExportHeadList() {
-    return columns.filter((c) => c.key !== 'action').map((c) => ({ key: String(c.key), title: String(c.title) }));
+    return (columns as any[])
+      .filter((c) => c.key !== 'action')
+      .map((c) => ({ key: String(c.key), title: String(c.title) }));
   }
 
   /**

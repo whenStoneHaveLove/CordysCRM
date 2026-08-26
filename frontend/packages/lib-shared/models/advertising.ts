@@ -63,6 +63,8 @@ export interface AdOrderSaveParams {
   paymentPostpayTrigger?: number;
   paymentPostpayDays?: number;
   currency?: string;
+  /** 下游客户付款返点明细（与 downstreamMediaIds 对应） */
+  downstreamMediaPayables?: DownstreamMediaPayable[];
 }
 
 export interface AdOrderApproveParams {
@@ -202,12 +204,25 @@ export interface AdOrderInfo {
   updateTime?: number;
 }
 
+/** 下游客户付款返点明细（详情/保存通用） */
+export interface DownstreamMediaPayable {
+  downstreamMediaId?: string;
+  downstreamMediaName?: string;
+  payableAmount?: number | null;
+  noRebateAmount?: number | null;
+  rebateMode?: number | null;
+  rebateValue?: number | null;
+  rebateAmount?: number | null;
+  actualPayable?: number | null;
+}
+
 export interface AdOrderDetail {
   order: AdOrderInfo;
   contractId?: string;
   contractNo?: string;
   contractName?: string;
   downstreamMediaIds?: string[];
+  downstreamMediaPayables?: DownstreamMediaPayable[];
   attachments: AdOrderAttachment[];
   changes: AdOrderChange[];
   logs: AdOrderLog[];

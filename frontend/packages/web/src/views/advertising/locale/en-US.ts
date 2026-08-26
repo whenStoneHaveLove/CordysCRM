@@ -86,6 +86,8 @@ export default {
   'advertising.order.form.rebateValue': 'Rebate Value',
   'advertising.order.form.noRebateAmount': 'No-Rebate Amount',
   'advertising.order.form.mediaPayableAmount': 'Media Payable',
+  'advertising.order.form.payableAmount': 'Payable Amount',
+  'advertising.order.form.actualPayable': 'Actual Payable',
   'advertising.order.form.deliveryStart': 'Delivery Start',
   'advertising.order.form.deliveryEnd': 'Delivery End',
   'advertising.order.form.deliveryVolume': 'Delivery Volume+Unit',

@@ -274,6 +274,55 @@
               </template>
             </n-grid>
 
+            <!-- 6.1 各下游客户付款返点明细（与下游客户多选联动） -->
+            <template v-if="(form.downstreamMediaIds || []).length > 0">
+              <n-divider title-placement="center" class="payable-subtitle-divider">
+                <span class="payable-subtitle">各下游客户付款返点明细</span>
+              </n-divider>
+              <div v-for="(item, idx) in form.downstreamMediaPayables" :key="item.downstreamMediaId" class="payable-card">
+                <div class="payable-card-title">
+                  <span class="payable-card-index">{{ idx + 1 }}</span>
+                  <span class="payable-card-name">{{ downstreamMediaName(item.downstreamMediaId) }}</span>
+                </div>
+                <n-grid :cols="2" :x-gap="16">
+                  <n-form-item-gi :span="1" :label="t('advertising.order.form.payableAmount')">
+                    <n-input-number v-model:value="item.payableAmount" :min="0" :precision="2" style="width: 100%" />
+                  </n-form-item-gi>
+                  <n-form-item-gi :span="1" :label="t('advertising.order.form.noRebateAmount')">
+                    <n-input-number v-model:value="item.noRebateAmount" :min="0" :precision="2" style="width: 100%" />
+                  </n-form-item-gi>
+                  <n-form-item-gi :span="1" :label="t('advertising.order.form.rebateMode')">
+                    <n-radio-group v-model:value="item.rebateMode" name="payableRebateMode">
+                      <n-radio :value="10">比例</n-radio>
+                      <n-radio :value="20">固定金额</n-radio>
+                    </n-radio-group>
+                  </n-form-item-gi>
+                  <n-form-item-gi
+                    v-if="item.rebateMode === 10"
+                    :span="1"
+                    :label="t('advertising.order.form.rebateRatio')"
+                  >
+                    <n-input-number v-model:value="item.rebateValue" :min="0" :max="100" :precision="2" style="width: 100%">
+                      <template #suffix>%</template>
+                    </n-input-number>
+                  </n-form-item-gi>
+                  <n-form-item-gi
+                    v-else-if="item.rebateMode === 20"
+                    :span="1"
+                    :label="t('advertising.order.form.rebateAmount')"
+                  >
+                    <n-input-number v-model:value="item.rebateValue" :min="0" :precision="2" style="width: 100%" />
+                  </n-form-item-gi>
+                  <n-form-item-gi :span="1" :label="t('advertising.order.form.rebateAmountAuto')">
+                    <span class="readonly-field">{{ payableAutoCalc(item).rebateAmount }}</span>
+                  </n-form-item-gi>
+                  <n-form-item-gi :span="1" :label="t('advertising.order.form.actualPayable')">
+                    <span class="readonly-field">{{ payableAutoCalc(item).actualPayable }}</span>
+                  </n-form-item-gi>
+                </n-grid>
+              </div>
+            </template>
+
             <!-- 7. 附件与合同 -->
             <n-divider title-placement="left">
               <span class="section-title">7. 附件与合同</span>
@@ -520,6 +569,16 @@
     paymentPostpayDays?: number | null;
     currency?: string;
     remark?: string;
+    downstreamMediaPayables?: DownstreamPayable[];
+  }
+
+  /** 单个下游客户的付款返点明细 */
+  interface DownstreamPayable {
+    downstreamMediaId: string;
+    payableAmount?: number | null;
+    noRebateAmount?: number | null;
+    rebateMode?: number | null;
+    rebateValue?: number | null;
   }
 
   const form = reactive<AdOrderForm>({
@@ -556,6 +615,7 @@
     paymentPostpayDays: null,
     currency: 'CNY',
     remark: undefined,
+    downstreamMediaPayables: [],
   });
 
   // 自动计算：返点金额、实际应收
@@ -575,6 +635,52 @@
       receivableAmount: (total - rebate).toFixed(2),
     };
   });
+
+  // 根据下游客户 id 取名称（下拉选项 label）
+  function downstreamMediaName(id?: string): string {
+    if (!id) return '';
+    const found = downstreamMediaOptions.value.find((o) => o.value === id);
+    return found ? found.label : '';
+  }
+
+  // 监听下游客户多选变化，同步每个客户的付款返点明细卡片
+  watch(
+    () => form.downstreamMediaIds,
+    (ids) => {
+      const list = ids || [];
+      const existing = new Map((form.downstreamMediaPayables || []).map((p) => [p.downstreamMediaId, p]));
+      form.downstreamMediaPayables = list.map((id) => {
+        const prev = existing.get(id);
+        if (prev) return prev;
+        return {
+          downstreamMediaId: id,
+          payableAmount: null,
+          noRebateAmount: null,
+          rebateMode: null,
+          rebateValue: null,
+        } as DownstreamPayable;
+      });
+    },
+    { deep: true }
+  );
+
+  // 单个下游客户付款返点明细的自动计算
+  function payableAutoCalc(item: DownstreamPayable) {
+    const payable = Number(item.payableAmount || 0);
+    const noRebate = Number(item.noRebateAmount || 0);
+    const base = Math.max(payable - noRebate, 0);
+    let rebate = 0;
+    if (item.rebateMode === 10 && item.rebateValue) {
+      rebate = (base * Number(item.rebateValue)) / 100;
+    } else if (item.rebateMode === 20 && item.rebateValue) {
+      rebate = Number(item.rebateValue);
+    }
+    const actual = payable - rebate;
+    return {
+      rebateAmount: rebate.toFixed(2),
+      actualPayable: actual.toFixed(2),
+    };
+  }
 
   // 比例模式下，实时计算预收金额（应收 × 比例%）
   watch(
@@ -822,6 +928,18 @@
         ? { id: res.contractId, contractNo: res.contractNo, contractName: res.contractName }
         : null;
       form.downstreamMediaIds = res.downstreamMediaIds || [];
+      // 回填各下游客户付款返点明细（watch 已将数组按 ids 初始化为默认值，这里覆盖真实值）
+      const payVo = res.downstreamMediaPayables || [];
+      form.downstreamMediaPayables = (form.downstreamMediaIds || []).map((id: string) => {
+        const vo: any = payVo.find((p: any) => p.downstreamMediaId === id) || {};
+        return {
+          downstreamMediaId: id,
+          payableAmount: vo.payableAmount ?? null,
+          noRebateAmount: vo.noRebateAmount ?? null,
+          rebateMode: vo.rebateMode ?? null,
+          rebateValue: vo.rebateValue ?? null,
+        } as DownstreamPayable;
+      });
       form.upstreamAgentId = o.upstreamAgentId;
       form.agentOrderNo = o.agentOrderNo;
       form.totalAmount = o.totalAmount;
@@ -874,6 +992,13 @@
       orderType: form.orderType ?? undefined,
       contractId: form.contractId,
       downstreamMediaIds: form.downstreamMediaIds,
+      downstreamMediaPayables: (form.downstreamMediaPayables || []).map((p) => ({
+        downstreamMediaId: p.downstreamMediaId,
+        payableAmount: p.payableAmount ?? undefined,
+        noRebateAmount: p.noRebateAmount ?? undefined,
+        rebateMode: p.rebateMode ?? undefined,
+        rebateValue: p.rebateValue ?? undefined,
+      })),
       upstreamAgentId: form.upstreamAgentId,
       agentOrderNo: form.agentOrderNo,
       totalAmount: form.totalAmount ?? undefined,
@@ -993,5 +1118,49 @@
   }
   .attach-tip {
     margin: 0 0 16px 120px;
+  }
+  .payable-card {
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--primary-color, #18a058);
+    border-radius: 6px;
+    padding: 14px 16px 4px;
+    margin: 0 0 12px 12px;
+    background: var(--card-color);
+  }
+  .payable-card-title {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--text-n1);
+  }
+  .payable-card-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color, #18a058);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .payable-card-name {
+    padding-left: 4px;
+  }
+  .payable-subtitle-divider :deep(.n-divider__title) {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-n2, #606266);
+    letter-spacing: 0.5px;
+  }
+  .payable-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-n2, #606266);
   }
 </style>
