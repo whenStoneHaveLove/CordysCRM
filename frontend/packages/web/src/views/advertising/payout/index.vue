@@ -41,7 +41,7 @@
     </n-card>
 
     <!-- 新建/编辑弹窗 -->
-    <n-modal v-model:show="showModal" :title="modalTitle" preset="card" style="width: 560px">
+    <n-modal v-model:show="showModal" :title="modalTitle" preset="card" style="width: 880px">
       <n-form ref="formRef" :model="form" label-placement="left" :label-width="100">
         <n-form-item label="关联订单" path="orderId">
           <n-select
@@ -72,14 +72,44 @@
         <n-form-item label="类型">
           <n-select v-model:value="form.type" :options="typeOptions" />
         </n-form-item>
-        <n-form-item v-if="mediaOptions.length > 0" label="付款">
-          <n-checkbox-group v-model:value="form.mediaIds">
-            <n-space vertical>
-              <n-checkbox v-for="m in mediaOptions" :key="m.value" :value="m.value" :label="m.label" />
-            </n-space>
-          </n-checkbox-group>
-        </n-form-item>
-        <n-form-item label="备注">
+
+        <!-- 各下游客户返点与本次付款明细 -->
+        <template v-if="mediaOptions.length > 0">
+          <n-divider title-placement="center" class="media-divider"> 各下游客户返点信息与本次付款 </n-divider>
+          <div class="media-cards">
+            <div v-for="(m, idx) in mediaOptions" :key="m.mediaId || m.id" class="media-card">
+              <div class="media-card-header">
+                <span class="media-card-index">{{ idx + 1 }}</span>
+                <span class="media-card-name">{{ m.mediaName || m.mediaId }}</span>
+              </div>
+              <n-descriptions :column="3" size="small" bordered label-placement="left" :label-width="92">
+                <n-descriptions-item label="应付">¥{{ fmtMoney(m.payableAmount) }}</n-descriptions-item>
+                <n-descriptions-item label="不记返">¥{{ fmtMoney(m.noRebateAmount) }}</n-descriptions-item>
+                <n-descriptions-item label="实际应付">¥{{ fmtMoney(m.actualPayable) }}</n-descriptions-item>
+                <n-descriptions-item label="返点方式">{{ rebateModeLabel(m.rebateMode) }}</n-descriptions-item>
+                <n-descriptions-item label="返点值">{{ fmtRebateValue(m) }}</n-descriptions-item>
+                <n-descriptions-item label="返点金额">¥{{ fmtMoney(m.rebateAmount) }}</n-descriptions-item>
+                <n-descriptions-item label="累计已付">¥{{ fmtMoney(m.paidAmount) }}</n-descriptions-item>
+                <n-descriptions-item label="剩余应付">¥{{ fmtMoney(remainingOf(m)) }}</n-descriptions-item>
+                <n-descriptions-item label="本次付款">
+                  <n-input-number
+                    v-model:value="mediaPaidDraft[m.mediaId || m.id]"
+                    :min="0"
+                    :precision="2"
+                    style="width: 100%"
+                    placeholder="0.00"
+                    @update:value="recalcAmount"
+                  />
+                </n-descriptions-item>
+              </n-descriptions>
+            </div>
+            <div class="media-summary">
+              已填本次付款合计：<span class="summary-amount">¥{{ fmtMoney(currentPaidTotal) }}</span>
+            </div>
+          </div>
+        </template>
+
+        <n-form-item label="备注" class="mt-12">
           <n-input v-model:value="form.remark" type="textarea" :rows="2" placeholder="备注" />
         </n-form-item>
       </n-form>
@@ -108,14 +138,18 @@
       <template #footer>
         <n-space justify="end">
           <n-button @click="showApprove = false">取消</n-button>
-          <n-button v-permission="['AD_PAYOUT:APPROVE']" type="success" :loading="saving" @click="doApprove('APPROVE')">通过</n-button>
-          <n-button v-permission="['AD_PAYOUT:APPROVE']" type="error" :loading="saving" @click="doApprove('REJECT')">驳回</n-button>
+          <n-button v-permission="['AD_PAYOUT:APPROVE']" type="success" :loading="saving" @click="doApprove('APPROVE')"
+            >通过</n-button
+          >
+          <n-button v-permission="['AD_PAYOUT:APPROVE']" type="error" :loading="saving" @click="doApprove('REJECT')"
+            >驳回</n-button
+          >
         </n-space>
       </template>
     </n-modal>
 
     <!-- 详情弹窗 -->
-    <n-modal v-model:show="showDetail" preset="card" title="付款单详情" style="width: 640px">
+    <n-modal v-model:show="showDetail" preset="card" title="付款单详情" style="width: 760px">
       <n-spin :show="detailLoading">
         <n-descriptions label-placement="left" :column="2" bordered size="small">
           <n-descriptions-item label="付款单号">{{ detail.paymentNo || '-' }}</n-descriptions-item>
@@ -156,6 +190,43 @@
             </n-descriptions-item>
           </n-descriptions>
         </template>
+
+        <!-- 各下游客户付款返点明细 -->
+        <n-divider title-placement="left">各下游客户付款返点明细</n-divider>
+        <n-table
+          v-if="detail.mediaDetails && detail.mediaDetails.length"
+          :bordered="true"
+          size="small"
+          :single-line="false"
+        >
+          <thead>
+            <tr>
+              <th style="width: 60px">序号</th>
+              <th>下游客户</th>
+              <th style="width: 100px">应付</th>
+              <th style="width: 100px">不记返</th>
+              <th style="width: 100px">返点方式</th>
+              <th style="width: 90px">返点值</th>
+              <th style="width: 100px">返点金额</th>
+              <th style="width: 100px">实际应付</th>
+              <th style="width: 110px">本次付款</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(m, idx) in detail.mediaDetails" :key="m.id || idx">
+              <td>{{ idx + 1 }}</td>
+              <td>{{ m.mediaName || m.mediaId || '-' }}</td>
+              <td>¥{{ fmtMoney(m.payableAmount) }}</td>
+              <td>¥{{ fmtMoney(m.noRebateAmount) }}</td>
+              <td>{{ rebateModeLabel(m.rebateMode) }}</td>
+              <td>{{ fmtDetailRebateValue(m) }}</td>
+              <td>¥{{ fmtMoney(m.rebateAmount) }}</td>
+              <td>¥{{ fmtMoney(m.actualPayable) }}</td>
+              <td>¥{{ fmtMoney(m.paidAmount) }}</td>
+            </tr>
+          </tbody>
+        </n-table>
+        <n-empty v-else description="暂无各下游客户付款明细" />
       </n-spin>
       <template #footer>
         <n-space justify="end">
@@ -172,13 +243,12 @@
   import {
     NButton,
     NCard,
-    NCheckbox,
-    NCheckboxGroup,
     NDataTable,
     NDatePicker,
     NDescriptions,
     NDescriptionsItem,
     NDivider,
+    NEmpty,
     NForm,
     NFormItem,
     NInput,
@@ -187,6 +257,7 @@
     NSelect,
     NSpace,
     NSpin,
+    NTable,
     NTag,
     useMessage,
   } from 'naive-ui';
@@ -198,7 +269,13 @@
     getAdPayoutTypeLabel,
   } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
-  import type { AdPayoutDetail, AdPayoutInfo, AdPayoutPageParams } from '@lib/shared/models/advertising';
+  import type {
+    AdPayoutDetail,
+    AdPayoutInfo,
+    AdPayoutMediaDetailItem,
+    AdPayoutMediaOption,
+    AdPayoutPageParams,
+  } from '@lib/shared/models/advertising';
 
   import {
     approveAdPayout,
@@ -276,8 +353,36 @@
     }
   }
 
-  const mediaOptions = ref<Array<{ label: string; value: string }>>([]);
+  /* ========== 工具 ========== */
+  function fmtMoney(v?: number | null): string {
+    if (v === null || v === undefined || v === '') return '0.00';
+    const n = Number(v);
+    if (Number.isNaN(n)) return '0.00';
+    return n.toFixed(2);
+  }
+  function rebateModeLabel(v?: number): string {
+    if (v === 10) return '比例';
+    if (v === 20) return '固定金额';
+    return '-';
+  }
+  function fmtRebateValue(m: AdPayoutMediaOption): string {
+    if (m.rebateMode === 10) return `${fmtMoney(m.rebateValue)}%`;
+    if (m.rebateMode === 20) return `¥${fmtMoney(m.rebateValue)}`;
+    return '-';
+  }
+  function fmtDetailRebateValue(m: AdPayoutMediaDetailItem): string {
+    if (m.rebateMode === 10) return `${fmtMoney(m.rebateValue)}%`;
+    if (m.rebateMode === 20) return `¥${fmtMoney(m.rebateValue)}`;
+    return '-';
+  }
+  function remainingOf(m: AdPayoutMediaOption): number {
+    const actual = Number(m.actualPayable ?? 0);
+    const paid = Number(m.paidAmount ?? 0);
+    const diff = actual - paid;
+    return diff > 0 ? diff : 0;
+  }
 
+  /* ========== 新建/编辑表单状态 ========== */
   interface PayoutForm {
     orderId?: string;
     amount?: number;
@@ -295,9 +400,17 @@
     remark: undefined,
   });
 
-  // ---- 订单选择 ----
+  /* ========== 订单选择 + 下游客户返点信息 ========== */
   const orderLoading = ref(false);
   const orderOptions = ref<Array<{ label: string; value: string }>>([]);
+  const mediaOptions = ref<AdPayoutMediaOption[]>([]);
+  // 每客户本次付款草稿（key = mediaId || id）
+  const mediaPaidDraft = reactive<Record<string, number>>({});
+
+  function resetMediaDraft() {
+    Object.keys(mediaPaidDraft).forEach((k) => delete mediaPaidDraft[k]);
+  }
+
   async function searchOrders(keyword: string) {
     orderLoading.value = true;
     try {
@@ -312,29 +425,35 @@
       orderLoading.value = false;
     }
   }
+
   async function onOrderChange(orderId: string) {
+    resetMediaDraft();
+    mediaOptions.value = [];
     if (!orderId) {
       form.amount = undefined;
-      form.mediaIds = [];
-      mediaOptions.value = [];
       return;
     }
     try {
       const remaining = await getAdPayoutRemaining(orderId);
       form.amount = Number(remaining ?? 0);
-      const media = await getAdPayoutMedia(orderId);
-      mediaOptions.value = (media || []).map((m: any) => ({
-        label: m.mediaName || m.mediaId || m.id,
-        value: m.id,
-      }));
-      // 默认全选
-      form.mediaIds = mediaOptions.value.map((m) => m.value);
+      const media = (await getAdPayoutMedia(orderId)) || [];
+      mediaOptions.value = media as AdPayoutMediaOption[];
+      // 编辑模式不自动填充草稿
     } catch (e) {
       // ignore
     }
   }
 
-  // ---- 新建/编辑 ----
+  function recalcAmount() {
+    // 本次付款合计自动汇总到 form.amount
+    const total = Object.values(mediaPaidDraft).reduce((sum, n) => sum + (Number(n) || 0), 0);
+    if (total > 0) {
+      form.amount = Number(total.toFixed(2));
+    }
+  }
+  const currentPaidTotal = computed(() => Object.values(mediaPaidDraft).reduce((sum, n) => sum + (Number(n) || 0), 0));
+
+  /* ========== 新建/编辑 ========== */
   const showModal = ref(false);
   const editId = ref('');
   const modalTitle = computed(() => (editId.value ? '编辑付款单' : '新建付款单'));
@@ -347,6 +466,7 @@
     form.mediaIds = [];
     form.remark = undefined;
     mediaOptions.value = [];
+    resetMediaDraft();
     editId.value = '';
   }
 
@@ -359,6 +479,7 @@
   async function openEdit(row: AdPayoutInfo) {
     editId.value = row.id!;
     showModal.value = true;
+    resetMediaDraft();
     try {
       const res = await getAdPayoutDetail(row.id!);
       form.orderId = res.orderId;
@@ -368,19 +489,16 @@
       form.remark = res.remark;
       if (res.orderId) {
         orderOptions.value = [{ label: res.orderName || res.orderId, value: res.orderId }];
-        const media = await getAdPayoutMedia(res.orderId);
-        mediaOptions.value = (media || []).map((m: any) => ({
-          label: m.mediaName || m.mediaId || m.id,
-          value: m.id,
-        }));
+        const media = (await getAdPayoutMedia(res.orderId)) || [];
+        mediaOptions.value = media as AdPayoutMediaOption[];
       }
-      if (res.mediaIds) {
-        try {
-          form.mediaIds = JSON.parse(res.mediaIds);
-        } catch (e) {
-          form.mediaIds = [];
-        }
-      }
+      // 回填明细草稿
+      const details = res.mediaDetails || [];
+      details.forEach((d) => {
+        const key = d.mediaId || '';
+        if (!key) return;
+        mediaPaidDraft[key] = Number(d.paidAmount ?? 0);
+      });
     } catch (e) {
       message.error((e as Error).message || '加载失败');
     }
@@ -397,13 +515,34 @@
     }
     saving.value = true;
     try {
+      const mediaDetails: AdPayoutMediaDetailItem[] = mediaOptions.value
+        .map((m) => {
+          const key = m.mediaId || m.id || '';
+          const paid = Number(mediaPaidDraft[key] || 0);
+          return {
+            orderDownstreamMediaId: m.id,
+            mediaId: m.mediaId,
+            mediaName: m.mediaName,
+            payableAmount: Number(m.payableAmount ?? 0),
+            noRebateAmount: Number(m.noRebateAmount ?? 0),
+            rebateMode: m.rebateMode,
+            rebateValue: Number(m.rebateValue ?? 0),
+            rebateAmount: Number(m.rebateAmount ?? 0),
+            actualPayable: Number(m.actualPayable ?? 0),
+            paidAmount: paid,
+          };
+        })
+        .filter((d) => d.mediaId);
+      const mediaIds = mediaOptions.value.map((m) => m.mediaId || m.id).filter(Boolean) as string[];
+
       const payload: any = {
         orderId: form.orderId,
         amount: form.amount,
         paymentTime: form.paymentTime,
         type: form.type,
-        mediaIds: form.mediaIds,
+        mediaIds,
         remark: form.remark,
+        mediaDetails,
       };
       if (editId.value) {
         payload.id = editId.value;
@@ -421,7 +560,7 @@
     }
   }
 
-  // ---- 提交 / 审核 ----
+  /* ========== 提交 / 审核 ========== */
   async function handleSubmit(row: AdPayoutInfo) {
     try {
       await submitAdPayout(row.id!);
@@ -469,7 +608,7 @@
     }
   }
 
-  // ---- 详情 ----
+  /* ========== 详情 ========== */
   const showDetail = ref(false);
   const detailLoading = ref(false);
   const detail = reactive<AdPayoutDetail>({});
@@ -492,7 +631,10 @@
   }
   function goContractDetail(contractId?: string) {
     if (!contractId) return;
-    const { href } = router.resolve({ name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_DETAIL, params: { id: contractId } });
+    const { href } = router.resolve({
+      name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_DETAIL,
+      params: { id: contractId },
+    });
     window.open(href, '_blank');
   }
   const columns: DataTableColumn<AdPayoutInfo>[] = [
@@ -594,9 +736,66 @@
   .mt-4 {
     margin-top: 16px;
   }
+  .mt-12 {
+    margin-top: 12px;
+  }
   .action-modal-label {
     margin-bottom: 4px;
     font-size: 12px;
     color: var(--text-n2);
+  }
+  .media-divider {
+    color: var(--text-n2);
+    font-weight: 600;
+  }
+  .media-divider :deep(.n-divider__title) {
+    font-weight: 600;
+    color: var(--text-n2);
+  }
+  .media-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .media-card {
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 4px;
+    padding: 10px 12px 6px;
+    background: var(--card-color, #fafbfc);
+  }
+  .media-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .media-card-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .media-card-name {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 13px;
+  }
+  .media-summary {
+    text-align: right;
+    font-size: 13px;
+    color: var(--text-n2);
+  }
+  .summary-amount {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-left: 4px;
   }
 </style>

@@ -83,4 +83,8 @@ public class AdPayoutDetailResponse {
     /* ---- 关联合同信息 ---- */
     @Schema(description = "关联合同列表")
     private List<AdContractBriefResponse> contracts;
+
+    /* ---- 各下游客户付款返点明细 ---- */
+    @Schema(description = "本次付款明细(每客户一行)")
+    private List<AdPayoutMediaDetailItem> mediaDetails;
 }

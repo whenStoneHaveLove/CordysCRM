@@ -14,6 +14,7 @@ import type {
   AdPayoutPageResult,
   AdPayoutInfo,
   AdPayoutDetail,
+  AdPayoutMediaOption,
 } from '@lib/shared/models/advertising';
 
 export default function useAdPayoutApi(CDR: CordysAxios) {
@@ -49,7 +50,7 @@ export default function useAdPayoutApi(CDR: CordysAxios) {
 
   // 订单的下游客户列表（付款勾选用，含名称）
   function getAdPayoutMedia(orderId: string) {
-    return CDR.get<Array<{ id: string; mediaId?: string; mediaName?: string }>>({
+    return CDR.get<AdPayoutMediaOption[]>({
       url: `${AdPayoutMediaUrl}/${orderId}`,
     });
   }

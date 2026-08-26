@@ -36,4 +36,7 @@ public class AdPayoutSaveRequest {
 
     @Schema(description = "备注")
     private String remark;
+
+    @Schema(description = "各下游客户付款返点明细(每客户一行)")
+    private List<AdPayoutMediaDetail> mediaDetails;
 }

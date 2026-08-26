@@ -15,11 +15,15 @@ import cn.cordys.crm.ad.order.mapper.ExtAdOrderMapper;
 import cn.cordys.crm.ad.payout.constants.PayoutStatus;
 import cn.cordys.crm.ad.payout.constants.PayoutType;
 import cn.cordys.crm.ad.payout.domain.AdPayout;
+import cn.cordys.crm.ad.payout.domain.AdPaymentMedia;
+import cn.cordys.crm.ad.payout.dto.request.AdPayoutMediaDetail;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutApproveRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutPageRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutSaveRequest;
 import cn.cordys.crm.ad.payout.dto.response.AdPayoutDetailResponse;
 import cn.cordys.crm.ad.payout.dto.response.AdPayoutListResponse;
+import cn.cordys.crm.ad.payout.dto.response.AdPayoutMediaDetailItem;
+import cn.cordys.crm.ad.payout.mapper.AdPaymentMediaMapper;
 import cn.cordys.crm.ad.payout.mapper.ExtAdPayoutMapper;
 import cn.cordys.crm.ad.payout.mapper.ExtAdPayoutMediaOptionMapper;
 import cn.cordys.mybatis.BaseMapper;
@@ -57,6 +61,10 @@ public class AdPayoutService {
     private ExtAdOrderContractMapper orderContractMapper;
     @Resource
     private ExtAdContractMapper extAdContractMapper;
+    @Resource
+    private AdPaymentMediaMapper adPaymentMediaMapper;
+    @Resource
+    private cn.cordys.crm.ad.payout.mapper.ExtAdPaymentMediaMapper extAdPaymentMediaMapper;
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -84,6 +92,7 @@ public class AdPayoutService {
         p.setCreateTime(now);
         p.setUpdateTime(now);
         payoutMapper.insert(p);
+        saveMediaDetails(p, request.getMediaDetails(), userId, orgId, now);
         return p;
     }
 
@@ -109,6 +118,9 @@ public class AdPayoutService {
         p.setUpdateUser(userId);
         p.setUpdateTime(System.currentTimeMillis());
         payoutMapper.update(p);
+        // 先清后写明细
+        extAdPaymentMediaMapper.deleteByPaymentId(p.getId());
+        saveMediaDetails(p, request.getMediaDetails(), userId, orgId, p.getUpdateTime());
         return p;
     }
 
@@ -196,6 +208,8 @@ public class AdPayoutService {
 
         // 关联合同（框架合同 + 单笔合同）
         resp.setContracts(loadContracts(p.getOrderId()));
+        // 各下游客户付款返点明细
+        resp.setMediaDetails(extAdPaymentMediaMapper.selectByPaymentId(p.getId()));
         return resp;
     }
 
@@ -309,5 +323,41 @@ public class AdPayoutService {
 
     private String genNo() {
         return "P" + System.currentTimeMillis();
+    }
+
+    /** 写入付款单-各下游客户付款返点明细（每客户一行）。 */
+    private void saveMediaDetails(AdPayout p, List<AdPayoutMediaDetail> details, String userId, String orgId, long now) {
+        if (details == null || details.isEmpty()) {
+            return;
+        }
+        List<AdPaymentMedia> rows = new java.util.ArrayList<>();
+        for (AdPayoutMediaDetail d : details) {
+            if (d.getMediaId() == null || d.getMediaId().isBlank()) {
+                continue;
+            }
+            AdPaymentMedia row = new AdPaymentMedia();
+            row.setId(IDGenerator.nextStr());
+            row.setPaymentId(p.getId());
+            row.setOrderId(p.getOrderId());
+            row.setOrderDownstreamMediaId(d.getOrderDownstreamMediaId());
+            row.setMediaId(d.getMediaId());
+            row.setMediaName(d.getMediaName());
+            row.setPayableAmount(d.getPayableAmount());
+            row.setNoRebateAmount(d.getNoRebateAmount());
+            row.setRebateMode(d.getRebateMode());
+            row.setRebateValue(d.getRebateValue());
+            row.setRebateAmount(d.getRebateAmount());
+            row.setActualPayable(d.getActualPayable());
+            row.setPaidAmount(d.getPaidAmount() == null ? BigDecimal.ZERO : d.getPaidAmount());
+            row.setOrganizationId(orgId);
+            row.setCreateUser(userId);
+            row.setUpdateUser(userId);
+            row.setCreateTime(now);
+            row.setUpdateTime(now);
+            rows.add(row);
+        }
+        if (!rows.isEmpty()) {
+            adPaymentMediaMapper.batchInsert(rows);
+        }
     }
 }

@@ -35,7 +35,7 @@
     <!-- 详情抽屉 -->
     <n-drawer
       v-model:show="detailVisible"
-      :width="640"
+      :width="760"
       placement="right"
       :title="t('advertising.approval.detail.title')"
     >
@@ -67,6 +67,39 @@
                     <td>{{ row.label }}</td>
                     <td class="before-value">{{ row.before }}</td>
                     <td class="after-value">{{ row.after }}</td>
+                  </tr>
+                </tbody>
+              </n-table>
+            </template>
+
+            <!-- 付款单：各下游客户付款返点明细 -->
+            <template v-if="detailType === 'payout' && detailMediaList.length">
+              <n-divider title-placement="left">各下游客户付款返点明细</n-divider>
+              <n-table :bordered="true" size="small" :single-line="false">
+                <thead>
+                  <tr>
+                    <th style="width: 50px">序号</th>
+                    <th>下游客户</th>
+                    <th style="width: 90px">应付</th>
+                    <th style="width: 90px">不记返</th>
+                    <th style="width: 90px">返点方式</th>
+                    <th style="width: 80px">返点值</th>
+                    <th style="width: 90px">返点金额</th>
+                    <th style="width: 90px">实际应付</th>
+                    <th style="width: 100px">本次付款</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(m, idx) in detailMediaList" :key="idx">
+                    <td>{{ idx + 1 }}</td>
+                    <td>{{ m.mediaName || m.mediaId || '-' }}</td>
+                    <td>¥{{ fmtPayoutMoney(m.payableAmount) }}</td>
+                    <td>¥{{ fmtPayoutMoney(m.noRebateAmount) }}</td>
+                    <td>{{ rebateModeLabel(m.rebateMode) }}</td>
+                    <td>{{ fmtRebateValue(m) }}</td>
+                    <td>¥{{ fmtPayoutMoney(m.rebateAmount) }}</td>
+                    <td>¥{{ fmtPayoutMoney(m.actualPayable) }}</td>
+                    <td>¥{{ fmtPayoutMoney(m.paidAmount) }}</td>
                   </tr>
                 </tbody>
               </n-table>
@@ -151,10 +184,42 @@
 
   const detailVisible = ref(false);
   const detailLoading = ref(false);
+  const detailType = ref<string>('');
   // 基础字段：value 为显示文本，link 为跳转路由名（点击新页面查看）
   const detailBaseFields = ref<Array<{ label: string; value: string; link?: string; linkId?: string }>>([]);
   // 改单字段变更对比行
   const detailCompareRows = ref<Array<{ label: string; before: string; after: string }>>([]);
+  // 付款单各下游客户付款明细
+  const detailMediaList = ref<
+    Array<{
+      mediaName?: string;
+      mediaId?: string;
+      payableAmount?: number;
+      noRebateAmount?: number;
+      rebateMode?: number;
+      rebateValue?: number;
+      rebateAmount?: number;
+      actualPayable?: number;
+      paidAmount?: number;
+    }>
+  >([]);
+
+  function fmtPayoutMoney(v?: number | null): string {
+    if (v === null || v === undefined || v === '') return '0.00';
+    const n = Number(v);
+    if (Number.isNaN(n)) return '0.00';
+    return n.toFixed(2);
+  }
+  function rebateModeLabel(v?: number): string {
+    if (v === 10) return '比例';
+    if (v === 20) return '固定金额';
+    return '-';
+  }
+  function fmtRebateValue(m: { rebateMode?: number; rebateValue?: number | null }): string {
+    if (m.rebateMode === 10) return `${fmtPayoutMoney(m.rebateValue)}%`;
+    if (m.rebateMode === 20) return `¥${fmtPayoutMoney(m.rebateValue)}`;
+    return '-';
+  }
 
   /* eslint-disable no-use-before-define */
   const pagination = reactive({
@@ -363,7 +428,10 @@
     });
   }
 
-  async function loadDetail(type: string, id: string): Promise<{ base: BaseField[]; compare: CompareRow[] }> {
+  async function loadDetail(
+    type: string,
+    id: string
+  ): Promise<{ base: BaseField[]; compare: CompareRow[]; mediaDetails?: any[] }> {
     if (type === 'order') {
       const res: any = await getAdOrderDetail(id);
       const o = res?.order || {};
@@ -494,6 +562,7 @@
           { label: '备注', value: res?.remark || '-' },
         ],
         compare: [],
+        mediaDetails: res?.mediaDetails || [],
       };
     }
     return { base: [], compare: [] };
@@ -508,10 +577,15 @@
     detailLoading.value = true;
     detailBaseFields.value = [];
     detailCompareRows.value = [];
+    detailMediaList.value = [];
+    detailType.value = type;
     try {
-      const { base, compare } = await loadDetail(type, id);
+      const { base, compare, mediaDetails } = await loadDetail(type, id);
       detailBaseFields.value = base;
       detailCompareRows.value = compare;
+      if (type === 'payout' && mediaDetails) {
+        detailMediaList.value = mediaDetails;
+      }
     } catch (e) {
       message.error((e as Error).message || '加载详情失败');
     } finally {

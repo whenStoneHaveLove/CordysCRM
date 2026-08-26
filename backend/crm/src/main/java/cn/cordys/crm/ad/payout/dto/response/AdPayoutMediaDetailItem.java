@@ -6,18 +6,21 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 /**
- * 付款单选下拉项（订单的下游客户，JOIN ad_downstream_media 填充名称）。
+ * 付款单详情中的：每下游客户付款返点明细项。
  */
 @Data
-public class AdPayoutMediaOptionResponse {
+public class AdPayoutMediaDetailItem {
 
-    @Schema(description = "订单-下游客户关联id")
+    @Schema(description = "明细id")
     private String id;
 
-    @Schema(description = "字典id")
+    @Schema(description = "订单-下游客户中间表id")
+    private String orderDownstreamMediaId;
+
+    @Schema(description = "下游客户id")
     private String mediaId;
 
-    @Schema(description = "名称")
+    @Schema(description = "下游客户名称")
     private String mediaName;
 
     @Schema(description = "应付金额")
@@ -38,6 +41,6 @@ public class AdPayoutMediaOptionResponse {
     @Schema(description = "实际应付")
     private BigDecimal actualPayable;
 
-    @Schema(description = "该客户累计已付金额(含草稿/审核中)")
+    @Schema(description = "本次付款金额")
     private BigDecimal paidAmount;
 }

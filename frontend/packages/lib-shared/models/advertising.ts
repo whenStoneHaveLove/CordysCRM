@@ -1001,6 +1001,35 @@ export interface AdPayoutSaveParams {
   mediaIds?: string[];
   voucherUrl?: string;
   remark?: string;
+  mediaDetails?: AdPayoutMediaDetailItem[];
+}
+
+/** 各下游客户付款返点明细（新建/编辑付款单时附带）。 */
+export interface AdPayoutMediaDetailItem {
+  orderDownstreamMediaId?: string;
+  mediaId?: string;
+  mediaName?: string;
+  payableAmount?: number;
+  noRebateAmount?: number;
+  rebateMode?: number;
+  rebateValue?: number;
+  rebateAmount?: number;
+  actualPayable?: number;
+  paidAmount?: number;
+}
+
+/** 订单的下游客户列表（带返点信息 + 累计已付，供新建付款单参考）。 */
+export interface AdPayoutMediaOption {
+  id?: string;
+  mediaId?: string;
+  mediaName?: string;
+  payableAmount?: number;
+  noRebateAmount?: number;
+  rebateMode?: number;
+  rebateValue?: number;
+  rebateAmount?: number;
+  actualPayable?: number;
+  paidAmount?: number;
 }
 
 export interface AdPayoutApproveParams {
@@ -1062,6 +1091,7 @@ export interface AdPayoutDetail {
   orderNo?: string;
   orderName?: string;
   contracts?: AdContractBriefInfo[];
+  mediaDetails?: AdPayoutMediaDetailItem[];
 }
 
 export type AdPayoutPageResult = CommonList<AdPayoutInfo>;
