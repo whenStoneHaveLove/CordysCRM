@@ -426,6 +426,20 @@
     }
   }
 
+  function recalcAmount() {
+    // 本次付款合计自动汇总到 form.amount
+    const total = Object.values(mediaPaidDraft).reduce((sum, n) => sum + (Number(n) || 0), 0);
+    if (total > 0) {
+      form.amount = Number(total.toFixed(2));
+    }
+  }
+  const currentPaidTotal = computed(() => Object.values(mediaPaidDraft).reduce((sum, n) => sum + (Number(n) || 0), 0));
+
+  /* ========== 新建/编辑 ========== */
+  const showModal = ref(false);
+  const editId = ref('');
+  const modalTitle = computed(() => (editId.value ? '编辑付款单' : '新建付款单'));
+
   async function onOrderChange(orderId: string) {
     resetMediaDraft();
     mediaOptions.value = [];
@@ -450,20 +464,6 @@
       // ignore
     }
   }
-
-  function recalcAmount() {
-    // 本次付款合计自动汇总到 form.amount
-    const total = Object.values(mediaPaidDraft).reduce((sum, n) => sum + (Number(n) || 0), 0);
-    if (total > 0) {
-      form.amount = Number(total.toFixed(2));
-    }
-  }
-  const currentPaidTotal = computed(() => Object.values(mediaPaidDraft).reduce((sum, n) => sum + (Number(n) || 0), 0));
-
-  /* ========== 新建/编辑 ========== */
-  const showModal = ref(false);
-  const editId = ref('');
-  const modalTitle = computed(() => (editId.value ? '编辑付款单' : '新建付款单'));
 
   function resetForm() {
     form.orderId = undefined;
