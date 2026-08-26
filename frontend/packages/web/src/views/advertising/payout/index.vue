@@ -438,7 +438,14 @@
       form.amount = Number(remaining ?? 0);
       const media = (await getAdPayoutMedia(orderId)) || [];
       mediaOptions.value = media as AdPayoutMediaOption[];
-      // 编辑模式不自动填充草稿
+      // 新建模式：本次付款默认带出各客户的剩余应付
+      if (!editId.value) {
+        mediaOptions.value.forEach((m) => {
+          const key = m.mediaId || m.id || '';
+          if (key) mediaPaidDraft[key] = remainingOf(m);
+        });
+        recalcAmount();
+      }
     } catch (e) {
       // ignore
     }
