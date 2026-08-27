@@ -212,10 +212,10 @@
             </n-grid>
 
             <!-- 6. 付款返点明细（下游客户） -->
+            <n-divider title-placement="left">
+              <span class="section-title">6. 付款返点明细（下游客户）</span>
+            </n-divider>
             <template v-if="(form.downstreamMediaIds || []).length > 0">
-              <n-divider title-placement="left">
-                <span class="section-title">6. 付款返点明细（下游客户）</span>
-              </n-divider>
               <div
                 v-for="(item, idx) in form.downstreamMediaPayables"
                 :key="item.downstreamMediaId"
@@ -291,6 +291,13 @@
                       <n-input-number v-model:value="item.paymentPrepayRatio" :min="0" :max="100" style="width: 100%">
                         <template #suffix>%</template>
                       </n-input-number>
+                    </n-form-item-gi>
+                    <n-form-item-gi
+                      v-if="item.paymentPrepayMode === 10"
+                      :span="1"
+                      :label="t('advertising.order.form.paymentPrepayAmount')"
+                    >
+                      <span class="readonly-field">{{ item.paymentPrepayAmount ?? 0 }}</span>
                     </n-form-item-gi>
                     <n-form-item-gi
                       v-else-if="item.paymentPrepayMode === 20"
