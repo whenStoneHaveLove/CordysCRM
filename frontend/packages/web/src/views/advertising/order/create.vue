@@ -726,11 +726,11 @@
         p.payableAmount,
       ]),
     () => {
-      for (const p of form.downstreamMediaPayables) {
+      form.downstreamMediaPayables.forEach((p: DownstreamPayable) => {
         if (p.paymentMethod === 10 && p.paymentPrepayMode === 10 && p.payableAmount != null) {
           p.paymentPrepayAmount = +((Number(p.payableAmount) * Number(p.paymentPrepayRatio || 0)) / 100).toFixed(2);
         }
-      }
+      });
     },
     { deep: true }
   );
