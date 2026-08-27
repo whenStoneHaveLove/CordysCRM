@@ -18,7 +18,9 @@
         <n-divider title-placement="left">基本信息</n-divider>
         <n-descriptions label-placement="left" :column="3" bordered size="small">
           <n-descriptions-item label="名称">{{ detail.media?.name || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="类型">{{ detail.mediaTypeLabel || detail.media?.mediaType || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="类型">{{
+            detail.mediaTypeLabel || detail.media?.mediaType || '-'
+          }}</n-descriptions-item>
           <n-descriptions-item label="覆盖渠道">{{ detail.media?.channel || '-' }}</n-descriptions-item>
           <n-descriptions-item label="刊例价">{{ detail.media?.rateCard || '-' }}</n-descriptions-item>
           <n-descriptions-item label="折扣政策">{{ detail.media?.discountPolicy || '-' }}</n-descriptions-item>
@@ -38,6 +40,31 @@
           <n-descriptions-item label="修改人">{{ getUserName(detail.media?.updateUser) }}</n-descriptions-item>
           <n-descriptions-item label="修改时间">{{ fmtDateTime(detail.media?.updateTime) }}</n-descriptions-item>
         </n-descriptions>
+
+        <n-divider title-placement="left">银行账户</n-divider>
+        <n-empty v-if="!detail.accountList || detail.accountList.length === 0" description="暂无银行账户" />
+        <n-table v-else :bordered="false" :single-line="false" size="small">
+          <thead>
+            <tr>
+              <th>收款人全称</th>
+              <th>开户行</th>
+              <th>银行账号</th>
+              <th>是否停用</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="acc in detail.accountList" :key="acc.id">
+              <td>{{ acc.payeeName || '-' }}</td>
+              <td>{{ acc.bankName || '-' }}</td>
+              <td>{{ acc.bankAccount || '-' }}</td>
+              <td>
+                <n-tag :type="acc.disabled === 1 ? 'error' : 'success'" size="small">
+                  {{ acc.disabled === 1 ? '已停用' : '启用' }}
+                </n-tag>
+              </td>
+            </tr>
+          </tbody>
+        </n-table>
       </n-card>
     </n-spin>
   </div>
@@ -46,7 +73,18 @@
 <script setup lang="ts">
   import { computed, onMounted, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
-  import { NButton, NCard, NDescriptions, NDescriptionsItem, NDivider, NSpin, NTag, useMessage } from 'naive-ui';
+  import {
+    NButton,
+    NCard,
+    NDescriptions,
+    NDescriptionsItem,
+    NDivider,
+    NEmpty,
+    NSpin,
+    NTable,
+    NTag,
+    useMessage,
+  } from 'naive-ui';
 
   import { useI18n } from '@lib/shared/hooks/useI18n';
 
