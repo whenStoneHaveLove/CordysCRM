@@ -592,6 +592,13 @@
     noRebateAmount?: number | null;
     rebateMode?: number | null;
     rebateValue?: number | null;
+    paymentMethod?: number | null;
+    paymentPrepayMode?: number | null;
+    paymentPrepayRatio?: number | null;
+    paymentPrepayAmount?: number | null;
+    paymentPrepayDeadline?: number | null;
+    paymentPostpayTrigger?: number | null;
+    paymentPostpayDays?: number | null;
   }
 
   const form = reactive<AdOrderForm>({
