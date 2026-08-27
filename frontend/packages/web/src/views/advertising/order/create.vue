@@ -726,14 +726,14 @@
   // 每个客户：比例模式下，实时计算预付金额（应付金额 × 比例%）
   watch(
     () =>
-      form.downstreamMediaPayables.map((p: DownstreamPayable) => [
+      (form.downstreamMediaPayables || []).map((p: DownstreamPayable) => [
         p.paymentMethod,
         p.paymentPrepayMode,
         p.paymentPrepayRatio,
         p.payableAmount,
       ]),
     () => {
-      form.downstreamMediaPayables.forEach((p: DownstreamPayable) => {
+      (form.downstreamMediaPayables || []).forEach((p: DownstreamPayable) => {
         if (p.paymentMethod === 10 && p.paymentPrepayMode === 10 && p.payableAmount != null) {
           p.paymentPrepayAmount = +((Number(p.payableAmount) * Number(p.paymentPrepayRatio || 0)) / 100).toFixed(2);
         }
