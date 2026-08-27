@@ -647,8 +647,8 @@ public class AdOrderService {
         }
         BigDecimal payable = dto.getPayableAmount();
         BigDecimal noRebate = dto.getNoRebateAmount() == null ? BigDecimal.ZERO : dto.getNoRebateAmount();
-        Integer rebateMode = dto.getRebateMode();
-        BigDecimal rebateValue = dto.getRebateValue();
+        Integer rebateMode = dto.getRebateMode() == null ? 10 : dto.getRebateMode();
+        BigDecimal rebateValue = dto.getRebateValue() == null ? BigDecimal.ZERO : dto.getRebateValue();
         odm.setPayableAmount(payable);
         odm.setNoRebateAmount(dto.getNoRebateAmount());
         odm.setRebateMode(rebateMode);

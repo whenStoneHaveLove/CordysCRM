@@ -377,7 +377,8 @@ public class AdPayoutService {
             row.setMediaName(d.getMediaName());
             row.setPayableAmount(d.getPayableAmount());
             row.setNoRebateAmount(d.getNoRebateAmount());
-            row.setRebateMode(d.getRebateMode());
+            // ad_payment_media.rebate_mode 为 NOT NULL，订单下游客户可能未填，兜底默认 10(比例)
+            row.setRebateMode(d.getRebateMode() == null ? 10 : d.getRebateMode());
             row.setRebateValue(d.getRebateValue());
             row.setRebateAmount(d.getRebateAmount());
             row.setActualPayable(d.getActualPayable());
