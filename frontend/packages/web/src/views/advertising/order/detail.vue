@@ -132,8 +132,45 @@
               </n-descriptions-item>
               <n-descriptions-item label="返点金额">{{ fmtAmount(p.rebateAmount) }}</n-descriptions-item>
               <n-descriptions-item label="实际应付">{{ fmtAmount(p.actualPayable) }}</n-descriptions-item>
+              <n-descriptions-item label="付款方式">
+                {{ p.paymentMethod === 10 ? '预付' : p.paymentMethod === 20 ? '后付' : '-' }}
+              </n-descriptions-item>
+              <template v-if="p.paymentMethod === 10">
+                <n-descriptions-item label="预付模式">
+                  {{ p.paymentPrepayMode === 10 ? '比例' : p.paymentPrepayMode === 20 ? '固定金额' : '-' }}
+                </n-descriptions-item>
+                <n-descriptions-item label="预付比例/金额">
+                  {{
+                    p.paymentPrepayMode === 10
+                      ? fmtAmount(p.paymentPrepayRatio) + '%'
+                      : fmtAmount(p.paymentPrepayAmount)
+                  }}
+                </n-descriptions-item>
+                <n-descriptions-item label="预付截止日">
+                  {{ fmtDateTime(p.paymentPrepayDeadline) }}
+                </n-descriptions-item>
+              </template>
+              <template v-else-if="p.paymentMethod === 20">
+                <n-descriptions-item label="后付触发">
+                  {{
+                    p.paymentPostpayTrigger === 10
+                      ? '收到上游全款'
+                      : p.paymentPostpayTrigger === 20
+                      ? '执行完成X天'
+                      : '-'
+                  }}
+                </n-descriptions-item>
+                <n-descriptions-item v-if="p.paymentPostpayTrigger === 20" label="后付天数">
+                  {{ p.paymentPostpayDays }}
+                </n-descriptions-item>
+              </template>
             </n-descriptions>
           </div>
+          <n-descriptions label-placement="left" :column="3" bordered size="small" class="payable-total-row">
+            <n-descriptions-item label="应付总额（各客户累加）">
+              {{ fmtAmount(mediaPayableTotal) }}
+            </n-descriptions-item>
+          </n-descriptions>
         </template>
 
         <n-divider title-placement="left">{{ t('advertising.order.detail.tab.attachment') }}</n-divider>
@@ -353,6 +390,10 @@
   const loading = ref(false);
   const uploading = ref(false);
   const detail = ref<AdOrderDetail | null>(null);
+
+  const mediaPayableTotal = computed(() => {
+    return (detail.value?.downstreamMediaPayables || []).reduce((sum, p) => sum + Number(p.payableAmount || 0), 0);
+  });
 
   const actionModal = reactive<{
     show: boolean;

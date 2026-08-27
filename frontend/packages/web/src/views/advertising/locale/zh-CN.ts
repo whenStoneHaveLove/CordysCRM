@@ -89,6 +89,7 @@ export default {
   'advertising.order.form.rebateValue': '返点值',
   'advertising.order.form.noRebateAmount': '不记返金额',
   'advertising.order.form.mediaPayableAmount': '应付总额',
+  'advertising.order.form.mediaPayableAmountTotal': '应付总额（各客户累加）',
   'advertising.order.form.payableAmount': '应付金额',
   'advertising.order.form.actualPayable': '实际应付',
   'advertising.order.form.deliveryStart': '投放起始日',

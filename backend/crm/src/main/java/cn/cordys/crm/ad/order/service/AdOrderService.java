@@ -140,7 +140,7 @@ public class AdOrderService {
         // 关联合同：框架订单必选框架合同；单笔订单可后补
         syncOrderContract(order.getId(), request.getContractId(), request.getOrderType(), userId, orgId);
         // 关联下游客户
-        syncOrderDownstreamMedia(order.getId(), request.getDownstreamMediaIds(),
+        syncOrderDownstreamMedia(order, request.getDownstreamMediaIds(),
                 request.getDownstreamMediaPayables(), userId, orgId);
         return order;
     }
@@ -168,7 +168,7 @@ public class AdOrderService {
         // 同步合同关联
         syncOrderContract(order.getId(), request.getContractId(), request.getOrderType(), userId, orgId);
         // 同步下游客户
-        syncOrderDownstreamMedia(order.getId(), request.getDownstreamMediaIds(),
+        syncOrderDownstreamMedia(order, request.getDownstreamMediaIds(),
                 request.getDownstreamMediaPayables(), userId, orgId);
         return order;
     }
@@ -208,6 +208,13 @@ public class AdOrderService {
                     vo.setRebateValue(odm.getRebateValue());
                     vo.setRebateAmount(odm.getRebateAmount());
                     vo.setActualPayable(odm.getActualPayable());
+                    vo.setPaymentMethod(odm.getPaymentMethod());
+                    vo.setPaymentPrepayMode(odm.getPaymentPrepayMode());
+                    vo.setPaymentPrepayRatio(odm.getPaymentPrepayRatio());
+                    vo.setPaymentPrepayAmount(odm.getPaymentPrepayAmount());
+                    vo.setPaymentPrepayDeadline(odm.getPaymentPrepayDeadline());
+                    vo.setPaymentPostpayTrigger(odm.getPaymentPostpayTrigger());
+                    vo.setPaymentPostpayDays(odm.getPaymentPostpayDays());
                     return vo;
                 })
                 .collect(Collectors.toList());
@@ -575,9 +582,10 @@ public class AdOrderService {
      * 注意：由于唯一键 (order_id, downstream_media_id) 不区分 deleted，
      * 插入前先检查已存在记录（含已删除），若存在则复用（设 deleted=0）。
      */
-    private void syncOrderDownstreamMedia(String orderId, List<String> downstreamMediaIds,
+    private void syncOrderDownstreamMedia(AdOrder order, List<String> downstreamMediaIds,
                                            List<AdOrderSaveRequest.DownstreamMediaPayableDTO> payables,
                                            String userId, String orgId) {
+        String orderId = order.getId();
         // 先逻辑删除该订单的所有现有下游客户关联
         List<AdOrderDownstreamMedia> existing = orderDownstreamMediaMapper.selectByOrderId(orderId);
         for (AdOrderDownstreamMedia odm : existing) {
@@ -621,6 +629,15 @@ public class AdOrderService {
                 orderDownstreamMediaMapper.insert(odm);
             }
         }
+        // 订单应付总额 = 各下游客户应付金额之和（后端累加并写回主表）
+        BigDecimal payableSum = BigDecimal.ZERO;
+        for (AdOrderSaveRequest.DownstreamMediaPayableDTO dto : (payables == null ? java.util.Collections.<AdOrderSaveRequest.DownstreamMediaPayableDTO>emptyList() : payables)) {
+            if (dto != null && dto.getPayableAmount() != null) {
+                payableSum = payableSum.add(dto.getPayableAmount());
+            }
+        }
+        order.setMediaPayableAmount(payableSum);
+        adOrderMapper.update(order);
     }
 
     /** 把前端传来的付款返点明细写入关联行，并自动计算 rebateAmount/actualPayable */
@@ -654,6 +671,26 @@ public class AdOrderService {
         odm.setRebateAmount(rebateAmount);
         BigDecimal actual = (payable == null ? BigDecimal.ZERO : payable).subtract(rebateAmount);
         odm.setActualPayable(actual);
+        // 付款方式（下放到每个客户），预付金额基数=该客户应付金额
+        odm.setPaymentMethod(dto.getPaymentMethod());
+        odm.setPaymentPrepayMode(dto.getPaymentPrepayMode());
+        odm.setPaymentPrepayRatio(dto.getPaymentPrepayRatio());
+        odm.setPaymentPrepayDeadline(dto.getPaymentPrepayDeadline());
+        odm.setPaymentPostpayTrigger(dto.getPaymentPostpayTrigger());
+        odm.setPaymentPostpayDays(dto.getPaymentPostpayDays());
+        BigDecimal prepayAmount = null;
+        if (dto.getPaymentMethod() != null && dto.getPaymentMethod() == 10
+                && dto.getPaymentPrepayMode() != null && payable != null) {
+            if (dto.getPaymentPrepayMode() == 10 && dto.getPaymentPrepayRatio() != null) {
+                prepayAmount = payable.multiply(dto.getPaymentPrepayRatio())
+                        .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            } else if (dto.getPaymentPrepayMode() == 20 && dto.getPaymentPrepayDeadline() != null
+                    && dto.getPaymentPrepayRatio() != null) {
+                // 固定金额模式用 paymentPrepayRatio 列承载固定金额值
+                prepayAmount = dto.getPaymentPrepayRatio();
+            }
+        }
+        odm.setPaymentPrepayAmount(prepayAmount);
     }
 
     private void recordLog(AdOrder order, String action, int from, int to, String userId, String orgId) {

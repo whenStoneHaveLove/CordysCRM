@@ -136,5 +136,23 @@ public class AdOrderSaveRequest {
 
         @Schema(description = "返点值:比例时存百分比数值,固定金额时存金额")
         private BigDecimal rebateValue;
+
+        @Schema(description = "付款方式:10-预付/20-后付")
+        private Integer paymentMethod;
+
+        @Schema(description = "预付模式:10-比例/20-固定金额")
+        private Integer paymentPrepayMode;
+
+        @Schema(description = "预付比例(%)")
+        private BigDecimal paymentPrepayRatio;
+
+        @Schema(description = "预付截止日(时间戳)")
+        private Long paymentPrepayDeadline;
+
+        @Schema(description = "后付触发:10-收到上游全款/20-执行完成X天")
+        private Integer paymentPostpayTrigger;
+
+        @Schema(description = "后付天数(执行完成X天后付款)")
+        private Integer paymentPostpayDays;
     }
 }

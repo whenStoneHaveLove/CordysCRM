@@ -214,6 +214,14 @@ export interface DownstreamMediaPayable {
   rebateValue?: number | null;
   rebateAmount?: number | null;
   actualPayable?: number | null;
+  /** 付款方式:10-预付/20-后付（下放到每个客户） */
+  paymentMethod?: number | null;
+  paymentPrepayMode?: number | null;
+  paymentPrepayRatio?: number | null;
+  paymentPrepayAmount?: number | null;
+  paymentPrepayDeadline?: number | null;
+  paymentPostpayTrigger?: number | null;
+  paymentPostpayDays?: number | null;
 }
 
 export interface AdOrderDetail {

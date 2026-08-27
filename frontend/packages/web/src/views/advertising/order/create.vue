@@ -211,80 +211,22 @@
               </n-form-item-gi>
             </n-grid>
 
-            <!-- 6. 付款方式（下游客户） -->
-            <n-divider title-placement="left">
-              <span class="section-title">6. 付款方式（下游客户）</span>
-            </n-divider>
-            <n-grid :cols="2" :x-gap="16">
-              <n-form-item-gi :span="2" :label="t('advertising.order.form.paymentMethod')" path="paymentMethod">
-                <n-radio-group v-model:value="form.paymentMethod" name="paymentMethod">
-                  <n-radio :value="10">预付</n-radio>
-                  <n-radio :value="20">后付</n-radio>
-                </n-radio-group>
-              </n-form-item-gi>
-              <n-form-item-gi :span="1" :label="t('advertising.order.form.mediaPayableAmount')">
-                <n-input-number v-model:value="form.mediaPayableAmount" :min="0" :precision="2" style="width: 100%" />
-              </n-form-item-gi>
-              <template v-if="form.paymentMethod === 10">
-                <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPrepayMode')">
-                  <n-select
-                    v-model:value="form.paymentPrepayMode"
-                    :options="prepayModeOptions"
-                    placeholder="预付模式"
-                  />
-                </n-form-item-gi>
-                <n-form-item-gi
-                  v-if="form.paymentPrepayMode === 10"
-                  :span="1"
-                  :label="t('advertising.order.form.paymentPrepayRatio')"
-                >
-                  <n-input-number v-model:value="form.paymentPrepayRatio" :min="0" :max="100" style="width: 100%">
-                    <template #suffix>%</template>
-                  </n-input-number>
-                </n-form-item-gi>
-                <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPrepayAmount')">
-                  <n-input-number
-                    v-model:value="form.paymentPrepayAmount"
-                    :min="0"
-                    :precision="2"
-                    style="width: 100%"
-                    :disabled="form.paymentPrepayMode === 10"
-                    placeholder="自动计算"
-                  />
-                </n-form-item-gi>
-                <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPrepayDeadline')">
-                  <n-date-picker v-model:value="form.paymentPrepayDeadline" type="date" style="width: 100%" />
-                </n-form-item-gi>
-              </template>
-              <template v-if="form.paymentMethod === 20">
-                <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPostpayTrigger')">
-                  <n-select
-                    v-model:value="form.paymentPostpayTrigger"
-                    :options="postpayTriggerOptions"
-                    placeholder="后付触发"
-                  />
-                </n-form-item-gi>
-                <n-form-item-gi
-                  v-if="form.paymentPostpayTrigger === 20"
-                  :span="1"
-                  :label="t('advertising.order.form.paymentPostpayDays')"
-                >
-                  <n-input-number v-model:value="form.paymentPostpayDays" :min="0" style="width: 100%" />
-                </n-form-item-gi>
-              </template>
-            </n-grid>
-
-            <!-- 6.1 各下游客户付款返点明细（与下游客户多选联动） -->
+            <!-- 6. 付款返点明细（下游客户） -->
             <template v-if="(form.downstreamMediaIds || []).length > 0">
-              <n-divider title-placement="center" class="payable-subtitle-divider">
-                <span class="payable-subtitle">各下游客户付款返点明细</span>
+              <n-divider title-placement="left">
+                <span class="section-title">6. 付款返点明细（下游客户）</span>
               </n-divider>
-              <div v-for="(item, idx) in form.downstreamMediaPayables" :key="item.downstreamMediaId" class="payable-card">
+              <div
+                v-for="(item, idx) in form.downstreamMediaPayables"
+                :key="item.downstreamMediaId"
+                class="payable-card"
+              >
                 <div class="payable-card-title">
                   <span class="payable-card-index">{{ idx + 1 }}</span>
                   <span class="payable-card-name">{{ downstreamMediaName(item.downstreamMediaId) }}</span>
                 </div>
                 <n-grid :cols="2" :x-gap="16">
+                  <!-- 基础返点 -->
                   <n-form-item-gi :span="1" :label="t('advertising.order.form.payableAmount')">
                     <n-input-number v-model:value="item.payableAmount" :min="0" :precision="2" style="width: 100%" />
                   </n-form-item-gi>
@@ -302,7 +244,13 @@
                     :span="1"
                     :label="t('advertising.order.form.rebateRatio')"
                   >
-                    <n-input-number v-model:value="item.rebateValue" :min="0" :max="100" :precision="2" style="width: 100%">
+                    <n-input-number
+                      v-model:value="item.rebateValue"
+                      :min="0"
+                      :max="100"
+                      :precision="2"
+                      style="width: 100%"
+                    >
                       <template #suffix>%</template>
                     </n-input-number>
                   </n-form-item-gi>
@@ -319,8 +267,73 @@
                   <n-form-item-gi :span="1" :label="t('advertising.order.form.actualPayable')">
                     <span class="readonly-field">{{ payableAutoCalc(item).actualPayable }}</span>
                   </n-form-item-gi>
+
+                  <!-- 每个客户的付款方式 -->
+                  <n-form-item-gi :span="2" :label="t('advertising.order.form.paymentMethod')">
+                    <n-radio-group v-model:value="item.paymentMethod" name="payablePaymentMethod">
+                      <n-radio :value="10">预付</n-radio>
+                      <n-radio :value="20">后付</n-radio>
+                    </n-radio-group>
+                  </n-form-item-gi>
+                  <template v-if="item.paymentMethod === 10">
+                    <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPrepayMode')">
+                      <n-select
+                        v-model:value="item.paymentPrepayMode"
+                        :options="prepayModeOptions"
+                        placeholder="预付模式"
+                      />
+                    </n-form-item-gi>
+                    <n-form-item-gi
+                      v-if="item.paymentPrepayMode === 10"
+                      :span="1"
+                      :label="t('advertising.order.form.paymentPrepayRatio')"
+                    >
+                      <n-input-number v-model:value="item.paymentPrepayRatio" :min="0" :max="100" style="width: 100%">
+                        <template #suffix>%</template>
+                      </n-input-number>
+                    </n-form-item-gi>
+                    <n-form-item-gi
+                      v-else-if="item.paymentPrepayMode === 20"
+                      :span="1"
+                      :label="t('advertising.order.form.paymentPrepayAmount')"
+                    >
+                      <n-input-number
+                        v-model:value="item.paymentPrepayRatio"
+                        :min="0"
+                        :precision="2"
+                        style="width: 100%"
+                        placeholder="固定金额"
+                      />
+                    </n-form-item-gi>
+                    <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPrepayDeadline')">
+                      <n-date-picker v-model:value="item.paymentPrepayDeadline" type="date" style="width: 100%" />
+                    </n-form-item-gi>
+                  </template>
+                  <template v-else-if="item.paymentMethod === 20">
+                    <n-form-item-gi :span="1" :label="t('advertising.order.form.paymentPostpayTrigger')">
+                      <n-select
+                        v-model:value="item.paymentPostpayTrigger"
+                        :options="postpayTriggerOptions"
+                        placeholder="后付触发"
+                      />
+                    </n-form-item-gi>
+                    <n-form-item-gi
+                      v-if="item.paymentPostpayTrigger === 20"
+                      :span="1"
+                      :label="t('advertising.order.form.paymentPostpayDays')"
+                    >
+                      <n-input-number v-model:value="item.paymentPostpayDays" :min="0" style="width: 100%" />
+                    </n-form-item-gi>
+                  </template>
                 </n-grid>
               </div>
+
+              <!-- 应付总额（各客户应付金额累加） -->
+              <n-grid :cols="2" :x-gap="16" class="payable-total-row">
+                <n-form-item-gi :span="2" :label="t('advertising.order.form.mediaPayableAmountTotal')">
+                  <span class="readonly-field total-field">{{ payableTotal }}</span>
+                </n-form-item-gi>
+              </n-grid>
             </template>
 
             <!-- 7. 附件与合同 -->
@@ -691,15 +704,10 @@
       }
     }
   );
-  // 比例模式下，实时计算预付金额（应付 × 比例%）
-  watch(
-    [() => form.paymentPrepayMode, () => form.paymentPrepayRatio, () => form.mediaPayableAmount],
-    ([mode, ratio, base]) => {
-      if (mode === 10) {
-        form.paymentPrepayAmount = +((Number(base || 0) * Number(ratio || 0)) / 100).toFixed(2);
-      }
-    }
-  );
+  // 各下游客户应付金额累加 = 订单应付总额
+  const payableTotal = computed(() => {
+    return (form.downstreamMediaPayables || []).reduce((sum, it) => sum + Number(it.payableAmount || 0), 0).toFixed(2);
+  });
 
   function formatMoney(v: string | number) {
     if (v == null || v === '') return '-';
@@ -766,11 +774,9 @@
       [form.totalAmount, t('advertising.order.form.totalAmount')],
       [form.rebateMode, t('advertising.order.form.rebateMode')],
       [form.rebateValue, t('advertising.order.form.rebateValue')],
-      [form.mediaPayableAmount, t('advertising.order.form.mediaPayableAmount')],
       [form.deliveryStartDate, t('advertising.order.form.deliveryStart')],
       [form.deliveryEndDate, t('advertising.order.form.deliveryEnd')],
       [form.receiptMethod, t('advertising.order.form.receiptMethod')],
-      [form.paymentMethod, t('advertising.order.form.paymentMethod')],
     ];
     const missing = checks.find(([val]) => val === undefined || val === null || val === '');
     if (missing) {
@@ -784,10 +790,6 @@
   function validateBusiness(): boolean {
     if (!form.totalAmount || form.totalAmount <= 0) {
       message.warning(`${t('advertising.order.form.totalAmount')} 需大于 0`);
-      return false;
-    }
-    if (form.mediaPayableAmount !== null && form.mediaPayableAmount !== undefined && form.mediaPayableAmount < 0) {
-      message.warning(`${t('advertising.order.form.mediaPayableAmount')} 不能为负`);
       return false;
     }
     if (form.orderType === 10 && !form.contractId) {
@@ -894,16 +896,6 @@
     }
   );
 
-  // 应付总额默认联动订单总额，可手动改
-  watch(
-    () => form.totalAmount,
-    (val) => {
-      if (form.mediaPayableAmount === null || form.mediaPayableAmount === undefined) {
-        form.mediaPayableAmount = val ?? null;
-      }
-    }
-  );
-
   function toDateValue(v: any): number | null {
     if (v == null || v === '') return null;
     if (typeof v === 'number') return v;
@@ -938,6 +930,12 @@
           noRebateAmount: vo.noRebateAmount ?? null,
           rebateMode: vo.rebateMode ?? null,
           rebateValue: vo.rebateValue ?? null,
+          paymentMethod: vo.paymentMethod ?? null,
+          paymentPrepayMode: vo.paymentPrepayMode ?? null,
+          paymentPrepayRatio: vo.paymentPrepayRatio ?? null,
+          paymentPrepayDeadline: toDateValue(vo.paymentPrepayDeadline),
+          paymentPostpayTrigger: vo.paymentPostpayTrigger ?? null,
+          paymentPostpayDays: vo.paymentPostpayDays ?? null,
         } as DownstreamPayable;
       });
       form.upstreamAgentId = o.upstreamAgentId;
@@ -956,13 +954,7 @@
       form.receiptPrepayAmount = o.receiptPrepayAmount ?? null;
       form.receiptPrepayDeadline = toDateValue(o.receiptPrepayDeadline);
       form.receiptAccountPeriodDays = o.receiptAccountPeriodDays ?? null;
-      form.paymentMethod = o.paymentMethod ?? null;
-      form.paymentPrepayMode = o.paymentPrepayMode ?? null;
-      form.paymentPrepayRatio = o.paymentPrepayRatio ?? null;
-      form.paymentPrepayAmount = o.paymentPrepayAmount ?? null;
-      form.paymentPrepayDeadline = toDateValue(o.paymentPrepayDeadline);
-      form.paymentPostpayTrigger = o.paymentPostpayTrigger ?? null;
-      form.paymentPostpayDays = o.paymentPostpayDays ?? null;
+      form.mediaPayableAmount = o.mediaPayableAmount;
       form.currency = o.currency || 'CNY';
       form.remark = o.remark;
       // 回填已有附件
@@ -998,6 +990,12 @@
         noRebateAmount: p.noRebateAmount ?? undefined,
         rebateMode: p.rebateMode ?? undefined,
         rebateValue: p.rebateValue ?? undefined,
+        paymentMethod: p.paymentMethod ?? undefined,
+        paymentPrepayMode: p.paymentPrepayMode ?? undefined,
+        paymentPrepayRatio: p.paymentPrepayRatio ?? undefined,
+        paymentPrepayDeadline: p.paymentPrepayDeadline ?? undefined,
+        paymentPostpayTrigger: p.paymentPostpayTrigger ?? undefined,
+        paymentPostpayDays: p.paymentPostpayDays ?? undefined,
       })),
       upstreamAgentId: form.upstreamAgentId,
       agentOrderNo: form.agentOrderNo,
@@ -1005,7 +1003,6 @@
       noRebateAmount: form.noRebateAmount ?? undefined,
       rebateMode: form.rebateMode ?? undefined,
       rebateValue: form.rebateValue ?? undefined,
-      mediaPayableAmount: form.mediaPayableAmount ?? undefined,
       deliveryStartDate: form.deliveryStartDate ?? undefined,
       deliveryEndDate: form.deliveryEndDate ?? undefined,
       deliveryVolume: form.deliveryVolume,
@@ -1015,13 +1012,6 @@
       receiptPrepayAmount: form.receiptPrepayAmount ?? undefined,
       receiptPrepayDeadline: form.receiptPrepayDeadline ?? undefined,
       receiptAccountPeriodDays: form.receiptAccountPeriodDays ?? undefined,
-      paymentMethod: form.paymentMethod ?? undefined,
-      paymentPrepayMode: form.paymentPrepayMode ?? undefined,
-      paymentPrepayRatio: form.paymentPrepayRatio ?? undefined,
-      paymentPrepayAmount: form.paymentPrepayAmount ?? undefined,
-      paymentPrepayDeadline: form.paymentPrepayDeadline ?? undefined,
-      paymentPostpayTrigger: form.paymentPostpayTrigger ?? undefined,
-      paymentPostpayDays: form.paymentPostpayDays ?? undefined,
       currency: form.currency,
       remark: form.remark,
     };
