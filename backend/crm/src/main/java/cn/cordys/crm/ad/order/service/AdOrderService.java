@@ -734,6 +734,27 @@ public class AdOrderService {
     }
 
     /**
+     * 仅根据订单主表已有金额字段，计算并回填「应付返点」「订单收入」两个派生列。
+     * 不重算 mediaPayableAmount/actualMediaPayableAmount（保留主表原值，避免无下游明细时把主表金额错误地置 0）。
+     * 用于历史数据批量补数场景：主表原有两个应付字段已正确，仅需补出新增的派生字段。
+     * 公式：
+     *   应付返点 = mediaPayableAmount - actualMediaPayableAmount
+     *   订单收入 = receivableAmount    - actualMediaPayableAmount
+     * 任意一侧为 null 时按 0 计，结果仍为 null 时不写（保留 null 便于排查）。
+     */
+    private void applyDerivedOnlyFromOrder(AdOrder order) {
+        BigDecimal mediaPayable = order.getMediaPayableAmount() == null ? BigDecimal.ZERO : order.getMediaPayableAmount();
+        BigDecimal actualPayable = order.getActualMediaPayableAmount() == null ? BigDecimal.ZERO : order.getActualMediaPayableAmount();
+        BigDecimal receivable = order.getReceivableAmount() == null ? BigDecimal.ZERO : order.getReceivableAmount();
+        if (order.getMediaPayableAmount() != null && order.getActualMediaPayableAmount() != null) {
+            order.setMediaRebateAmount(mediaPayable.subtract(actualPayable));
+        }
+        if (order.getReceivableAmount() != null && order.getActualMediaPayableAmount() != null) {
+            order.setOrderIncomeAmount(receivable.subtract(actualPayable));
+        }
+    }
+
+    /**
      * 历史数据批量补数：重算所有订单的应付/实际应付/应付返点/订单收入/付款方式。
      * 从 ad_order_downstream_media 读取各订单已有的下游明细（不依赖前端 request），
      * 复用 applyIncomeFromPayable 的统一计算逻辑，逐单 updateById 写回主表。
@@ -747,21 +768,8 @@ public class AdOrderService {
         List<AdOrder> orders = adOrderMapper.select(criteria);
         int count = 0;
         for (AdOrder order : orders) {
-            List<AdOrderDownstreamMedia> details = orderDownstreamMediaMapper.selectByOrderId(order.getId());
-            List<AdOrderSaveRequest.DownstreamMediaPayableDTO> payables = new java.util.ArrayList<>();
-            if (details != null) {
-                for (AdOrderDownstreamMedia d : details) {
-                    AdOrderSaveRequest.DownstreamMediaPayableDTO dto = new AdOrderSaveRequest.DownstreamMediaPayableDTO();
-                    dto.setDownstreamMediaId(d.getDownstreamMediaId());
-                    dto.setPayableAmount(d.getPayableAmount());
-                    dto.setNoRebateAmount(d.getNoRebateAmount());
-                    dto.setRebateMode(d.getRebateMode());
-                    dto.setRebateValue(d.getRebateValue());
-                    dto.setPaymentMethod(d.getPaymentMethod());
-                    payables.add(dto);
-                }
-            }
-            applyIncomeFromPayables(order, payables);
+            // 仅补出应付返点/订单收入两个派生列，不重算主表金额（避免把原本正确的应付/实际应付置 0）
+            applyDerivedOnlyFromOrder(order);
             adOrderMapper.updateById(order);
             count++;
         }
