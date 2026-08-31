@@ -741,7 +741,10 @@ public class AdOrderService {
      */
     @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
     public int recomputeIncomeFieldsForAll() {
-        List<AdOrder> orders = adOrderMapper.selectList(null);
+        cn.cordys.mybatis.lambda.LambdaQueryWrapper<AdOrder> qw =
+                new cn.cordys.mybatis.lambda.LambdaQueryWrapper<>();
+        qw.eq(AdOrder::getDeleted, 0);
+        List<AdOrder> orders = adOrderMapper.selectByLambda(qw);
         int count = 0;
         for (AdOrder order : orders) {
             List<AdOrderDownstreamMedia> details = orderDownstreamMediaMapper.selectByOrderId(order.getId());
