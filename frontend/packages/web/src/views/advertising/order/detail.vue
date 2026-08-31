@@ -117,14 +117,8 @@
           <n-descriptions-item :label="t('advertising.order.detail.amount.received')">{{
             fmtAmount(detail.order.receivedAmount)
           }}</n-descriptions-item>
-          <n-descriptions-item :label="t('advertising.order.detail.amount.invoiced')">{{
-            fmtAmount(detail.order.invoicedAmount)
-          }}</n-descriptions-item>
           <n-descriptions-item :label="t('advertising.order.detail.amount.mediaPaid')">{{
             fmtAmount(detail.order.mediaPaidAmount)
-          }}</n-descriptions-item>
-          <n-descriptions-item :label="t('advertising.order.detail.amount.badDebt')">{{
-            fmtAmount(detail.order.badDebtAmount)
           }}</n-descriptions-item>
         </n-descriptions>
 
