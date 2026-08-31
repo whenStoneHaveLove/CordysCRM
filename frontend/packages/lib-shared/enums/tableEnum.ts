@@ -33,6 +33,7 @@ export enum TableKeyEnum {
   CONTRACT_INVOICE = 'contractInvoice',
   ORDER = 'order', // 订单
   CONTRACT_ORDER = 'contractOrder', // 合同下的订单
+  AD_ORDER = 'adOrder', // 广告订单（列设置独立存储，避免与通用订单 ORDER 互相覆盖）
   // 全局搜索
   SEARCH_ADVANCED_CLUE = 'searchAdvancedClue', // 线索
   SEARCH_ADVANCED_CUSTOMER = 'searchAdvancedCustomer', // 客户

@@ -270,6 +270,18 @@ public class AdOrderController {
             if (r.getMediaPayableAmount() == null) return "";
             return r.getMediaPayableAmount().toPlainString();
         });
+        HEAD_VALUE_MAPPER.put("actualMediaPayableAmount", r -> {
+            if (r.getActualMediaPayableAmount() == null) return "";
+            return r.getActualMediaPayableAmount().toPlainString();
+        });
+        HEAD_VALUE_MAPPER.put("mediaRebateAmount", r -> {
+            if (r.getMediaRebateAmount() == null) return "";
+            return r.getMediaRebateAmount().toPlainString();
+        });
+        HEAD_VALUE_MAPPER.put("orderIncomeAmount", r -> {
+            if (r.getOrderIncomeAmount() == null) return "";
+            return r.getOrderIncomeAmount().toPlainString();
+        });
         HEAD_VALUE_MAPPER.put("rebateAmount", r -> {
             if (r.getRebateAmount() == null) return "";
             return r.getRebateAmount().toPlainString();

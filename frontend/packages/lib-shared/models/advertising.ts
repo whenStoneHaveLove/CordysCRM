@@ -86,6 +86,9 @@ export interface AdOrderListItem {
   businessEntityName?: string;
   upstreamAgentId?: string;
   upstreamAgentName?: string;
+  actualMediaPayableAmount?: number;
+  mediaRebateAmount?: number;
+  orderIncomeAmount?: number;
   customerId?: string;
   customerName?: string;
   orderType?: number;

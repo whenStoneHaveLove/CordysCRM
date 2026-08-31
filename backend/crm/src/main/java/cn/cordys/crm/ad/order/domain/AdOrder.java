@@ -75,6 +75,12 @@ public class AdOrder extends BaseModel {
     @Schema(description = "实际应付总额(返点后,各下游客户actual_payable累加)")
     private BigDecimal actualMediaPayableAmount;
 
+    @Schema(description = "应付返点(应付金额-实际应付)")
+    private BigDecimal mediaRebateAmount;
+
+    @Schema(description = "订单收入(实际应收-实际应付)")
+    private BigDecimal orderIncomeAmount;
+
     @Schema(description = "投放起始日")
     @Column(name = "delivery_start_date")
     private Date deliveryStartDate;

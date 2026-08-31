@@ -44,10 +44,9 @@
             <CrmIcon type="iconicon_move" class="cursor-not-allowed text-[var(--text-n6)]" :size="12" />
             <CrmIcon
               :type="element.fixed ? 'iconicon_pin_filled' : 'iconicon_pin'"
-              :class="`${element.columnSelectorDisabled ? 'cursor-not-allowed' : 'cursor-pointer'} ${
-                element.fixed ? 'text-[var(--primary-8)]' : 'text-[var(--text-n1)]'
-              }`"
+              :class="`cursor-pointer ${element.fixed ? 'text-[var(--primary-8)]' : 'text-[var(--text-n1)]'}`"
               :size="12"
+              @click="toggleFixedColumn(element)"
             />
             <n-tooltip trigger="hover" placement="top">
               <template #trigger>
@@ -205,10 +204,20 @@
   const operationCachedColumn = ref<CrmDataTableColumn>();
   const activeLayoutType = ref<string>('compact');
   const paginationType = ref<PaginationType>('scrollPagination');
+  // 锁定列的原始固定方向：图钉在「未固定 / 原始方向」间切换，
+  // 避免把 fixed:'right' 的状态列误切到 left 而破坏「后几列在末尾」的布局
+  const lockedOriginalFixed = new Map<string, 'left' | 'right' | undefined>();
 
   async function getCachedColumns() {
     const columns = await tableStore.getCanSetColumns(props.tableKey);
     notAllowSortCachedColumns.value = columns.filter((e) => e.columnSelectorDisabled);
+    // 只记录首次读取到的方向：同一会话内多次打开弹窗时不被用户改动覆盖
+    notAllowSortCachedColumns.value.forEach((e: { key?: string | number; fixed?: 'left' | 'right' }) => {
+      const k = String(e.key);
+      if (!lockedOriginalFixed.has(k)) {
+        lockedOriginalFixed.set(k, e.fixed);
+      }
+    });
     allowSortCachedColumns.value = columns.filter(
       (e) => !e.columnSelectorDisabled && e.key !== SpecialColumnEnum.OPERATION
     );
@@ -265,6 +274,15 @@
   function toggleFixedColumn(ele: CrmDataTableColumn) {
     if (ele.key === SpecialColumnEnum.OPERATION && operationCachedColumn.value) {
       operationCachedColumn.value.fixed = operationCachedColumn.value.fixed ? undefined : 'right';
+      hasChange.value = true;
+      return;
+    }
+    // 锁定列（不可隐藏、不可拖拽）也允许切换固定：在「未固定 / 原始方向」间切换
+    const lockedTarget = notAllowSortCachedColumns.value.find(
+      (item: { key?: string | number; fixed?: 'left' | 'right' }) => item.key === ele.key
+    );
+    if (lockedTarget) {
+      lockedTarget.fixed = lockedTarget.fixed ? undefined : lockedOriginalFixed.get(String(ele.key)) || 'left';
       hasChange.value = true;
       return;
     }

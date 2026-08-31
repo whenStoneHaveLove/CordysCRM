@@ -662,6 +662,11 @@ public class AdOrderService {
         }
         order.setMediaPayableAmount(payableSum);
         order.setActualMediaPayableAmount(actualPayableSum);
+        // 应付返点 = 应付金额 - 实际应付
+        order.setMediaRebateAmount(payableSum.subtract(actualPayableSum));
+        // 订单收入 = 实际应收 - 实际应付
+        BigDecimal actualReceivable = order.getReceivableAmount() == null ? BigDecimal.ZERO : order.getReceivableAmount();
+        order.setOrderIncomeAmount(actualReceivable.subtract(actualPayableSum));
         // 订单付款方式由下游客户明细推导：存在任一客户为预付(10)则订单为预付；
         // 仅当所有客户均为后付(20)时订单才为后付；无客户明细则为 null。
         Integer derivedPaymentMethod = null;

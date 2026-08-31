@@ -23,6 +23,8 @@
             o.receivable_amount AS receivableAmount,
             o.media_payable_amount AS mediaPayableAmount,
             o.actual_media_payable_amount AS actualMediaPayableAmount,
+            o.media_rebate_amount AS mediaRebateAmount,
+            o.order_income_amount AS orderIncomeAmount,
             o.rebate_amount AS rebateAmount,
             o.receipt_method AS receiptMethod,
             o.payment_method AS paymentMethod,

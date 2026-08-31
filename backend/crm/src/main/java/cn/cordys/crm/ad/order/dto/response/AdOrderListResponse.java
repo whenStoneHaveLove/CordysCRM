@@ -64,6 +64,12 @@ public class AdOrderListResponse {
     @Schema(description = "实际应付总额(返点后)")
     private BigDecimal actualMediaPayableAmount;
 
+    @Schema(description = "应付返点(应付金额-实际应付)")
+    private BigDecimal mediaRebateAmount;
+
+    @Schema(description = "订单收入(实际应收-实际应付)")
+    private BigDecimal orderIncomeAmount;
+
     @Schema(description = "返点金额")
     private BigDecimal rebateAmount;
 
