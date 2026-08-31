@@ -744,7 +744,7 @@ public class AdOrderService {
         cn.cordys.mybatis.lambda.LambdaQueryWrapper<AdOrder> qw =
                 new cn.cordys.mybatis.lambda.LambdaQueryWrapper<>();
         qw.eq(AdOrder::getDeleted, 0);
-        List<AdOrder> orders = adOrderMapper.selectByLambda(qw);
+        List<AdOrder> orders = adOrderMapper.selectListByLambda(qw);
         int count = 0;
         for (AdOrder order : orders) {
             List<AdOrderDownstreamMedia> details = orderDownstreamMediaMapper.selectByOrderId(order.getId());
