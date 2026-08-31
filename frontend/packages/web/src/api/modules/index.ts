@@ -898,6 +898,7 @@ export const {
   voidAdOrder,
   forceArchiveAdOrder,
   exportAdOrder,
+  recomputeIncome,
 } = adOrderApi;
 
 export const {

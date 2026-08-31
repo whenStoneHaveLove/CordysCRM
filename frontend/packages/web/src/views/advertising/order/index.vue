@@ -54,6 +54,7 @@
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">{{ t('advertising.order.reset') }}</n-button>
         <n-button v-permission="['AD_ORDER:EXPORT']" :loading="exporting" @click="handleExport">导出</n-button>
+        <n-button v-if="userStore.isAdmin" :loading="recomputing" @click="handleRecomputeIncome">补算数据</n-button>
         <ColumnSetting
           :table-key="TableKeyEnum.AD_ORDER"
           :disabled="false"
@@ -102,8 +103,9 @@
 
   import ColumnSetting from '@/components/pure/crm-table/components/columnSetting.vue';
 
-  import { exportAdOrder, getAdOrderPage } from '@/api/modules';
+  import { exportAdOrder, getAdOrderPage, recomputeIncome } from '@/api/modules';
   import useTableStore from '@/hooks/useTableStore';
+  import useUserStore from '@/store/modules/user';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
@@ -126,6 +128,7 @@
   const router = useRouter();
   const message = useMessage();
   const permissionDirective = resolveDirective('permission');
+  const userStore = useUserStore();
 
   const statusOptions = AdOrderStatusOptions;
   const orderTypeOptions = AdOrderTypeOptions;
@@ -549,6 +552,7 @@
   }
 
   const exporting = ref(false);
+  const recomputing = ref(false);
 
   // 导出列 = 当前页面展示列（由列设置面板持久化配置决定），排除「详情」操作列
   function buildExportHeadList() {
@@ -602,6 +606,23 @@
       message.error((e as Error).message || '导出失败');
     } finally {
       exporting.value = false;
+    }
+  }
+
+  // 历史数据批量补数（仅管理员可见）：重算所有订单的应付/实际应付/应付返点/订单收入/付款方式
+  async function handleRecomputeIncome() {
+    if (!userStore.isAdmin) {
+      message.error('仅管理员可执行该操作');
+      return;
+    }
+    recomputing.value = true;
+    try {
+      const count = await recomputeIncome();
+      message.success(`补算完成，共处理 ${count} 条订单`);
+    } catch (e) {
+      message.error((e as Error).message || '补算失败');
+    } finally {
+      recomputing.value = false;
     }
   }
 

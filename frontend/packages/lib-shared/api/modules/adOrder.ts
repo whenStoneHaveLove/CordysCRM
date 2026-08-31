@@ -1,26 +1,27 @@
 import type { CordysAxios } from '@lib/shared/api/http/Axios';
 import {
-  AdOrderCreateUrl,
-  AdOrderUpdateUrl,
-  AdOrderDetailUrl,
-  AdOrderPageUrl,
-  AdOrderSubmitUrl,
   AdOrderApproveUrl,
-  AdOrderRejectUrl,
   AdOrderConfirmExecuteUrl,
-  AdOrderVoidUrl,
-  AdOrderForceArchiveUrl,
+  AdOrderCreateUrl,
+  AdOrderDetailUrl,
   AdOrderExportUrl,
+  AdOrderForceArchiveUrl,
+  AdOrderPageUrl,
+  AdOrderRecomputeIncomeUrl,
+  AdOrderRejectUrl,
+  AdOrderSubmitUrl,
+  AdOrderUpdateUrl,
+  AdOrderVoidUrl,
 } from '@lib/shared/api/requrls/adOrder';
 import type {
-  AdOrderSaveParams,
+  AdOrderApproveParams,
+  AdOrderDetail,
+  AdOrderForceArchiveParams,
+  AdOrderInfo,
   AdOrderPageParams,
   AdOrderPageResult,
-  AdOrderDetail,
-  AdOrderInfo,
-  AdOrderApproveParams,
+  AdOrderSaveParams,
   AdOrderVoidParams,
-  AdOrderForceArchiveParams,
 } from '@lib/shared/models/advertising';
 
 export default function useAdOrderApi(CDR: CordysAxios) {
@@ -76,11 +77,21 @@ export default function useAdOrderApi(CDR: CordysAxios) {
 
   // 导出订单（按筛选条件，同步流式返回 Excel 文件；返回原生响应以便读取 blob，自动携带 X-AUTH-TOKEN/CSRF-TOKEN）
   function exportAdOrder(data: AdOrderPageParams) {
-    return CDR.post<any>({
-      url: AdOrderExportUrl,
-      data,
-      responseType: 'blob',
-    }, { isReturnNativeResponse: true, isTransformResponse: false });
+    return CDR.post<any>(
+      {
+        url: AdOrderExportUrl,
+        data,
+        responseType: 'blob',
+      },
+      { isReturnNativeResponse: true, isTransformResponse: false }
+    );
+  }
+
+  // 历史数据批量补数（仅管理员）：重算所有订单的应付/实际应付/应付返点/订单收入/付款方式
+  function recomputeIncome() {
+    return CDR.post<number>({
+      url: AdOrderRecomputeIncomeUrl,
+    });
   }
 
   return {
@@ -95,5 +106,6 @@ export default function useAdOrderApi(CDR: CordysAxios) {
     voidAdOrder,
     forceArchiveAdOrder,
     exportAdOrder,
+    recomputeIncome,
   };
 }
