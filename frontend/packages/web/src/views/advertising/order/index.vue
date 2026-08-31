@@ -550,9 +550,9 @@
 
   const exporting = ref(false);
 
-  // 导出列 = 全量列（排除「详情」操作列），与页面可见列无关：导出用于对账需完整字段
+  // 导出列 = 当前页面展示列（由列设置面板持久化配置决定），排除「详情」操作列
   function buildExportHeadList() {
-    return (allColumns as any[])
+    return (visibleColumns.value as any[])
       .filter((c) => c.key !== 'action')
       .map((c) => ({ key: String(c.key), title: String(c.title) }));
   }
