@@ -422,7 +422,7 @@ export const AD_ORDER_CHANGE_FIELD_META: AdChangeFieldMeta[] = [
   { field: 'orderName', label: '订单名称', type: 'text' },
   { field: 'customerId', label: '客户', type: 'text', control: 'select-customer' },
   { field: 'industryCode', label: '行业类别', type: 'text', control: 'select-industry' },
-  { field: 'totalAmount', label: '订单总金额', type: 'number' },
+  { field: 'totalAmount', label: '订单金额', type: 'number' },
   { field: 'noRebateAmount', label: '不记返金额', type: 'number' },
   { field: 'rebateValue', label: '返点值', type: 'number' },
   { field: 'rebateMode', label: '返点方式', type: 'number', control: 'enum-rebateMode' },

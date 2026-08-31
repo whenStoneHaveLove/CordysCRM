@@ -44,7 +44,7 @@ public class AdOrderSaveRequest {
     @Schema(description = "代理订单号")
     private String agentOrderNo;
 
-    @Schema(description = "订单总金额")
+    @Schema(description = "订单金额")
     private BigDecimal totalAmount;
 
     @Schema(description = "返点方式:10比例/20固定金额")

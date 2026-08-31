@@ -51,7 +51,7 @@ public class AdOrder extends BaseModel {
     @Schema(description = "主状态(L-01,10倍数)")
     private Integer status;
 
-    @Schema(description = "订单总金额")
+    @Schema(description = "订单金额")
     private BigDecimal totalAmount;
 
     @Schema(description = "返点方式:10比例/20固定金额")

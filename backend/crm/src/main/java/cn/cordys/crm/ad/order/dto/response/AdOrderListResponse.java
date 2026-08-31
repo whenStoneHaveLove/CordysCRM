@@ -52,7 +52,7 @@ public class AdOrderListResponse {
     @Schema(description = "主状态标签")
     private String statusLabel;
 
-    @Schema(description = "订单总金额")
+    @Schema(description = "订单金额")
     private BigDecimal totalAmount;
 
     @Schema(description = "应收金额")

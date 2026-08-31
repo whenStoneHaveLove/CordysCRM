@@ -110,7 +110,7 @@ CREATE TABLE ad_order
     `agent_order_no`            VARCHAR(64)  COMMENT '代理订单号',
     `creator_id`                VARCHAR(32)  NOT NULL COMMENT '下单人',
     `status`                    TINYINT      NOT NULL DEFAULT 0 COMMENT '主状态(L-01,10倍数)',
-    `total_amount`              DECIMAL(15,2) NOT NULL COMMENT '订单总金额',
+    `total_amount`              DECIMAL(15,2) NOT NULL COMMENT '订单金额',
     `rebate_mode`               TINYINT      NOT NULL COMMENT '返点方式:10比例/20固定金额',
     `rebate_value`              DECIMAL(10,2) NOT NULL COMMENT '返点值',
     `no_rebate_amount`          DECIMAL(15,2) NOT NULL DEFAULT 0 COMMENT '不记返金额',

@@ -69,7 +69,7 @@
 | agent_order_no | 代理订单号 | 自由文本 | 否(自由输入) | — | 否 | 可空 |
 | creator_id | 下单人 | ID外键(sys_user) | 系统自动 | — | 系统 | 存 sys_user.id，=当前登录用户 |
 | status | 主状态 | 枚举值 | 系统自动 | OrderStatus | 系统 | 新建默认 0=草稿 |
-| total_amount | 订单总金额 | 数值 | 否(自由输入) | — | **是** | NOT NULL |
+| total_amount | 订单金额 | 数值 | 否(自由输入) | — | **是** | NOT NULL |
 | rebate_mode | 返点方式 | 枚举值 | **是(静态枚举)** | DDL注释(10比例/20固定金额) | **是** | NOT NULL |
 | rebate_value | 返点值 | 数值 | 否(自由输入) | — | **是** | NOT NULL |
 | no_rebate_amount | 不记返金额 | 数值 | 否(自由输入) | — | 系统 | 默认0 |
