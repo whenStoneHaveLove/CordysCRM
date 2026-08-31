@@ -650,6 +650,19 @@ public class AdOrderService {
                 orderDownstreamMediaMapper.insert(odm);
             }
         }
+        // 订单应付总额/实际应付/应付返点/订单收入/付款方式 由明细推导，复用统一方法
+        applyIncomeFromPayables(order, payables);
+        adOrderMapper.update(order);
+    }
+
+    /**
+     * 根据下游客户付款明细列表，重算并回填订单主表：
+     * 应付总额(mediaPayableAmount)、实际应付总额(actualMediaPayableAmount)、
+     * 应付返点(mediaRebateAmount)、订单收入(orderIncomeAmount)、付款方式(paymentMethod)。
+     * 仅做字段赋值，不执行数据库更新，由调用方负责 update。
+     * 该方法为唯一计算来源，create/update 与历史数据批量补数均复用，保证逻辑一致。
+     */
+    private void applyIncomeFromPayables(AdOrder order, List<AdOrderSaveRequest.DownstreamMediaPayableDTO> payables) {
         // 订单应付总额 = 各下游客户应付金额之和（后端累加并写回主表）
         BigDecimal payableSum = BigDecimal.ZERO;
         // 订单实际应付总额(返点后) = 各下游客户 (应付金额 - 返点金额) 之和
@@ -718,7 +731,38 @@ public class AdOrderService {
             }
         }
         order.setPaymentMethod(derivedPaymentMethod);
-        adOrderMapper.update(order);
+    }
+
+    /**
+     * 历史数据批量补数：重算所有订单的应付/实际应付/应付返点/订单收入/付款方式。
+     * 从 ad_order_downstream_media 读取各订单已有的下游明细（不依赖前端 request），
+     * 复用 applyIncomeFromPayable 的统一计算逻辑，逐单 updateById 写回主表。
+     * 幂等：重复执行结果一致。仅供数据修复时手动触发一次。
+     */
+    @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
+    public int recomputeIncomeFieldsForAll() {
+        List<AdOrder> orders = adOrderMapper.selectList(null);
+        int count = 0;
+        for (AdOrder order : orders) {
+            List<AdOrderDownstreamMedia> details = orderDownstreamMediaMapper.selectByOrderId(order.getId());
+            List<AdOrderSaveRequest.DownstreamMediaPayableDTO> payables = new java.util.ArrayList<>();
+            if (details != null) {
+                for (AdOrderDownstreamMedia d : details) {
+                    AdOrderSaveRequest.DownstreamMediaPayableDTO dto = new AdOrderSaveRequest.DownstreamMediaPayableDTO();
+                    dto.setDownstreamMediaId(d.getDownstreamMediaId());
+                    dto.setPayableAmount(d.getPayableAmount());
+                    dto.setNoRebateAmount(d.getNoRebateAmount());
+                    dto.setRebateMode(d.getRebateMode());
+                    dto.setRebateValue(d.getRebateValue());
+                    dto.setPaymentMethod(d.getPaymentMethod());
+                    payables.add(dto);
+                }
+            }
+            applyIncomeFromPayables(order, payables);
+            adOrderMapper.updateById(order);
+            count++;
+        }
+        return count;
     }
 
     /** 把前端传来的付款返点明细写入关联行，并自动计算 rebateAmount/actualPayable */

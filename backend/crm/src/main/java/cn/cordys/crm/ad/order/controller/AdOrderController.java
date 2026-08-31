@@ -125,6 +125,18 @@ public class AdOrderController {
     }
 
     /**
+     * 历史数据批量补数接口：重算所有订单的应付/实际应付/应付返点/订单收入/付款方式。
+     * 仅在新增派生字段（V3.0.0_27/28）后，对存量数据为 0 的订单做一次补偿。
+     * 幂等（重复执行结果一致）。运行完可保留，日常不会被调用。
+     */
+    @PostMapping("/recompute-income")
+    @CsPermission(PermissionConstants.AD_ORDER_EXPORT)
+    @Operation(summary = "（数据修复）重算所有订单的应付/实际应付/应付返点/订单收入/付款方式")
+    public int recomputeIncome() {
+        return adOrderService.recomputeIncomeFieldsForAll();
+    }
+
+    /**
      * 列宽策略：按表头计算（中英字符自适应），给数据较长的字段适当放宽。
      * 覆盖项目内置 CustomHeadColWidthStyleStrategy 的偏窄算法。
      */
