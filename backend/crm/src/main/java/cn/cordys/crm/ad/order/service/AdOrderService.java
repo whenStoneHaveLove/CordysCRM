@@ -741,10 +741,10 @@ public class AdOrderService {
      */
     @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
     public int recomputeIncomeFieldsForAll() {
-        cn.cordys.mybatis.lambda.LambdaQueryWrapper<AdOrder> qw =
-                new cn.cordys.mybatis.lambda.LambdaQueryWrapper<>();
-        qw.eq(AdOrder::getDeleted, 0);
-        List<AdOrder> orders = adOrderMapper.selectListByLambda(qw);
+        // 仅查未删除订单：框架 selectListByLambda 存在 Provider 强转缺陷，改用实体条件查询
+        AdOrder criteria = new AdOrder();
+        criteria.setDeleted(0);
+        List<AdOrder> orders = adOrderMapper.select(criteria);
         int count = 0;
         for (AdOrder order : orders) {
             List<AdOrderDownstreamMedia> details = orderDownstreamMediaMapper.selectByOrderId(order.getId());
