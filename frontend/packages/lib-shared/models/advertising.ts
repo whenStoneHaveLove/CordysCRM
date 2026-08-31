@@ -84,6 +84,8 @@ export interface AdOrderListItem {
   orderName?: string;
   businessEntityId?: string;
   businessEntityName?: string;
+  upstreamAgentId?: string;
+  upstreamAgentName?: string;
   customerId?: string;
   customerName?: string;
   orderType?: number;

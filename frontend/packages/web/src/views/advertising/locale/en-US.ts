@@ -23,6 +23,7 @@ export default {
   'advertising.order.column.orderNo': 'Order No.',
   'advertising.order.column.orderName': 'Order Name',
   'advertising.order.column.businessEntity': 'Business Entity',
+  'advertising.order.column.upstreamAgent': 'Upstream Agent',
   'advertising.order.column.customer': 'Customer',
   'advertising.order.column.orderType': 'Order Type',
   'advertising.order.column.status': 'Status',
@@ -59,6 +60,8 @@ export default {
   'advertising.order.detail.amount.mediaPaid': 'Media Paid',
   'advertising.order.detail.amount.badDebt': 'Bad Debt',
   'advertising.order.detail.redInvoice': 'Need Red Invoice',
+  'advertising.order.detail.mediaPayableAmountTotal': 'Media Payable (sum of clients)',
+  'advertising.order.detail.actualPayableAmountTotal': 'Actual Payable (sum of clients, after rebate)',
 
   'advertising.order.form.title.create': 'Create Ad Order',
   'advertising.order.form.title.edit': 'Edit Ad Order',

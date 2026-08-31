@@ -24,6 +24,7 @@ export default {
   'advertising.order.column.orderNo': '订单编号',
   'advertising.order.column.orderName': '订单名称',
   'advertising.order.column.businessEntity': '业务主体',
+  'advertising.order.column.upstreamAgent': '上游代理',
   'advertising.order.column.customer': '客户',
   'advertising.order.column.orderType': '订单类型',
   'advertising.order.column.status': '状态',
@@ -61,6 +62,8 @@ export default {
   'advertising.order.detail.amount.mediaPaid': '已付',
   'advertising.order.detail.amount.badDebt': '坏账金额',
   'advertising.order.detail.redInvoice': '需红冲',
+  'advertising.order.detail.mediaPayableAmountTotal': '应付总额（各客户累加）',
+  'advertising.order.detail.actualPayableAmountTotal': '实际应付总额（各客户累加）',
 
   // 订单表单
   'advertising.order.form.title.create': '新建广告订单',

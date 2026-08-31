@@ -13,6 +13,8 @@
             o.order_name AS orderName,
             o.business_entity_id AS businessEntityId,
             be.name AS businessEntityName,
+            o.upstream_agent_id AS upstreamAgentId,
+            ua.name AS upstreamAgentName,
             o.customer_id AS customerId,
             c.name AS customerName,
             o.order_type AS orderType,
@@ -20,6 +22,7 @@
             o.total_amount AS totalAmount,
             o.receivable_amount AS receivableAmount,
             o.media_payable_amount AS mediaPayableAmount,
+            o.actual_media_payable_amount AS actualMediaPayableAmount,
             o.rebate_amount AS rebateAmount,
             o.receipt_method AS receiptMethod,
             o.payment_method AS paymentMethod,
@@ -32,6 +35,7 @@
             CASE WHEN COUNT(oc.id) = 0 THEN 1 ELSE 0 END AS missingContract
         FROM ad_order o
         LEFT JOIN ad_business_entity be ON be.id = o.business_entity_id AND be.deleted = 0
+        LEFT JOIN ad_upstream_agent ua ON ua.id = o.upstream_agent_id AND ua.deleted = 0
         LEFT JOIN ad_customer c ON c.id = o.customer_id AND c.deleted = 0
         LEFT JOIN ad_order_contract oc ON oc.order_id = o.id AND oc.deleted = 0
         WHERE o.organization_id = #{request.organizationId}

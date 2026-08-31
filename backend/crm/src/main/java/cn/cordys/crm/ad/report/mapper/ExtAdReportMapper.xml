@@ -131,7 +131,7 @@
             IFNULL((SELECT SUM(o.receivable_amount) FROM ad_order o
                     WHERE o.organization_id = #{organizationId} AND o.deleted = 0
                       AND o.status != 100), 0)                                               AS totalReceivable,
-            IFNULL((SELECT SUM(o.media_payable_amount) FROM ad_order o
+            IFNULL((SELECT SUM(o.actual_media_payable_amount) FROM ad_order o
                     WHERE o.organization_id = #{organizationId} AND o.deleted = 0
                       AND o.status != 100), 0)                                               AS totalMediaPayable,
             IFNULL((SELECT SUM(o.receivable_amount - o.received_amount) FROM ad_order o

@@ -220,7 +220,7 @@ public class AdOrderController {
      * 默认导出列（字段 key，与前端列表页保持一致，排除操作列）。
      */
     private static final List<String> DEFAULT_HEAD_KEYS = Arrays.asList(
-            "orderNo", "orderName", "businessEntityName", "customerName", "orderType", "status",
+            "orderNo", "orderName", "upstreamAgentName", "customerName", "orderType", "status",
             "totalAmount", "receivableAmount", "mediaPayableAmount", "rebateAmount",
             "receiptMethod", "paymentMethod", "deliveryStartDate", "deliveryEndDate", "createTime",
             "receiptDone", "paymentDone", "missingContract"
@@ -248,6 +248,7 @@ public class AdOrderController {
         HEAD_VALUE_MAPPER.put("orderNo", AdOrderListResponse::getOrderNo);
         HEAD_VALUE_MAPPER.put("orderName", AdOrderListResponse::getOrderName);
         HEAD_VALUE_MAPPER.put("businessEntityName", AdOrderListResponse::getBusinessEntityName);
+        HEAD_VALUE_MAPPER.put("upstreamAgentName", AdOrderListResponse::getUpstreamAgentName);
         HEAD_VALUE_MAPPER.put("customerName", AdOrderListResponse::getCustomerName);
         HEAD_VALUE_MAPPER.put("orderType", r -> {
             if (r.getOrderType() == null) return "";

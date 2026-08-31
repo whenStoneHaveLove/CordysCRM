@@ -167,8 +167,11 @@
             </n-descriptions>
           </div>
           <n-descriptions label-placement="left" :column="3" bordered size="small" class="payable-total-row">
-            <n-descriptions-item label="应付总额（各客户累加）">
+            <n-descriptions-item :label="t('advertising.order.detail.mediaPayableAmountTotal')">
               {{ fmtAmount(mediaPayableTotal) }}
+            </n-descriptions-item>
+            <n-descriptions-item label="实际应付总额（各客户累加）">
+              {{ fmtAmount(actualPayableTotal) }}
             </n-descriptions-item>
           </n-descriptions>
         </template>
@@ -393,6 +396,15 @@
 
   const mediaPayableTotal = computed(() => {
     return (detail.value?.downstreamMediaPayables || []).reduce((sum, p) => sum + Number(p.payableAmount || 0), 0);
+  });
+
+  // 实际应付总额(返点后) = 各客户 (应付金额 - 返点金额) 累加
+  const actualPayableTotal = computed(() => {
+    return (detail.value?.downstreamMediaPayables || []).reduce((sum, p) => {
+      const payable = Number(p.payableAmount || 0);
+      const rebate = Number(p.rebateAmount || 0);
+      return sum + (payable - rebate);
+    }, 0);
   });
 
   const actionModal = reactive<{

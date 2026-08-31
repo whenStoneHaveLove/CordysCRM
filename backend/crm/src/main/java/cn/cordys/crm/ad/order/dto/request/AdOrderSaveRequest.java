@@ -59,6 +59,9 @@ public class AdOrderSaveRequest {
     @Schema(description = "应付总额(下游口径,L-28)")
     private BigDecimal mediaPayableAmount;
 
+    @Schema(description = "实际应付总额(返点后,各下游客户actual_payable累加)")
+    private BigDecimal actualMediaPayableAmount;
+
     @Schema(description = "投放起始日")
     private Date deliveryStartDate;
 

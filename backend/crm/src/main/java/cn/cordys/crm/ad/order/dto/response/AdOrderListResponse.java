@@ -28,6 +28,12 @@ public class AdOrderListResponse {
     @Schema(description = "业务主体名称")
     private String businessEntityName;
 
+    @Schema(description = "上游代理id")
+    private String upstreamAgentId;
+
+    @Schema(description = "上游代理名称")
+    private String upstreamAgentName;
+
     @Schema(description = "客户id")
     private String customerId;
 
@@ -54,6 +60,9 @@ public class AdOrderListResponse {
 
     @Schema(description = "应付总额")
     private BigDecimal mediaPayableAmount;
+
+    @Schema(description = "实际应付总额(返点后)")
+    private BigDecimal actualMediaPayableAmount;
 
     @Schema(description = "返点金额")
     private BigDecimal rebateAmount;

@@ -95,7 +95,7 @@ public class AdOrderChangeService {
     private static final Set<String> MUTABLE_FIELDS = new HashSet<>(Arrays.asList(
             "totalAmount", "noRebateAmount", "rebateValue", "receiptPrepayRatio", "paymentPrepayRatio",
             "rebateMode", "receiptMethod", "receiptPrepayMode", "receiptAccountPeriodDays",
-            "paymentMethod", "paymentPrepayMode", "paymentPostpayTrigger", "paymentPostpayDays",
+            "paymentPrepayMode", "paymentPostpayTrigger", "paymentPostpayDays",
             "deliveryStartDate", "deliveryEndDate", "receiptPrepayDeadline", "paymentPrepayDeadline",
             "orderName", "deliveryVolume", "remark", "extJson", "currency",
             "signingEntity", "industryCode", "upstreamAgentId", "agentOrderNo", "customerId"
@@ -372,7 +372,6 @@ public class AdOrderChangeService {
             case "receiptMethod": return order.getReceiptMethod();
             case "receiptPrepayMode": return order.getReceiptPrepayMode();
             case "receiptAccountPeriodDays": return order.getReceiptAccountPeriodDays();
-            case "paymentMethod": return order.getPaymentMethod();
             case "paymentPrepayMode": return order.getPaymentPrepayMode();
             case "paymentPostpayTrigger": return order.getPaymentPostpayTrigger();
             case "paymentPostpayDays": return order.getPaymentPostpayDays();
@@ -414,7 +413,6 @@ public class AdOrderChangeService {
                 case "receiptMethod": order.setReceiptMethod(toInt(val)); break;
                 case "receiptPrepayMode": order.setReceiptPrepayMode(toInt(val)); break;
                 case "receiptAccountPeriodDays": order.setReceiptAccountPeriodDays(toInt(val)); break;
-                case "paymentMethod": order.setPaymentMethod(toInt(val)); break;
                 case "paymentPrepayMode": order.setPaymentPrepayMode(toInt(val)); break;
                 case "paymentPostpayTrigger": order.setPaymentPostpayTrigger(toInt(val)); break;
                 case "paymentPostpayDays": order.setPaymentPostpayDays(toInt(val)); break;

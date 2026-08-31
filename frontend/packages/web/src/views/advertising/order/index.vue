@@ -202,8 +202,8 @@
     { key: 'orderNo', title: t('advertising.order.column.orderNo'), width: 150 },
     { key: 'orderName', title: t('advertising.order.column.orderName'), minWidth: 160, ellipsis: { tooltip: true } },
     {
-      key: 'businessEntityName',
-      title: t('advertising.order.column.businessEntity'),
+      key: 'upstreamAgentName',
+      title: t('advertising.order.column.upstreamAgent'),
       width: 140,
       ellipsis: { tooltip: true },
     },

@@ -631,12 +631,67 @@ public class AdOrderService {
         }
         // 订单应付总额 = 各下游客户应付金额之和（后端累加并写回主表）
         BigDecimal payableSum = BigDecimal.ZERO;
+        // 订单实际应付总额(返点后) = 各下游客户 (应付金额 - 返点金额) 之和
+        BigDecimal actualPayableSum = BigDecimal.ZERO;
         for (AdOrderSaveRequest.DownstreamMediaPayableDTO dto : (payables == null ? java.util.Collections.<AdOrderSaveRequest.DownstreamMediaPayableDTO>emptyList() : payables)) {
-            if (dto != null && dto.getPayableAmount() != null) {
+            if (dto == null) {
+                continue;
+            }
+            if (dto.getPayableAmount() != null) {
                 payableSum = payableSum.add(dto.getPayableAmount());
+                // 与 fillPayableFields 同样的返点计算逻辑,保证主表与明细一致
+                BigDecimal payableAmt = dto.getPayableAmount();
+                BigDecimal noRebate = dto.getNoRebateAmount() == null ? BigDecimal.ZERO : dto.getNoRebateAmount();
+                Integer rebateMode = dto.getRebateMode() == null ? 10 : dto.getRebateMode();
+                BigDecimal rebateValue = dto.getRebateValue() == null ? BigDecimal.ZERO : dto.getRebateValue();
+                BigDecimal rebateAmount = BigDecimal.ZERO;
+                if (payableAmt != null) {
+                    if (rebateMode == 10) {
+                        BigDecimal base = payableAmt.subtract(noRebate);
+                        if (base.compareTo(BigDecimal.ZERO) < 0) {
+                            base = BigDecimal.ZERO;
+                        }
+                        rebateAmount = base.multiply(rebateValue)
+                                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+                    } else if (rebateMode == 20) {
+                        rebateAmount = rebateValue;
+                    }
+                }
+                actualPayableSum = actualPayableSum.add(payableAmt.subtract(rebateAmount));
             }
         }
         order.setMediaPayableAmount(payableSum);
+        order.setActualMediaPayableAmount(actualPayableSum);
+        // 订单付款方式由下游客户明细推导：存在任一客户为预付(10)则订单为预付；
+        // 仅当所有客户均为后付(20)时订单才为后付；无客户明细则为 null。
+        Integer derivedPaymentMethod = null;
+        java.util.List<AdOrderSaveRequest.DownstreamMediaPayableDTO> payableList =
+                payables == null ? java.util.Collections.<AdOrderSaveRequest.DownstreamMediaPayableDTO>emptyList() : payables;
+        if (!payableList.isEmpty()) {
+            boolean allPostpay = true;
+            boolean anyPrepay = false;
+            for (AdOrderSaveRequest.DownstreamMediaPayableDTO dto : payableList) {
+                if (dto == null) {
+                    continue;
+                }
+                Integer pm = dto.getPaymentMethod();
+                if (Integer.valueOf(10).equals(pm)) {
+                    anyPrepay = true;
+                    allPostpay = false;
+                    break;
+                } else if (Integer.valueOf(20).equals(pm)) {
+                    allPostpay = true;
+                } else {
+                    allPostpay = false;
+                }
+            }
+            if (anyPrepay) {
+                derivedPaymentMethod = 10;
+            } else if (allPostpay) {
+                derivedPaymentMethod = 20;
+            }
+        }
+        order.setPaymentMethod(derivedPaymentMethod);
         adOrderMapper.update(order);
     }
 
