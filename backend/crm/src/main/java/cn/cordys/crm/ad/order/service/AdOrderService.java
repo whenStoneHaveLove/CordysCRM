@@ -136,6 +136,17 @@ public class AdOrderService {
         order.setUpdateTime(now);
         order.setOrderNo(generateOrderNo(order.getBusinessEntityId(), orgId, now));
         amountCalculator.computeAmounts(order);
+        // 派生列(实际应付/应付返点/订单收入)在 syncOrderDownstreamMedia 中按下游明细累加后由 update 写回，
+        // 此处 insert 前先置 0，避免 NOT NULL 列传入 null 报错（DDL 为 NOT NULL DEFAULT 0）。
+        if (order.getActualMediaPayableAmount() == null) {
+            order.setActualMediaPayableAmount(BigDecimal.ZERO);
+        }
+        if (order.getMediaRebateAmount() == null) {
+            order.setMediaRebateAmount(BigDecimal.ZERO);
+        }
+        if (order.getOrderIncomeAmount() == null) {
+            order.setOrderIncomeAmount(BigDecimal.ZERO);
+        }
         adOrderMapper.insert(order);
         // 关联合同：框架订单必选框架合同；单笔订单可后补
         syncOrderContract(order.getId(), request.getContractId(), request.getOrderType(), userId, orgId);
@@ -164,6 +175,16 @@ public class AdOrderService {
         order.setUpdateUser(userId);
         order.setUpdateTime(System.currentTimeMillis());
         amountCalculator.computeAmounts(order);
+        // 同 create：派生列随后由 syncOrderDownstreamMedia 重算写回，此处先置 0 避免 NOT NULL 列收到 null
+        if (order.getActualMediaPayableAmount() == null) {
+            order.setActualMediaPayableAmount(BigDecimal.ZERO);
+        }
+        if (order.getMediaRebateAmount() == null) {
+            order.setMediaRebateAmount(BigDecimal.ZERO);
+        }
+        if (order.getOrderIncomeAmount() == null) {
+            order.setOrderIncomeAmount(BigDecimal.ZERO);
+        }
         adOrderMapper.update(order);
         // 同步合同关联
         syncOrderContract(order.getId(), request.getContractId(), request.getOrderType(), userId, orgId);
