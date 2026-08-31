@@ -88,6 +88,7 @@
           <n-descriptions-item label="投放量">{{ detail.order.deliveryVolume || '-' }}</n-descriptions-item>
           <n-descriptions-item label="币种">{{ detail.order.currency || '-' }}</n-descriptions-item>
           <n-descriptions-item label="下单人">{{ getUserName(detail.order.creatorId) }}</n-descriptions-item>
+          <n-descriptions-item label="备注" :span="3">{{ detail.order.remark || '-' }}</n-descriptions-item>
         </n-descriptions>
 
         <n-divider title-placement="left">{{ t('advertising.order.detail.tab.base') }} - 金额</n-divider>
@@ -95,9 +96,24 @@
           <n-descriptions-item :label="t('advertising.order.column.totalAmount')">{{
             fmtAmount(detail.order.totalAmount)
           }}</n-descriptions-item>
-          <n-descriptions-item label="应收金额">{{ fmtAmount(detail.order.receivableAmount) }}</n-descriptions-item>
-          <n-descriptions-item label="返点金额">{{ fmtAmount(detail.order.rebateAmount) }}</n-descriptions-item>
-          <n-descriptions-item label="应付">{{ fmtAmount(detail.order.mediaPayableAmount) }}</n-descriptions-item>
+          <n-descriptions-item :label="t('advertising.order.column.receivable')">{{
+            fmtAmount(detail.order.receivableAmount)
+          }}</n-descriptions-item>
+          <n-descriptions-item :label="t('advertising.order.column.rebate')">{{
+            fmtAmount(detail.order.rebateAmount)
+          }}</n-descriptions-item>
+          <n-descriptions-item :label="t('advertising.order.column.mediaPayable')">{{
+            fmtAmount(detail.order.mediaPayableAmount)
+          }}</n-descriptions-item>
+          <n-descriptions-item :label="t('advertising.order.column.actualMediaPayable')">{{
+            fmtAmount(detail.order.actualMediaPayableAmount)
+          }}</n-descriptions-item>
+          <n-descriptions-item :label="t('advertising.order.column.mediaRebate')">{{
+            fmtAmount(detail.order.mediaRebateAmount)
+          }}</n-descriptions-item>
+          <n-descriptions-item :label="t('advertising.order.column.orderIncome')">{{
+            fmtAmount(detail.order.orderIncomeAmount)
+          }}</n-descriptions-item>
           <n-descriptions-item :label="t('advertising.order.detail.amount.received')">{{
             fmtAmount(detail.order.receivedAmount)
           }}</n-descriptions-item>

@@ -60,7 +60,7 @@ export default {
   'advertising.order.detail.creator': '下单人',
   'advertising.order.detail.attachment.empty': '暂无附件',
   'advertising.order.detail.allowedActions.empty': '当前角色无可执行动作',
-  'advertising.order.detail.amount.received': '已收款',
+  'advertising.order.detail.amount.received': '已收',
   'advertising.order.detail.amount.invoiced': '已开票',
   'advertising.order.detail.amount.mediaPaid': '已付',
   'advertising.order.detail.amount.badDebt': '坏账金额',
