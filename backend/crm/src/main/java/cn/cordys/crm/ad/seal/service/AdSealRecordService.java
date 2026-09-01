@@ -210,7 +210,9 @@ public class AdSealRecordService {
         String orderName = null;
         String businessEntityName = null;
         if (contract != null) {
+            resp.setContractId(contract.getId());
             resp.setContractNo(contract.getContractNo());
+            resp.setContractFileUrl(contract.getFileUrl());
             // 通过 ad_order_contract 中间表反查该合同关联的订单
             List<AdOrderContract> links = orderContractMapper.selectByContractId(contract.getId());
             if (links != null && !links.isEmpty()) {

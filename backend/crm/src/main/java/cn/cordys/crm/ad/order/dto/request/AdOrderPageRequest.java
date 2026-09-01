@@ -27,6 +27,9 @@ public class AdOrderPageRequest extends BasePageRequest {
     @Schema(description = "主状态")
     private Integer status;
 
+    @Schema(description = "主状态集合（多选，与 status 互斥；两者都传时以 statusList 为准）")
+    private List<Integer> statusList;
+
     @Schema(description = "业务主体id")
     private String businessEntityId;
 

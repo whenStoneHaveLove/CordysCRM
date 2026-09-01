@@ -281,6 +281,7 @@
   } from 'naive-ui';
 
   import {
+    AdOrderStatusEnum,
     AdPayoutStatusOptions,
     AdPayoutTypeOptions,
     getAdPayoutStatusLabel,
@@ -454,11 +455,20 @@
   async function searchOrders(keyword: string) {
     orderLoading.value = true;
     try {
-      const res = await getAdOrderPage({ current: 1, pageSize: 20, keyword: keyword || undefined });
-      orderOptions.value = (res.list || []).map((it: any) => ({
-        label: `${it.orderNo || ''} ${it.orderName || ''}`,
-        value: it.id,
-      }));
+      // 可建付款单的订单：待执行(45)/执行中(50)/结算中(80)
+      const allowed = [AdOrderStatusEnum.PENDING_EXECUTE, AdOrderStatusEnum.EXECUTING, AdOrderStatusEnum.SETTLEMENT];
+      const res = await getAdOrderPage({
+        current: 1,
+        pageSize: 20,
+        keyword: keyword || undefined,
+        statusList: allowed,
+      });
+      orderOptions.value = (res.list || [])
+        .filter((it: any) => allowed.includes(it.status))
+        .map((it: any) => ({
+          label: `${it.orderNo || ''} ${it.orderName || ''}`,
+          value: it.id,
+        }));
     } catch (e) {
       // ignore
     } finally {

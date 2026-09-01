@@ -13,6 +13,8 @@ export interface AdOrderPageParams {
   sort?: { name?: string; type?: string };
   keyword?: string;
   status?: number | null;
+  /** 主状态集合（多选，后端 SQL IN 过滤） */
+  statusList?: number[];
   businessEntityId?: string | null;
   customerId?: string | null;
   orderType?: number | null;
@@ -487,7 +489,10 @@ export interface AdSealRecordListItem {
 
 export interface AdSealRecordDetailResponse {
   record: AdSealRecordInfo;
+  contractId?: string;
   contractNo?: string;
+  /** 用印附件地址（取自合同 fileUrl） */
+  contractFileUrl?: string;
   businessEntityName?: string;
   orderNo?: string;
   statusLabel?: string;

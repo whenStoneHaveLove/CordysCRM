@@ -42,6 +42,12 @@
         LEFT JOIN ad_order_contract oc ON oc.order_id = o.id AND oc.deleted = 0
         WHERE o.organization_id = #{request.organizationId}
           AND o.deleted = 0
+        <if test="request.statusList != null and request.statusList.size() > 0">
+            AND o.status IN
+            <foreach collection="request.statusList" item="st" open="(" separator="," close=")">
+                #{st}
+            </foreach>
+        </if>
         <if test="request.status != null">
             AND o.status = #{request.status}
         </if>

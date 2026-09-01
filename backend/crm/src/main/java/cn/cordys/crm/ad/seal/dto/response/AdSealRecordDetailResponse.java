@@ -13,8 +13,14 @@ public class AdSealRecordDetailResponse {
     @Schema(description = "用印记录")
     private AdSealRecord record;
 
+    @Schema(description = "合同id")
+    private String contractId;
+
     @Schema(description = "合同编号")
     private String contractNo;
+
+    @Schema(description = "用印附件URL（取自合同 file_url）")
+    private String contractFileUrl;
 
     @Schema(description = "业务主体名称")
     private String businessEntityName;

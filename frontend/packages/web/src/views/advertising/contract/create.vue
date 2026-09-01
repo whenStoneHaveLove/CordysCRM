@@ -314,6 +314,15 @@
         label: [it.orderNo, it.orderName].filter(Boolean).join(' ') || it.id,
         value: it.id,
       }));
+      // 编辑回填时若关联订单已被删除/不在列表中，补一个占位 option，避免 label 空白
+      const formOrderIds = form.orderIds || [];
+      if (isEdit.value && formOrderIds.length) {
+        const knownIds = new Set(orderOptions.value.map((it) => it.value));
+        const missing = formOrderIds.filter((oid) => !knownIds.has(oid));
+        if (missing.length) {
+          orderOptions.value = orderOptions.value.concat(missing.map((oid) => ({ label: oid, value: oid })));
+        }
+      }
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);
@@ -405,11 +414,7 @@
       message.warning(`${t('advertising.contract.form.relatedPartyId')} ${t('advertising.order.form.required')}`);
       return false;
     }
-    // 单笔合同(contractType=20) 关联订单必填
-    if (form.contractType === 20 && (!form.orderIds || form.orderIds.length === 0)) {
-      message.warning(`${t('advertising.contract.form.orderId')} ${t('advertising.order.form.required')}`);
-      return false;
-    }
+    // 关联订单非必填：合同与订单是多对多关系（ad_order_contract 中间表），合同可以先建、订单后建
     return true;
   }
 
@@ -454,7 +459,8 @@
       form.contractType = o.contractType ?? null;
       form.relatedPartyType = o.relatedPartyType ?? null;
       form.relatedPartyId = o.relatedPartyId;
-      form.orderIds = o.orderIds || [];
+      // 关联订单：AdContract 实体没有 orderIds 字段，需要从详情接口的 orderList 里提取 orderId
+      form.orderIds = (res.orderList || []).map((it: any) => it.orderId).filter(Boolean);
       form.signingEntity = o.signingEntity;
       form.validFrom = toDateValue(o.validFrom);
       form.validTo = toDateValue(o.validTo);

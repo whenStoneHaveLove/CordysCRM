@@ -44,7 +44,15 @@
           <template v-if="detailBaseFields.length">
             <n-descriptions :column="1" label-placement="left" bordered>
               <n-descriptions-item v-for="(f, idx) in detailBaseFields" :key="idx" :label="f.label">
-                <n-button v-if="f.link" text type="primary" size="small" @click="openLink(f)">
+                <n-space v-if="f.attachmentUrl" :size="8">
+                  <n-button size="tiny" type="primary" ghost @click="handlePreviewAttachment(f.attachmentUrl)">
+                    预览
+                  </n-button>
+                  <n-button size="tiny" type="primary" ghost @click="handleDownloadAttachment(f.attachmentUrl)">
+                    下载
+                  </n-button>
+                </n-space>
+                <n-button v-else-if="f.link" text type="primary" size="small" @click="openLink(f)">
                   {{ f.value }}
                 </n-button>
                 <span v-else>{{ f.value }}</span>
@@ -166,16 +174,18 @@
     rejectAdSeal,
     rejectArchive,
   } from '@/api/modules';
+  import useUserStore from '@/store/modules/user';
   import { hasPermission } from '@/utils/permission';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
-  import { fmtAmount, fmtDateTime } from '../utils';
+  import { fmtAmount, fmtDate, fmtDateTime } from '../utils';
   import type { DataTableColumn } from 'naive-ui';
 
   const { t } = useI18n();
   const message = useMessage();
   const router = useRouter();
+  const userStore = useUserStore();
 
   const loading = ref(false);
   const list = ref<AdApprovalTodoItem[]>([]);
@@ -188,8 +198,10 @@
   const detailVisible = ref(false);
   const detailLoading = ref(false);
   const detailType = ref<string>('');
-  // 基础字段：value 为显示文本，link 为跳转路由名（点击新页面查看）
-  const detailBaseFields = ref<Array<{ label: string; value: string; link?: string; linkId?: string }>>([]);
+  // 基础字段：value 为显示文本，link 为跳转路由名（点击新页面查看），attachmentUrl 为附件地址（渲染预览/下载）
+  const detailBaseFields = ref<
+    Array<{ label: string; value: string; link?: string; linkId?: string; attachmentUrl?: string }>
+  >([]);
   // 改单字段变更对比行
   const detailCompareRows = ref<Array<{ label: string; before: string; after: string }>>([]);
   // 付款单各下游客户付款明细
@@ -379,7 +391,7 @@
     }
   }
 
-  type BaseField = { label: string; value: string; link?: string; linkId?: string };
+  type BaseField = { label: string; value: string; link?: string; linkId?: string; attachmentUrl?: string };
   type CompareRow = { label: string; before: string; after: string };
 
   // 打开关联详情（新页面）
@@ -387,6 +399,20 @@
     if (!field.link || !field.linkId) return;
     const { href } = router.resolve({ name: field.link, params: { id: field.linkId } });
     window.open(href, '_blank');
+  }
+
+  /** 附件预览 */
+  function handlePreviewAttachment(fileUrl: string) {
+    const previewUrl = `/attachment/preview/${fileUrl}?userId=${userStore.userInfo?.id || ''}`;
+    window.open(previewUrl, '_blank');
+  }
+
+  /** 附件下载 */
+  function handleDownloadAttachment(fileUrl: string) {
+    const downloadUrl = `/attachment/download/${fileUrl}?userId=${userStore.userInfo?.id || ''}`;
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.click();
   }
 
   function parseSnapshot(value?: string | null): Record<string, any> {
@@ -460,8 +486,19 @@
           { label: '应收金额', value: o.receivableAmount != null ? fmtAmount(o.receivableAmount) : '-' },
           { label: '应付', value: o.mediaPayableAmount != null ? fmtAmount(o.mediaPayableAmount) : '-' },
           {
+            label: '实际应付',
+            value: o.actualMediaPayableAmount != null ? fmtAmount(o.actualMediaPayableAmount) : '-',
+          },
+          {
+            label: '订单收入',
+            value: o.orderIncomeAmount != null ? fmtAmount(o.orderIncomeAmount) : '-',
+          },
+          {
             label: '投放周期',
-            value: o.deliveryStartDate && o.deliveryEndDate ? `${o.deliveryStartDate} ~ ${o.deliveryEndDate}` : '-',
+            value:
+              o.deliveryStartDate && o.deliveryEndDate
+                ? `${fmtDate(o.deliveryStartDate)} ~ ${fmtDate(o.deliveryEndDate)}`
+                : '-',
           },
           {
             label: '关联合同',
@@ -509,6 +546,7 @@
           { label: '订单名称', value: res?.orderName || '-' },
           { label: '申请份数', value: r.appliedCopies ?? '-' },
           { label: '申请备注', value: r.applyRemark || '-' },
+          { label: '用印附件', value: res?.contractFileUrl ? '查看附件' : '-', attachmentUrl: res?.contractFileUrl },
         ],
         compare: [],
       };
@@ -518,7 +556,12 @@
       const c = res?.contract || {};
       return {
         base: [
-          { label: '合同编号', value: c.contractNo || '-' },
+          {
+            label: '合同编号',
+            value: c.contractNo || '-',
+            link: c.id || id ? AdvertisingRouteEnum.ADVERTISING_CONTRACT_DETAIL : undefined,
+            linkId: c.id || id,
+          },
           { label: '合同名称', value: c.contractName || '-' },
           { label: t('advertising.approval.column.amount'), value: c.amount != null ? fmtAmount(c.amount) : '-' },
           {
@@ -604,7 +647,27 @@
   const columns: DataTableColumn<AdApprovalTodoItem>[] = [
     { key: 'typeLabel', title: '类型', width: 100, render: (row) => h('span', row.typeLabel || '-') },
     { key: 'applicantName', title: t('advertising.approval.column.applicant'), width: 110 },
-    { key: 'refNo', title: t('advertising.approval.column.refNo'), width: 180, ellipsis: { tooltip: true } },
+    {
+      key: 'refNo',
+      title: () => {
+        const type = currentType.value;
+        if (type === 'seal' || type === 'archive') {
+          return t('advertising.approval.column.refNo.contract');
+        }
+        if (type === 'order' || type === 'change') {
+          return t('advertising.approval.column.refNo.order');
+        }
+        if (type === 'receipt') {
+          return t('advertising.approval.column.refNo.receipt');
+        }
+        if (type === 'payout') {
+          return t('advertising.approval.column.refNo.payout');
+        }
+        return t('advertising.approval.column.refNo');
+      },
+      width: 180,
+      ellipsis: { tooltip: true },
+    },
     {
       key: 'amount',
       title: t('advertising.approval.column.amount'),
