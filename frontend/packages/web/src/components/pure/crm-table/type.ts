@@ -11,6 +11,7 @@ import type { CrmPaginationProps } from '../crm-pagination/index.vue';
 import type { DataTableColumnKey, DataTableProps, DataTableRowData, DataTableRowKey, PaginationProps } from 'naive-ui';
 import type {
   RenderFilterMenu,
+  Sorter,
   TableBaseColumn,
   TableColumnGroup,
   TableExpandColumn,
@@ -33,9 +34,16 @@ export type CrmDataTableColumn<T = any> = (
   showInTable?: boolean; // 是否展示在表格上、
   columnSelectorDisabled?: boolean; // 表头字段不可拖拽排序
   key?: DataTableColumnKey; // 这一列的 key，不可重复
-  title?: string | (() => VNodeChild);
-  sorter?: boolean | 'default'; // true是只展示图标，'default'是使用内置排序
-  filter?: boolean | ((optionValue: string | number, rowData: object) => boolean) | 'default'; // true是只展示图标
+  // naive-ui 三种列的 title 签名各不相同（TableColumnTitle / TableColumnGroupTitle /
+  // TableExpandColumnTitle），函数参数又按逆变检查，写具体联合类型两头都不兼容，
+  // 故此处参数放宽为 any，字符串表头仍受 string 约束。
+  title?: string | ((column: any) => VNodeChild);
+  // 与 naive-ui 的 TableBaseColumn.sorter 保持一致（含自定义比较函数），
+  // 否则外部用 DataTableColumn 定义的列无法赋值给 CrmDataTableColumn
+  sorter?: boolean | 'default' | Sorter<T>; // true是只展示图标，'default'是使用内置排序
+  // 与 naive-ui 的 Filter<T> 保持一致：行数据类型由外部列定义决定，
+  // 此处写 object 会因逆变检查在 T 存在必填字段（如 AdOrderListItem.id）时报错
+  filter?: boolean | ((optionValue: string | number, rowData: any) => boolean) | 'default'; // true是只展示图标
   sortOrder?: 'descend' | 'ascend' | false; // 受控状态下表格的排序方式
   render?: (rowData: T, rowIndex: number) => VNodeChild;
   renderFilterMenu?: RenderFilterMenu;

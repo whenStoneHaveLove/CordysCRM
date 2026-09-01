@@ -86,9 +86,6 @@ export interface AdOrderListItem {
   businessEntityName?: string;
   upstreamAgentId?: string;
   upstreamAgentName?: string;
-  actualMediaPayableAmount?: number;
-  mediaRebateAmount?: number;
-  orderIncomeAmount?: number;
   customerId?: string;
   customerName?: string;
   orderType?: number;
@@ -96,6 +93,9 @@ export interface AdOrderListItem {
   totalAmount?: number;
   receivableAmount?: number;
   mediaPayableAmount?: number;
+  actualMediaPayableAmount?: number;
+  mediaRebateAmount?: number;
+  orderIncomeAmount?: number;
   rebateAmount?: number;
   receiptMethod?: number;
   paymentMethod?: number;
@@ -173,6 +173,9 @@ export interface AdOrderInfo {
   rebateAmount?: number;
   receivableAmount?: number;
   mediaPayableAmount?: number;
+  actualMediaPayableAmount?: number;
+  mediaRebateAmount?: number;
+  orderIncomeAmount?: number;
   deliveryStartDate?: number | string | null;
   deliveryEndDate?: number | string | null;
   deliveryVolume?: string;
@@ -723,6 +726,9 @@ export interface AdReportOrderSummary {
 export interface AdReportPaymentSummary {
   receivableAmount?: number;
   mediaPayableAmount?: number;
+  actualMediaPayableAmount?: number;
+  mediaRebateAmount?: number;
+  orderIncomeAmount?: number;
   paidAmount?: number;
   unpaidAmount?: number;
   overdueAmount?: number;

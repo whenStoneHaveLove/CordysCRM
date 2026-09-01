@@ -299,7 +299,7 @@ export default {
   'advertising.seal.form.approveRemark': 'Approve Remark',
 
   // Workbench
-  'module.advertising.workbench': 'Workbench',
+  'module.advertising.workbench': 'Home',
   'advertising.workbench.greeting.morning': 'Good morning',
   'advertising.workbench.greeting.afternoon': 'Good afternoon',
   'advertising.workbench.greeting.evening': 'Good evening',

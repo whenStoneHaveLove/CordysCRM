@@ -306,7 +306,7 @@ export default {
   'advertising.seal.form.approveRemark': '审批备注',
 
   // 工作台
-  'module.advertising.workbench': '工作台',
+  'module.advertising.workbench': '首页',
   'advertising.workbench.greeting.morning': '上午好',
   'advertising.workbench.greeting.afternoon': '下午好',
   'advertising.workbench.greeting.evening': '晚上好',
