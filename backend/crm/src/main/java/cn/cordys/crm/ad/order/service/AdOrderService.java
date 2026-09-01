@@ -744,18 +744,27 @@ public class AdOrderService {
      */
     /**
      * 补出三列（不动主表其他金额字段，与需求口径一致）：
-     *   实际应付 = 各下游明细 actualPayable 之和（与下游「实际应付总额（各客户累加）」底部展示一致）
+     *   实际应付 = 各下游明细 (应付金额 - 返点金额) 累加（与下游「实际应付总额（各客户累加）」底部展示一致；
+     *             不直接读明细 actualPayable 列，因历史数据该列可能为 0/null，统一按应付-返点计算更稳）
      *   应付返点 = 主表应付金额(mediaPayableAmount) - 实际应付
      *   订单收入 = 实际应收(receivableAmount) - 实际应付
-     * 明细是 source of truth：实际应付由明细累加；应付返点/订单收入由主表已有应付金额与应收派生。
+     * 明细是 source of truth：实际应付由明细 payableAmount - rebateAmount 累加；
+     * 应付返点/订单收入由主表已有应付金额与应收派生。
      */
     private void applyDerivedOnlyFromOrder(AdOrder order, List<AdOrderDownstreamMedia> details) {
         BigDecimal actualPayableSum = BigDecimal.ZERO;
         if (details != null) {
             for (AdOrderDownstreamMedia d : details) {
-                if (d != null && d.getActualPayable() != null) {
-                    actualPayableSum = actualPayableSum.add(d.getActualPayable());
+                if (d == null || d.getPayableAmount() == null) {
+                    continue;
                 }
+                BigDecimal payable = d.getPayableAmount();
+                BigDecimal rebate = d.getRebateAmount() == null ? BigDecimal.ZERO : d.getRebateAmount();
+                BigDecimal actual = payable.subtract(rebate);
+                if (actual.compareTo(BigDecimal.ZERO) < 0) {
+                    actual = BigDecimal.ZERO;
+                }
+                actualPayableSum = actualPayableSum.add(actual);
             }
         }
         order.setActualMediaPayableAmount(actualPayableSum);
