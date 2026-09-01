@@ -743,11 +743,11 @@ public class AdOrderService {
      * 任意一侧为 null 时按 0 计，结果仍为 null 时不写（保留 null 便于排查）。
      */
     /**
-     * 仅补出两列：
+     * 补出三列（不动主表其他金额字段，与需求口径一致）：
      *   实际应付 = 各下游明细 actualPayable 之和（与下游「实际应付总额（各客户累加）」底部展示一致）
-     *   订单收入 = 实际应收 - 实际应付
-     * 不动主表其他金额字段（mediaPayableAmount/mediaRebateAmount/paymentMethod 等保持原值），
-     * 与需求口径一致：明细是 source of truth，主表这两列同步过来即可。
+     *   应付返点 = 主表应付金额(mediaPayableAmount) - 实际应付
+     *   订单收入 = 实际应收(receivableAmount) - 实际应付
+     * 明细是 source of truth：实际应付由明细累加；应付返点/订单收入由主表已有应付金额与应收派生。
      */
     private void applyDerivedOnlyFromOrder(AdOrder order, List<AdOrderDownstreamMedia> details) {
         BigDecimal actualPayableSum = BigDecimal.ZERO;
@@ -759,6 +759,9 @@ public class AdOrderService {
             }
         }
         order.setActualMediaPayableAmount(actualPayableSum);
+        if (order.getMediaPayableAmount() != null) {
+            order.setMediaRebateAmount(order.getMediaPayableAmount().subtract(actualPayableSum));
+        }
         if (order.getReceivableAmount() != null) {
             order.setOrderIncomeAmount(order.getReceivableAmount().subtract(actualPayableSum));
         }
