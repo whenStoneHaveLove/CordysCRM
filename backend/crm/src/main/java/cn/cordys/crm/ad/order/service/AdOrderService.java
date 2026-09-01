@@ -744,8 +744,8 @@ public class AdOrderService {
      */
     /**
      * 补出三列（不动主表其他金额字段，与需求口径一致）：
-     *   实际应付 = 各下游明细 actualPayable 之和（明细 actual_payable 列已是 source of truth，
-     *             直接累加最准；不再走 payableAmount - rebateAmount，避免旧数据该列有值仍按公式算返点重复扣减）
+     *   实际应付 = 各下游明细实际应付之和（实际应付以明细 actual_payable 列为优先；该列为 null 的旧数据
+     *             用「应付金额 - 返点金额」即时兜底，与 fillPayableFields 写库逻辑一致，与前端明细行/底部累加展示一致）
      *   应付返点 = 主表应付金额(mediaPayableAmount) - 实际应付
      *   订单收入 = 实际应收(receivableAmount) - 实际应付
      */
@@ -753,10 +753,24 @@ public class AdOrderService {
         BigDecimal actualPayableSum = BigDecimal.ZERO;
         if (details != null) {
             for (AdOrderDownstreamMedia d : details) {
-                if (d == null || d.getActualPayable() == null) {
+                if (d == null) {
                     continue;
                 }
-                actualPayableSum = actualPayableSum.add(d.getActualPayable());
+                BigDecimal actual = d.getActualPayable();
+                if (actual == null) {
+                    // 历史数据该列为 null 时，按「应付金额 - 返点金额」兜底（与 fillPayableFields 写库公式一致）
+                    BigDecimal payable = d.getPayableAmount();
+                    BigDecimal rebate = d.getRebateAmount() == null ? BigDecimal.ZERO : d.getRebateAmount();
+                    if (payable != null) {
+                        actual = payable.subtract(rebate);
+                        if (actual.compareTo(BigDecimal.ZERO) < 0) {
+                            actual = BigDecimal.ZERO;
+                        }
+                    }
+                }
+                if (actual != null) {
+                    actualPayableSum = actualPayableSum.add(actual);
+                }
             }
         }
         order.setActualMediaPayableAmount(actualPayableSum);
