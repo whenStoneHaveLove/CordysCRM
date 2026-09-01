@@ -24,7 +24,7 @@
             c.id,
             c.order_id     AS orderId,
             o.order_no     AS refNo,
-            o.amount       AS amount,
+            o.total_amount AS amount,
             c.reason       AS summary,
             c.create_user  AS applicantId,
             c.create_time  AS createTime,
