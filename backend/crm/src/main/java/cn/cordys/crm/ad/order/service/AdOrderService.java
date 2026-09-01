@@ -792,15 +792,28 @@ public class AdOrderService {
         AdOrder criteria = new AdOrder();
         criteria.setDeleted(0);
         List<AdOrder> orders = adOrderMapper.select(criteria);
+        log.info("[recompute-income] 候选订单数: {}", orders.size());
         int count = 0;
         for (AdOrder order : orders) {
             // 补数仅写回「实际应付 / 应付返点 / 订单收入」三列：从下游明细 actual_payable 累加 = 实际应付；
             // 应付返点 = 主表应付金额 - 实际应付；订单收入 = 应收 - 实际应付
             List<AdOrderDownstreamMedia> details = orderDownstreamMediaMapper.selectByOrderId(order.getId());
             applyDerivedOnlyFromOrder(order, details);
-            adOrderMapper.updateById(order);
+            Integer affected = adOrderMapper.updateById(order);
+            if (affected == null || affected == 0) {
+                log.warn("[recompute-income] updateById 0 行 orderId={}, orderNo={}, actual={}, rebate={}, income={}, details={}",
+                        order.getId(), order.getOrderNo(),
+                        order.getActualMediaPayableAmount(), order.getMediaRebateAmount(), order.getOrderIncomeAmount(),
+                        details == null ? 0 : details.size());
+            } else if ("YYW-20260825-002".equals(order.getOrderNo()) || order.getOrderNo() != null && order.getOrderNo().contains("002")) {
+                log.info("[recompute-income] OK orderNo={} actual={} rebate={} income={} details={} affected={}",
+                        order.getOrderNo(),
+                        order.getActualMediaPayableAmount(), order.getMediaRebateAmount(), order.getOrderIncomeAmount(),
+                        details == null ? 0 : details.size(), affected);
+            }
             count++;
         }
+        log.info("[recompute-income] 累计处理订单数: {}", count);
         return count;
     }
 
