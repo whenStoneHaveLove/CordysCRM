@@ -798,18 +798,7 @@ public class AdOrderService {
             // 应付返点 = 主表应付金额 - 实际应付；订单收入 = 应收 - 实际应付
             List<AdOrderDownstreamMedia> details = orderDownstreamMediaMapper.selectByOrderId(order.getId());
             applyDerivedOnlyFromOrder(order, details);
-            Integer affected = adOrderMapper.updateById(order);
-            if (affected == null || affected == 0) {
-                log.warn("[recompute-income] updateById 0 行 orderId={}, orderNo={}, actual={}, rebate={}, income={}, details={}",
-                        order.getId(), order.getOrderNo(),
-                        order.getActualMediaPayableAmount(), order.getMediaRebateAmount(), order.getOrderIncomeAmount(),
-                        details == null ? 0 : details.size());
-            } else if ("YW-20260825-002".equals(order.getOrderNo()) || order.getOrderNo() != null && order.getOrderNo().contains("002")) {
-                log.info("[recompute-income] OK orderNo={} actual={} rebate={} income={} details={} affected={}",
-                        order.getOrderNo(),
-                        order.getActualMediaPayableAmount(), order.getMediaRebateAmount(), order.getOrderIncomeAmount(),
-                        details == null ? 0 : details.size(), affected);
-            }
+            Integer affected =             adOrderMapper.updateById(order);
             count++;
         }
         log.info("[recompute-income] 累计处理订单数: {}", count);
