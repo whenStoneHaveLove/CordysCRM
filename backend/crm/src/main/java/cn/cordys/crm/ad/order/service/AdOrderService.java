@@ -788,10 +788,9 @@ public class AdOrderService {
      */
     @org.springframework.transaction.annotation.Transactional(rollbackFor = Exception.class)
     public int recomputeIncomeFieldsForAll() {
-        // 仅查未删除订单：框架 selectListByLambda 存在 Provider 强转缺陷，改用实体条件查询
-        AdOrder criteria = new AdOrder();
-        criteria.setDeleted(0);
-        List<AdOrder> orders = adOrderMapper.select(criteria);
+        // 走 XML 显式列的 selectAllNonDeleted：框架默认 select(E criteria) 会把 int 默认 0 当 WHERE 条件，
+        // 导致只有草稿（status=0）订单被匹配，其余状态订单都被滤掉。这里只过滤 deleted=0。
+        List<AdOrder> orders = extAdOrderMapper.selectAllNonDeleted();
         log.info("[recompute-income] 候选订单数: {}", orders.size());
         int count = 0;
         for (AdOrder order : orders) {
@@ -805,7 +804,7 @@ public class AdOrderService {
                         order.getId(), order.getOrderNo(),
                         order.getActualMediaPayableAmount(), order.getMediaRebateAmount(), order.getOrderIncomeAmount(),
                         details == null ? 0 : details.size());
-            } else if ("YYW-20260825-002".equals(order.getOrderNo()) || order.getOrderNo() != null && order.getOrderNo().contains("002")) {
+            } else if ("YW-20260825-002".equals(order.getOrderNo()) || order.getOrderNo() != null && order.getOrderNo().contains("002")) {
                 log.info("[recompute-income] OK orderNo={} actual={} rebate={} income={} details={} affected={}",
                         order.getOrderNo(),
                         order.getActualMediaPayableAmount(), order.getMediaRebateAmount(), order.getOrderIncomeAmount(),

@@ -50,6 +50,13 @@ public interface ExtAdOrderMapper extends BaseMapper<AdOrder> {
     List<AdOrder> selectSettlement();
 
     /**
+     * 补数专用：查询所有未删除的广告订单（用于补全 actualMediaPayableAmount / mediaRebateAmount / orderIncomeAmount 三列）。
+     * 不能用框架默认的 select(E criteria)，因为框架会将 int 字段默认值 0 误当作 WHERE 条件，
+     * 只匹配 status=0 的草稿单，其余状态订单被滤掉。
+     */
+    List<AdOrder> selectAllNonDeleted();
+
+    /**
      * 统计某客户关联的订单数。
      */
     long countByCustomerId(@Param("customerId") String customerId, @Param("orgId") String orgId);
