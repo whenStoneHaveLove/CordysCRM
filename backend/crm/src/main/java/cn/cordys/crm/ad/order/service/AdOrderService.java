@@ -762,10 +762,8 @@ public class AdOrderService {
                     BigDecimal payable = d.getPayableAmount();
                     BigDecimal rebate = d.getRebateAmount() == null ? BigDecimal.ZERO : d.getRebateAmount();
                     if (payable != null) {
+                        // 负值如实保留（订单收入=应收-实际应付可能为负，按用户要求直接展示负值）
                         actual = payable.subtract(rebate);
-                        if (actual.compareTo(BigDecimal.ZERO) < 0) {
-                            actual = BigDecimal.ZERO;
-                        }
                     }
                 }
                 if (actual != null) {
