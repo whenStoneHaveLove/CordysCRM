@@ -742,15 +742,25 @@ public class AdOrderService {
      *   订单收入 = receivableAmount    - actualMediaPayableAmount
      * 任意一侧为 null 时按 0 计，结果仍为 null 时不写（保留 null 便于排查）。
      */
-    private void applyDerivedOnlyFromOrder(AdOrder order) {
-        BigDecimal mediaPayable = order.getMediaPayableAmount() == null ? BigDecimal.ZERO : order.getMediaPayableAmount();
-        BigDecimal actualPayable = order.getActualMediaPayableAmount() == null ? BigDecimal.ZERO : order.getActualMediaPayableAmount();
-        BigDecimal receivable = order.getReceivableAmount() == null ? BigDecimal.ZERO : order.getReceivableAmount();
-        if (order.getMediaPayableAmount() != null && order.getActualMediaPayableAmount() != null) {
-            order.setMediaRebateAmount(mediaPayable.subtract(actualPayable));
+    /**
+     * 仅补出两列：
+     *   实际应付 = 各下游明细 actualPayable 之和（与下游「实际应付总额（各客户累加）」底部展示一致）
+     *   订单收入 = 实际应收 - 实际应付
+     * 不动主表其他金额字段（mediaPayableAmount/mediaRebateAmount/paymentMethod 等保持原值），
+     * 与需求口径一致：明细是 source of truth，主表这两列同步过来即可。
+     */
+    private void applyDerivedOnlyFromOrder(AdOrder order, List<AdOrderDownstreamMedia> details) {
+        BigDecimal actualPayableSum = BigDecimal.ZERO;
+        if (details != null) {
+            for (AdOrderDownstreamMedia d : details) {
+                if (d != null && d.getActualPayable() != null) {
+                    actualPayableSum = actualPayableSum.add(d.getActualPayable());
+                }
+            }
         }
-        if (order.getReceivableAmount() != null && order.getActualMediaPayableAmount() != null) {
-            order.setOrderIncomeAmount(receivable.subtract(actualPayable));
+        order.setActualMediaPayableAmount(actualPayableSum);
+        if (order.getReceivableAmount() != null) {
+            order.setOrderIncomeAmount(order.getReceivableAmount().subtract(actualPayableSum));
         }
     }
 
@@ -768,8 +778,9 @@ public class AdOrderService {
         List<AdOrder> orders = adOrderMapper.select(criteria);
         int count = 0;
         for (AdOrder order : orders) {
-            // 仅补出应付返点/订单收入两个派生列，不重算主表金额（避免把原本正确的应付/实际应付置 0）
-            applyDerivedOnlyFromOrder(order);
+            // 补数仅写回「实际应付」「订单收入」两列：从下游明细 actualPayable 累加 = 实际应付；订单收入 = 应收 - 实际应付
+            List<AdOrderDownstreamMedia> details = orderDownstreamMediaMapper.selectByOrderId(order.getId());
+            applyDerivedOnlyFromOrder(order, details);
             adOrderMapper.updateById(order);
             count++;
         }
