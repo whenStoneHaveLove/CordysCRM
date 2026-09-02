@@ -18,7 +18,10 @@ public class AdPayout extends BaseModel {
     @Schema(description = "付款单号")
     private String paymentNo;
 
-    @Schema(description = "关联订单")
+    @Schema(description = "付款单类型:10订单类型/20非订单类型")
+    private Integer billType = 10;
+
+    @Schema(description = "关联订单(非订单类型时为空)")
     private String orderId;
 
     @Schema(description = "付款金额")

@@ -1018,6 +1018,8 @@ export type AdReceiptPageResult = CommonList<AdReceiptInfo>;
 
 export interface AdPayoutSaveParams {
   id?: string;
+  /** 付款单类型:10订单类型/20非订单类型 */
+  billType?: number;
   orderId?: string;
   amount?: number;
   paymentTime?: number | string | null;
@@ -1092,6 +1094,9 @@ export interface AdPayoutPageParams {
 export interface AdPayoutInfo {
   id?: string;
   paymentNo?: string;
+  /** 付款单类型:10订单类型/20非订单类型 */
+  billType?: number;
+  billTypeLabel?: string;
   orderId?: string;
   orderName?: string;
   amount?: number;
@@ -1112,6 +1117,9 @@ export interface AdPayoutInfo {
 export interface AdPayoutDetail {
   id?: string;
   paymentNo?: string;
+  /** 付款单类型:10订单类型/20非订单类型 */
+  billType?: number;
+  billTypeLabel?: string;
   orderId?: string;
   amount?: number;
   paymentTime?: number | string | null;

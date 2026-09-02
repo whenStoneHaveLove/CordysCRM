@@ -47,13 +47,11 @@
           <n-select
             v-model:value="form.orderId"
             filterable
-            remote
             clearable
             :loading="orderLoading"
             :options="orderOptions"
             placeholder="选择订单"
-            @search="searchOrders"
-            @focus="() => searchOrders('')"
+            @focus="loadOrders"
             @update:value="onOrderChange"
           />
         </n-form-item>
@@ -295,26 +293,23 @@
     remark: undefined,
   });
 
-  // ---- 订单选择 ----
+  // ---- 订单选择（一次性加载，前端本地过滤，避免远程搜索只取前 N 条导致搜不到） ----
   const orderLoading = ref(false);
   const orderOptions = ref<Array<{ label: string; value: string }>>([]);
-  async function searchOrders(keyword: string) {
+  const orderLoaded = ref(false);
+  async function loadOrders() {
+    if (orderLoaded.value) return;
     orderLoading.value = true;
     try {
       // 可建收款单的订单：待执行(45)/执行中(50)/结算中(80)
       const allowed = [AdOrderStatusEnum.PENDING_EXECUTE, AdOrderStatusEnum.EXECUTING, AdOrderStatusEnum.SETTLEMENT];
-      const res = await getAdOrderPage({
-        current: 1,
-        pageSize: 20,
-        keyword: keyword || undefined,
-        statusList: allowed,
-      });
-      orderOptions.value = (res.list || [])
-        .filter((it: any) => allowed.includes(it.status))
-        .map((it: any) => ({
-          label: `${it.orderNo || ''} ${it.orderName || ''}`,
-          value: it.id,
-        }));
+      const res = await getAdOrderPage({ current: 1, pageSize: 200, statusList: allowed });
+      const orderList = (res.list || []).filter((it: any) => allowed.includes(it.status));
+      orderOptions.value = orderList.map((it: any) => ({
+        label: [it.orderNo, it.orderName].filter(Boolean).join(' ') || it.id,
+        value: it.id,
+      }));
+      orderLoaded.value = true;
     } catch (e) {
       // ignore
     } finally {

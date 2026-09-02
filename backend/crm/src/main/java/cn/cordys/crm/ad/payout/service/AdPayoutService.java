@@ -12,6 +12,7 @@ import cn.cordys.crm.ad.order.domain.AdOrder;
 import cn.cordys.crm.ad.order.domain.AdOrderContract;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderContractMapper;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderMapper;
+import cn.cordys.crm.ad.payout.constants.PayoutBillType;
 import cn.cordys.crm.ad.payout.constants.PayoutStatus;
 import cn.cordys.crm.ad.payout.constants.PayoutType;
 import cn.cordys.crm.ad.payout.domain.AdPayout;
@@ -74,11 +75,12 @@ public class AdPayoutService {
     @OperationLog(module = "AD_PAYOUT", action = "CREATE", targetId = "")
     public AdPayout create(AdPayoutSaveRequest request, String userId, String orgId) {
         validate(request);
-        assertNoExistingPayout(request.getOrderId());
+        assertNoExistingPayout(request);
 
         AdPayout p = new AdPayout();
         p.setId(IDGenerator.nextStr());
         p.setPaymentNo(genNo());
+        p.setBillType(PayoutBillType.ofOrDefault(request.getBillType()).getCode());
         p.setOrderId(request.getOrderId());
         p.setAmount(request.getAmount());
         p.setPaymentTime(request.getPaymentTime());
@@ -104,10 +106,12 @@ public class AdPayoutService {
         if (request.getId() == null || request.getId().isBlank()) {
             throw new GenericException("付款单id不能为空");
         }
+        validate(request);
         AdPayout p = requirePayout(request.getId());
         if (p.getStatus() != PayoutStatus.DRAFT.getCode() && p.getStatus() != PayoutStatus.REJECTED.getCode()) {
             throw new GenericException("仅草稿或驳回状态的付款单可编辑");
         }
+        p.setBillType(PayoutBillType.ofOrDefault(request.getBillType()).getCode());
         p.setOrderId(request.getOrderId());
         p.setAmount(request.getAmount());
         p.setPaymentTime(request.getPaymentTime());
@@ -163,16 +167,18 @@ public class AdPayoutService {
         p.setStatus(PayoutStatus.APPROVED.getCode());
         payoutMapper.update(p);
 
-        // 回写订单：累计已付 + 置已付
-        AdOrder order = extAdOrderMapper.selectByPrimaryKey(p.getOrderId());
-        if (order != null) {
-            BigDecimal added = p.getAmount() == null ? BigDecimal.ZERO : p.getAmount();
-            BigDecimal current = order.getMediaPaidAmount() == null ? BigDecimal.ZERO : order.getMediaPaidAmount();
-            order.setMediaPaidAmount(current.add(added));
-            order.setPaymentDone(1);
-            order.setUpdateUser(userId);
-            order.setUpdateTime(System.currentTimeMillis());
-            extAdOrderMapper.update(order);
+        // 回写订单：仅订单类型（非订单类型无关联订单）
+        if (PayoutBillType.ofOrDefault(p.getBillType()).isOrder() && p.getOrderId() != null && !p.getOrderId().isBlank()) {
+            AdOrder order = extAdOrderMapper.selectByPrimaryKey(p.getOrderId());
+            if (order != null) {
+                BigDecimal added = p.getAmount() == null ? BigDecimal.ZERO : p.getAmount();
+                BigDecimal current = order.getMediaPaidAmount() == null ? BigDecimal.ZERO : order.getMediaPaidAmount();
+                order.setMediaPaidAmount(current.add(added));
+                order.setPaymentDone(1);
+                order.setUpdateUser(userId);
+                order.setUpdateTime(System.currentTimeMillis());
+                extAdOrderMapper.update(order);
+            }
         }
         return p;
     }
@@ -183,6 +189,9 @@ public class AdPayoutService {
         AdPayoutDetailResponse resp = new AdPayoutDetailResponse();
         resp.setId(p.getId());
         resp.setPaymentNo(p.getPaymentNo());
+        Integer billType = PayoutBillType.ofOrDefault(p.getBillType()).getCode();
+        resp.setBillType(billType);
+        resp.setBillTypeLabel(PayoutBillType.labelOf(billType));
         resp.setOrderId(p.getOrderId());
         resp.setAmount(p.getAmount());
         resp.setPaymentTime(p.getPaymentTime());
@@ -201,15 +210,16 @@ public class AdPayoutService {
         resp.setApproveTime(p.getApproveTime());
         resp.setApproveRemark(p.getApproveRemark());
 
-        // 订单信息
-        AdOrder order = extAdOrderMapper.selectByPrimaryKey(p.getOrderId());
-        if (order != null) {
-            resp.setOrderNo(order.getOrderNo());
-            resp.setOrderName(order.getOrderName());
+        // 订单信息 + 关联合同（非订单类型无订单，跳过）
+        if (PayoutBillType.ofOrDefault(p.getBillType()).isOrder()
+                && p.getOrderId() != null && !p.getOrderId().isBlank()) {
+            AdOrder order = extAdOrderMapper.selectByPrimaryKey(p.getOrderId());
+            if (order != null) {
+                resp.setOrderNo(order.getOrderNo());
+                resp.setOrderName(order.getOrderName());
+            }
+            resp.setContracts(loadContracts(p.getOrderId()));
         }
-
-        // 关联合同（框架合同 + 单笔合同）
-        resp.setContracts(loadContracts(p.getOrderId()));
         // 各下游客户付款返点明细
         resp.setMediaDetails(extAdPaymentMediaMapper.selectByPaymentId(p.getId()));
         return resp;
@@ -295,6 +305,9 @@ public class AdPayoutService {
         Page<AdPayoutListResponse> page = PageHelper.startPage(request.getCurrent(), request.getPageSize());
         List<AdPayoutListResponse> list = extAdPayoutMapper.pageList(request);
         for (AdPayoutListResponse r : list) {
+            Integer billType = PayoutBillType.ofOrDefault(r.getBillType()).getCode();
+            r.setBillType(billType);
+            r.setBillTypeLabel(PayoutBillType.labelOf(billType));
             r.setTypeLabel(PayoutType.labelOf(r.getType()));
             r.setStatusLabel(PayoutStatus.labelOf(r.getStatus()));
         }
@@ -317,19 +330,45 @@ public class AdPayoutService {
     // ===================== 私有辅助 =====================
 
     private void validate(AdPayoutSaveRequest request) {
-        if (request.getOrderId() == null || request.getOrderId().isBlank()) {
-            throw new GenericException("关联订单不能为空");
-        }
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new GenericException("付款金额必须大于0");
         }
         if (PayoutType.of(request.getType()) == null) {
             throw new GenericException("付款类型不合法(10普通付款/20坏账)");
         }
+        PayoutBillType billType = PayoutBillType.ofOrDefault(request.getBillType());
+
+        if (billType.isOrder()) {
+            // 订单类型：必须关联订单
+            if (request.getOrderId() == null || request.getOrderId().isBlank()) {
+                throw new GenericException("订单类型的付款单必须选择关联订单");
+            }
+            return;
+        }
+
+        // 非订单类型：无关联订单，下游客户手动选择，仅支持一条明细
+        if (request.getOrderId() != null && !request.getOrderId().isBlank()) {
+            throw new GenericException("非订单类型的付款单不能关联订单");
+        }
+        List<AdPayoutMediaDetail> details = request.getMediaDetails();
+        if (details == null || details.size() != 1) {
+            throw new GenericException("非订单类型的付款单必须且只能有一条客户明细");
+        }
+        AdPayoutMediaDetail d = details.get(0);
+        if (d.getMediaId() == null || d.getMediaId().isBlank()) {
+            throw new GenericException("非订单类型的付款单必须选择下游客户");
+        }
+        if (d.getAccountId() == null || d.getAccountId().isBlank()) {
+            throw new GenericException("非订单类型的付款单必须选择收款账户");
+        }
     }
 
-    private void assertNoExistingPayout(String orderId) {
-        AdPayout existing = extAdPayoutMapper.selectByOrderId(orderId);
+    /** 仅订单类型校验「一个订单只允许一个付款单」。 */
+    private void assertNoExistingPayout(AdPayoutSaveRequest request) {
+        if (!PayoutBillType.ofOrDefault(request.getBillType()).isOrder()) {
+            return;
+        }
+        AdPayout existing = extAdPayoutMapper.selectByOrderId(request.getOrderId());
         if (existing != null) {
             throw new GenericException("该订单已存在付款单，一个订单仅允许一个付款单");
         }
@@ -359,6 +398,16 @@ public class AdPayoutService {
     }
 
     /** 写入付款单-各下游客户付款返点明细（每客户一行）。 */
+    /** 空值兜底：null → 空串（用于 NOT NULL 的字符串列）。 */
+    private static String nvl(String v) {
+        return v == null ? "" : v;
+    }
+
+    /** 空值兜底：null → 0（用于 NOT NULL 的金额列）。 */
+    private static BigDecimal nvl(BigDecimal v) {
+        return v == null ? BigDecimal.ZERO : v;
+    }
+
     private void saveMediaDetails(AdPayout p, List<AdPayoutMediaDetail> details, String userId, String orgId, long now) {
         if (details == null || details.isEmpty()) {
             return;
@@ -372,16 +421,18 @@ public class AdPayoutService {
             row.setId(IDGenerator.nextStr());
             row.setPaymentId(p.getId());
             row.setOrderId(p.getOrderId());
-            row.setOrderDownstreamMediaId(d.getOrderDownstreamMediaId());
+            // 非订单类型无「订单-下游客户中间表」记录，该列 NOT NULL，兜底空串
+            row.setOrderDownstreamMediaId(nvl(d.getOrderDownstreamMediaId()));
             row.setMediaId(d.getMediaId());
             row.setMediaName(d.getMediaName());
-            row.setPayableAmount(d.getPayableAmount());
-            row.setNoRebateAmount(d.getNoRebateAmount());
+            // 下列金额列均为 NOT NULL，非订单类型无返点计算，统一兜底 0
+            row.setPayableAmount(nvl(d.getPayableAmount()));
+            row.setNoRebateAmount(nvl(d.getNoRebateAmount()));
             // ad_payment_media.rebate_mode 为 NOT NULL，订单下游客户可能未填，兜底默认 10(比例)
             row.setRebateMode(d.getRebateMode() == null ? 10 : d.getRebateMode());
-            row.setRebateValue(d.getRebateValue());
-            row.setRebateAmount(d.getRebateAmount());
-            row.setActualPayable(d.getActualPayable());
+            row.setRebateValue(nvl(d.getRebateValue()));
+            row.setRebateAmount(nvl(d.getRebateAmount()));
+            row.setActualPayable(nvl(d.getActualPayable()));
             row.setPaidAmount(d.getPaidAmount() == null ? BigDecimal.ZERO : d.getPaidAmount());
             row.setAccountId(d.getAccountId());
             row.setOrganizationId(orgId);

@@ -43,17 +43,20 @@
     <!-- 新建/编辑弹窗 -->
     <n-modal v-model:show="showModal" :title="modalTitle" preset="card" style="width: 880px">
       <n-form ref="formRef" :model="form" label-placement="left" :label-width="100">
-        <n-form-item label="关联订单" path="orderId">
+        <n-form-item label="付款单类型">
+          <n-select v-model:value="form.billType" :options="billTypeOptions" @update:value="onBillTypeChange" />
+        </n-form-item>
+
+        <!-- 订单类型：必须选择关联订单 -->
+        <n-form-item v-if="isOrderBill" label="关联订单" path="orderId">
           <n-select
             v-model:value="form.orderId"
             filterable
-            remote
             clearable
             :loading="orderLoading"
             :options="orderOptions"
             placeholder="选择订单"
-            @search="searchOrders"
-            @focus="() => searchOrders('')"
+            @focus="loadOrders"
             @update:value="onOrderChange"
           />
         </n-form-item>
@@ -63,7 +66,7 @@
             :min="0"
             :precision="2"
             style="width: 100%"
-            placeholder="剩余应付自动带出"
+            :placeholder="isOrderBill ? '剩余应付自动带出' : '请输入付款金额'"
           />
         </n-form-item>
         <n-form-item label="付款时间">
@@ -73,8 +76,48 @@
           <n-select v-model:value="form.type" :options="typeOptions" />
         </n-form-item>
 
-        <!-- 各下游客户返点与本次付款明细 -->
-        <template v-if="mediaOptions.length > 0">
+        <!-- 非订单类型：手动选择下游客户 + 账户二级联动（仅一条明细） -->
+        <template v-if="!isOrderBill">
+          <n-form-item label="下游客户">
+            <n-select
+              v-model:value="manualMediaId"
+              filterable
+              clearable
+              :loading="mediaListLoading"
+              :options="allMediaOptions"
+              placeholder="请选择下游客户"
+              @focus="loadAllMedia"
+              @update:value="onManualMediaChange"
+            />
+          </n-form-item>
+          <template v-if="manualMediaId">
+            <n-divider title-placement="center" class="media-divider"> 客户信息与收款账户 </n-divider>
+            <div class="media-cards">
+              <div class="media-card">
+                <div class="media-card-header">
+                  <span class="media-card-index">1</span>
+                  <span class="media-card-name">{{ manualMediaName || manualMediaId }}</span>
+                </div>
+                <n-descriptions :column="2" size="small" bordered label-placement="left" :label-width="92">
+                  <n-descriptions-item label="本次付款">¥{{ fmtMoney(form.amount) }}</n-descriptions-item>
+                  <n-descriptions-item label="账户信息">
+                    <n-select
+                      v-model:value="manualAccountId"
+                      filterable
+                      clearable
+                      :loading="accountLoading"
+                      :options="manualAccountOptions"
+                      placeholder="请选择收款账户"
+                    />
+                  </n-descriptions-item>
+                </n-descriptions>
+              </div>
+            </div>
+          </template>
+        </template>
+
+        <!-- 各下游客户返点与本次付款明细（订单类型） -->
+        <template v-if="isOrderBill && mediaOptions.length > 0">
           <n-divider title-placement="center" class="media-divider"> 各下游客户返点信息与本次付款 </n-divider>
           <div class="media-cards">
             <div v-for="(m, idx) in mediaOptions" :key="m.mediaId || m.id" class="media-card">
@@ -91,7 +134,7 @@
                 <n-descriptions-item label="返点金额">¥{{ fmtMoney(m.rebateAmount) }}</n-descriptions-item>
                 <n-descriptions-item label="累计已付">¥{{ fmtMoney(m.paidAmount) }}</n-descriptions-item>
                 <n-descriptions-item label="剩余应付">¥{{ fmtMoney(remainingOf(m)) }}</n-descriptions-item>
-                <n-descriptions-item label="本次付款">
+                <n-descriptions-item v-if="isOrderBill" label="本次付款">
                   <n-input-number
                     v-model:value="mediaPaidDraft[m.mediaId || m.id || '']"
                     :min="0"
@@ -169,6 +212,9 @@
       <n-spin :show="detailLoading">
         <n-descriptions label-placement="left" :column="2" bordered size="small">
           <n-descriptions-item label="付款单号">{{ detail.paymentNo || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="付款单类型">{{
+            detail.billTypeLabel || getAdPayoutBillTypeLabel(detail.billType)
+          }}</n-descriptions-item>
           <n-descriptions-item label="付款金额">¥{{ detail.amount ?? 0 }}</n-descriptions-item>
           <n-descriptions-item label="付款时间">{{ fmtDate(detail.paymentTime) }}</n-descriptions-item>
           <n-descriptions-item label="类型">{{ detail.typeLabel || '-' }}</n-descriptions-item>
@@ -187,15 +233,19 @@
           <n-descriptions-item label="审批备注" :span="2">{{ detail.approveRemark || '-' }}</n-descriptions-item>
         </n-descriptions>
 
-        <n-divider title-placement="left">关联订单</n-divider>
-        <n-descriptions label-placement="left" :column="2" bordered size="small">
-          <n-descriptions-item label="订单编号">
-            <n-button text type="primary" @click="goOrderDetail(detail.orderId)">{{ detail.orderNo || '-' }}</n-button>
-          </n-descriptions-item>
-          <n-descriptions-item label="订单名称">{{ detail.orderName || '-' }}</n-descriptions-item>
-        </n-descriptions>
+        <template v-if="detail.billType !== 20 && detail.orderId">
+          <n-divider title-placement="left">关联订单</n-divider>
+          <n-descriptions label-placement="left" :column="2" bordered size="small">
+            <n-descriptions-item label="订单编号">
+              <n-button text type="primary" @click="goOrderDetail(detail.orderId)">{{
+                detail.orderNo || '-'
+              }}</n-button>
+            </n-descriptions-item>
+            <n-descriptions-item label="订单名称">{{ detail.orderName || '-' }}</n-descriptions-item>
+          </n-descriptions>
+        </template>
 
-        <template v-if="detail.contracts && detail.contracts.length">
+        <template v-if="detail.billType !== 20 && detail.contracts && detail.contracts.length">
           <n-divider title-placement="left">关联合同</n-divider>
           <n-descriptions label-placement="left" :column="2" bordered size="small">
             <n-descriptions-item v-for="c in detail.contracts" :key="`no-${c.id}`" label="合同编号">
@@ -219,12 +269,12 @@
             <tr>
               <th style="width: 60px">序号</th>
               <th>下游客户</th>
-              <th style="width: 100px">应付</th>
-              <th style="width: 100px">不记返</th>
-              <th style="width: 100px">返点方式</th>
-              <th style="width: 90px">返点值</th>
-              <th style="width: 100px">返点金额</th>
-              <th style="width: 100px">实际应付</th>
+              <th v-if="!isNonOrderBill" style="width: 100px">应付</th>
+              <th v-if="!isNonOrderBill" style="width: 100px">不记返</th>
+              <th v-if="!isNonOrderBill" style="width: 100px">返点方式</th>
+              <th v-if="!isNonOrderBill" style="width: 90px">返点值</th>
+              <th v-if="!isNonOrderBill" style="width: 100px">返点金额</th>
+              <th v-if="!isNonOrderBill" style="width: 100px">实际应付</th>
               <th style="width: 110px">本次付款</th>
               <th style="width: 200px">收款账户</th>
             </tr>
@@ -233,12 +283,12 @@
             <tr v-for="(m, idx) in detail.mediaDetails" :key="m.mediaId || m.orderDownstreamMediaId || idx">
               <td>{{ idx + 1 }}</td>
               <td>{{ m.mediaName || m.mediaId || '-' }}</td>
-              <td>¥{{ fmtMoney(m.payableAmount) }}</td>
-              <td>¥{{ fmtMoney(m.noRebateAmount) }}</td>
-              <td>{{ rebateModeLabel(m.rebateMode) }}</td>
-              <td>{{ fmtDetailRebateValue(m) }}</td>
-              <td>¥{{ fmtMoney(m.rebateAmount) }}</td>
-              <td>¥{{ fmtMoney(m.actualPayable) }}</td>
+              <td v-if="!isNonOrderBill">¥{{ fmtMoney(m.payableAmount) }}</td>
+              <td v-if="!isNonOrderBill">¥{{ fmtMoney(m.noRebateAmount) }}</td>
+              <td v-if="!isNonOrderBill">{{ rebateModeLabel(m.rebateMode) }}</td>
+              <td v-if="!isNonOrderBill">{{ fmtDetailRebateValue(m) }}</td>
+              <td v-if="!isNonOrderBill">¥{{ fmtMoney(m.rebateAmount) }}</td>
+              <td v-if="!isNonOrderBill">¥{{ fmtMoney(m.actualPayable) }}</td>
               <td>¥{{ fmtMoney(m.paidAmount) }}</td>
               <td>{{ formatAccount(m) }}</td>
             </tr>
@@ -282,8 +332,11 @@
 
   import {
     AdOrderStatusEnum,
+    AdPayoutBillTypeEnum,
+    AdPayoutBillTypeOptions,
     AdPayoutStatusOptions,
     AdPayoutTypeOptions,
+    getAdPayoutBillTypeLabel,
     getAdPayoutStatusLabel,
     getAdPayoutTypeLabel,
   } from '@lib/shared/enums/advertisingEnum';
@@ -299,6 +352,8 @@
   import {
     approveAdPayout,
     createAdPayout,
+    getAdDownstreamMediaAccounts,
+    getAdDownstreamMediaPage,
     getAdOrderPage,
     getAdPayoutDetail,
     getAdPayoutMedia,
@@ -409,6 +464,7 @@
 
   /* ========== 新建/编辑表单状态 ========== */
   interface PayoutForm {
+    billType?: number;
     orderId?: string;
     amount?: number;
     paymentTime?: number | null;
@@ -417,6 +473,7 @@
     remark?: string;
   }
   const form = reactive<PayoutForm>({
+    billType: AdPayoutBillTypeEnum.ORDER,
     orderId: undefined,
     amount: undefined,
     paymentTime: null,
@@ -424,6 +481,62 @@
     mediaIds: [],
     remark: undefined,
   });
+
+  const billTypeOptions = AdPayoutBillTypeOptions;
+  /** 是否为订单类型付款单（form 视角，编辑/新建弹窗用） */
+  const isOrderBill = computed(() => form.billType !== AdPayoutBillTypeEnum.NON_ORDER);
+
+  /* ========== 非订单类型：手动选择下游客户 + 账户二级联动 ========== */
+  const manualMediaId = ref('');
+  const manualMediaName = ref('');
+  const manualAccountId = ref('');
+  const allMediaOptions = ref<Array<{ label: string; value: string }>>([]);
+  const manualAccountOptions = ref<Array<{ label: string; value: string }>>([]);
+  const mediaListLoading = ref(false);
+  const accountLoading = ref(false);
+  const allMediaLoaded = ref(false);
+
+  async function loadAllMedia() {
+    if (allMediaLoaded.value) return;
+    mediaListLoading.value = true;
+    try {
+      const res = await getAdDownstreamMediaPage({ current: 1, pageSize: 200 });
+      allMediaOptions.value = (res.list || []).map((it: any) => ({
+        label: it.name || it.id,
+        value: it.id,
+      }));
+      allMediaLoaded.value = true;
+    } catch (e) {
+      // ignore
+    } finally {
+      mediaListLoading.value = false;
+    }
+  }
+
+  /** 选择下游客户后：加载其账户列表并默认选中第一条可用账户 */
+  async function onManualMediaChange(mediaId: string) {
+    manualAccountId.value = '';
+    manualAccountOptions.value = [];
+    manualMediaName.value = allMediaOptions.value.find((o) => o.value === mediaId)?.label || '';
+    if (!mediaId) return;
+    accountLoading.value = true;
+    try {
+      const accounts = (await getAdDownstreamMediaAccounts(mediaId)) || [];
+      manualAccountOptions.value = (accounts as any[])
+        .filter((a) => a.disabled !== 1)
+        .map((a) => ({
+          label: `${a.payeeName || ''} - ${a.bankName || ''} - ${a.bankAccount || ''}`,
+          value: a.id || '',
+        }));
+      if (manualAccountOptions.value.length) {
+        manualAccountId.value = manualAccountOptions.value[0].value;
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      accountLoading.value = false;
+    }
+  }
 
   /* ========== 订单选择 + 下游客户返点信息 ========== */
   const orderLoading = ref(false);
@@ -439,6 +552,23 @@
     Object.keys(mediaAccountDraft).forEach((k) => delete mediaAccountDraft[k]);
   }
 
+  /** 切换付款单类型：清理另一类型的关联数据（金额/日期/类型/备注也一并清空，避免脏数据残留） */
+  function onBillTypeChange() {
+    form.amount = undefined;
+    form.paymentTime = null;
+    form.remark = undefined;
+    if (isOrderBill.value) {
+      manualMediaId.value = '';
+      manualMediaName.value = '';
+      manualAccountId.value = '';
+      manualAccountOptions.value = [];
+    } else {
+      form.orderId = undefined;
+      mediaOptions.value = [];
+      resetMediaDraft();
+    }
+  }
+
   function accountOptionsOf(m: AdPayoutMediaOption) {
     const opts = (m.accountList || []).map((a) => ({
       label: `${a.payeeName || ''} - ${a.bankName || ''} - ${a.bankAccount || ''}${a.disabled === 1 ? '（停用）' : ''}`,
@@ -452,23 +582,21 @@
     return acc?.id || '';
   }
 
-  async function searchOrders(keyword: string) {
+  // 订单选择：一次性加载，前端本地过滤，避免远程搜索只取前 N 条导致搜不到
+  const orderLoaded = ref(false);
+  async function loadOrders() {
+    if (orderLoaded.value) return;
     orderLoading.value = true;
     try {
       // 可建付款单的订单：待执行(45)/执行中(50)/结算中(80)
       const allowed = [AdOrderStatusEnum.PENDING_EXECUTE, AdOrderStatusEnum.EXECUTING, AdOrderStatusEnum.SETTLEMENT];
-      const res = await getAdOrderPage({
-        current: 1,
-        pageSize: 20,
-        keyword: keyword || undefined,
-        statusList: allowed,
-      });
-      orderOptions.value = (res.list || [])
-        .filter((it: any) => allowed.includes(it.status))
-        .map((it: any) => ({
-          label: `${it.orderNo || ''} ${it.orderName || ''}`,
-          value: it.id,
-        }));
+      const res = await getAdOrderPage({ current: 1, pageSize: 200, statusList: allowed });
+      const orderList = (res.list || []).filter((it: any) => allowed.includes(it.status));
+      orderOptions.value = orderList.map((it: any) => ({
+        label: [it.orderNo, it.orderName].filter(Boolean).join(' ') || it.id,
+        value: it.id,
+      }));
+      orderLoaded.value = true;
     } catch (e) {
       // ignore
     } finally {
@@ -519,6 +647,7 @@
   }
 
   function resetForm() {
+    form.billType = AdPayoutBillTypeEnum.ORDER;
     form.orderId = undefined;
     form.amount = undefined;
     form.paymentTime = null;
@@ -527,6 +656,10 @@
     form.remark = undefined;
     mediaOptions.value = [];
     resetMediaDraft();
+    manualMediaId.value = '';
+    manualMediaName.value = '';
+    manualAccountId.value = '';
+    manualAccountOptions.value = [];
     editId.value = '';
   }
 
@@ -542,11 +675,22 @@
     resetMediaDraft();
     try {
       const res = await getAdPayoutDetail(row.id!);
+      form.billType = res.billType ?? AdPayoutBillTypeEnum.ORDER;
       form.orderId = res.orderId;
       form.amount = res.amount;
       form.paymentTime = toTimeStamp(res.paymentTime);
       form.type = res.type ?? 10;
       form.remark = res.remark;
+      // 非订单类型：回显手动选择的客户与账户
+      if (!isOrderBill.value) {
+        await loadAllMedia();
+        const d = (res.mediaDetails || [])[0];
+        if (d?.mediaId) {
+          manualMediaId.value = d.mediaId;
+          await onManualMediaChange(d.mediaId);
+          manualAccountId.value = d.accountId || '';
+        }
+      }
       if (res.orderId) {
         orderOptions.value = [{ label: res.orderName || res.orderId, value: res.orderId }];
         const media = (await getAdPayoutMedia(res.orderId)) || [];
@@ -567,39 +711,67 @@
   }
 
   async function handleSave() {
-    if (!form.orderId) {
-      message.warning('请选择关联订单');
-      return;
-    }
     if (!form.amount || form.amount <= 0) {
       message.warning('付款金额必须大于0');
       return;
     }
+    // 非订单类型：必须选择下游客户与收款账户，且仅一条明细（本次付款 = 付款金额）
+    if (!isOrderBill.value) {
+      if (!manualMediaId.value) {
+        message.warning('请选择下游客户');
+        return;
+      }
+      if (!manualAccountId.value) {
+        message.warning('请选择收款账户');
+        return;
+      }
+    } else if (!form.orderId) {
+      message.warning('请选择关联订单');
+      return;
+    }
     saving.value = true;
     try {
-      const mediaDetails: AdPayoutMediaDetailItem[] = mediaOptions.value
-        .map((m) => {
-          const key = m.mediaId || m.id || '';
-          const paid = Number(mediaPaidDraft[key] || 0);
-          return {
-            orderDownstreamMediaId: m.id,
-            mediaId: m.mediaId,
-            mediaName: m.mediaName,
-            payableAmount: Number(m.payableAmount ?? 0),
-            noRebateAmount: Number(m.noRebateAmount ?? 0),
-            rebateMode: m.rebateMode,
-            rebateValue: Number(m.rebateValue ?? 0),
-            rebateAmount: Number(m.rebateAmount ?? 0),
-            actualPayable: Number(m.actualPayable ?? 0),
-            paidAmount: paid,
-            accountId: mediaAccountDraft[key] || undefined,
-          };
-        })
-        .filter((d) => d.mediaId);
-      const mediaIds = mediaOptions.value.map((m) => m.mediaId || m.id).filter(Boolean) as string[];
+      let mediaDetails: AdPayoutMediaDetailItem[];
+      let mediaIds: string[];
+
+      if (isOrderBill.value) {
+        // 订单类型：明细由订单带出，可多客户
+        mediaDetails = mediaOptions.value
+          .map((m) => {
+            const key = m.mediaId || m.id || '';
+            const paid = Number(mediaPaidDraft[key] || 0);
+            return {
+              orderDownstreamMediaId: m.id,
+              mediaId: m.mediaId,
+              mediaName: m.mediaName,
+              payableAmount: Number(m.payableAmount ?? 0),
+              noRebateAmount: Number(m.noRebateAmount ?? 0),
+              rebateMode: m.rebateMode,
+              rebateValue: Number(m.rebateValue ?? 0),
+              rebateAmount: Number(m.rebateAmount ?? 0),
+              actualPayable: Number(m.actualPayable ?? 0),
+              paidAmount: paid,
+              accountId: mediaAccountDraft[key] || undefined,
+            };
+          })
+          .filter((d) => d.mediaId);
+        mediaIds = mediaOptions.value.map((m) => m.mediaId || m.id).filter(Boolean) as string[];
+      } else {
+        // 非订单类型：仅一条，本次付款 = 付款金额
+        mediaDetails = [
+          {
+            mediaId: manualMediaId.value,
+            mediaName: manualMediaName.value,
+            paidAmount: Number(form.amount ?? 0),
+            accountId: manualAccountId.value,
+          },
+        ];
+        mediaIds = [manualMediaId.value];
+      }
 
       const payload: any = {
-        orderId: form.orderId,
+        billType: form.billType,
+        orderId: isOrderBill.value ? form.orderId : undefined,
         amount: form.amount,
         paymentTime: form.paymentTime,
         type: form.type,
@@ -628,17 +800,29 @@
 
   /** 模态提交：先保存草稿，校验账户后提交（草稿→待审核）。 */
   async function handleSubmitModal() {
-    if (mediaOptions.value.length === 0) {
-      message.warning('请先选择关联订单');
-      return;
-    }
-    const unselected = mediaOptions.value.filter((m) => {
-      const key = m.mediaId || m.id || '';
-      return !mediaAccountDraft[key];
-    });
-    if (unselected.length > 0) {
-      message.warning('每个下游客户都必须选择收款账户后才能提交');
-      return;
+    if (!isOrderBill.value) {
+      // 非订单类型：必须选择下游客户与收款账户
+      if (!manualMediaId.value) {
+        message.warning('请选择下游客户');
+        return;
+      }
+      if (!manualAccountId.value) {
+        message.warning('请选择收款账户后才能提交');
+        return;
+      }
+    } else {
+      if (mediaOptions.value.length === 0) {
+        message.warning('请先选择关联订单');
+        return;
+      }
+      const unselected = mediaOptions.value.filter((m) => {
+        const key = m.mediaId || m.id || '';
+        return !mediaAccountDraft[key];
+      });
+      if (unselected.length > 0) {
+        message.warning('每个下游客户都必须选择收款账户后才能提交');
+        return;
+      }
     }
     submitting.value = true;
     try {
@@ -707,6 +891,10 @@
   const showDetail = ref(false);
   const detailLoading = ref(false);
   const detail = reactive<AdPayoutDetail>({});
+  /** 详情弹窗的付款单类型（独立 computed，避免 form 重置时误判） */
+  const isNonOrderBill = computed(
+    () => (detail.billType ?? AdPayoutBillTypeEnum.ORDER) === AdPayoutBillTypeEnum.NON_ORDER
+  );
   async function openDetail(row: AdPayoutInfo) {
     showDetail.value = true;
     detailLoading.value = true;
@@ -734,6 +922,12 @@
   }
   const columns: DataTableColumn<AdPayoutInfo>[] = [
     { key: 'paymentNo', title: '付款单号', minWidth: 140, ellipsis: { tooltip: true } },
+    {
+      key: 'billType',
+      title: '付款单类型',
+      width: 110,
+      render: (row) => h('span', row.billTypeLabel || getAdPayoutBillTypeLabel(row.billType)),
+    },
     { key: 'orderName', title: '关联订单', minWidth: 160, ellipsis: { tooltip: true } },
     { key: 'amount', title: '付款金额', width: 120, render: (row) => h('span', `¥${row.amount ?? 0}`) },
     { key: 'paymentTime', title: '付款时间', width: 110, render: (row) => h('span', fmtDate(row.paymentTime)) },

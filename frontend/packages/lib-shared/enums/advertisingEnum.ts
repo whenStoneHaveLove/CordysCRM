@@ -187,6 +187,24 @@ export const AdPayoutTypeOptions = Object.keys(AdPayoutTypeLabel).map((k) => ({
   value: Number(k),
 }));
 
+/**
+ * 付款单类型（订单类型 / 非订单类型）。
+ * 订单类型：必须关联订单，客户明细由订单带出。
+ * 非订单类型：无关联订单，下游客户手动选择，仅一条明细。
+ */
+export enum AdPayoutBillTypeEnum {
+  ORDER = 10,
+  NON_ORDER = 20,
+}
+export const AdPayoutBillTypeLabel: Record<number, string> = {
+  [AdPayoutBillTypeEnum.ORDER]: '订单类型',
+  [AdPayoutBillTypeEnum.NON_ORDER]: '非订单类型',
+};
+export const AdPayoutBillTypeOptions = Object.keys(AdPayoutBillTypeLabel).map((k) => ({
+  label: AdPayoutBillTypeLabel[Number(k)],
+  value: Number(k),
+}));
+
 /** 状态中文标签（未知码回退为字符串）。 */
 export function getAdOrderStatusLabel(status?: number | null): string {
   if (status == null) return '-';
@@ -223,6 +241,10 @@ export function getAdPayoutStatusLabel(value?: number | null): string {
 export function getAdPayoutTypeLabel(value?: number | null): string {
   if (value == null) return '-';
   return AdPayoutTypeLabel[value] ?? String(value);
+}
+export function getAdPayoutBillTypeLabel(value?: number | null): string {
+  if (value == null) return '-';
+  return AdPayoutBillTypeLabel[value] ?? String(value);
 }
 
 /* ----------------------------- 合同 ----------------------------- */

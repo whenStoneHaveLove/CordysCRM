@@ -8,6 +8,7 @@
         SELECT
             p.id              AS id,
             p.payment_no      AS paymentNo,
+            p.bill_type       AS billType,
             p.order_id        AS orderId,
             o.order_name      AS orderName,
             p.amount          AS amount,

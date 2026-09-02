@@ -246,6 +246,7 @@ public class AdOrderService {
         if (contractId != null) {
             AdContract contract = contractMapper.selectByPrimaryKey(contractId);
             if (contract != null) {
+                response.setContractId(contract.getId());
                 response.setContractNo(contract.getContractNo());
                 response.setContractName(contract.getContractName());
             }

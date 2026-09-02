@@ -87,6 +87,7 @@
         SELECT
             p.id,
             p.payment_no   AS refNo,
+            p.bill_type    AS billType,
             p.remark       AS summary,
             p.create_user  AS applicantId,
             p.amount       AS amount,

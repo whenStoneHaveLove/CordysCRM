@@ -18,6 +18,12 @@ public class AdPayoutListResponse {
     @Schema(description = "付款单号")
     private String paymentNo;
 
+    @Schema(description = "付款单类型:10订单类型/20非订单类型")
+    private Integer billType;
+
+    @Schema(description = "付款单类型标签")
+    private String billTypeLabel;
+
     @Schema(description = "关联订单")
     private String orderId;
 

@@ -985,6 +985,7 @@ export const {
   createAdDownstreamMedia,
   updateAdDownstreamMedia,
   getAdDownstreamMediaDetail,
+  getAdDownstreamMediaAccounts,
   getAdDownstreamMediaPage,
   deleteAdDownstreamMedia,
 } = adDownstreamMediaApi;

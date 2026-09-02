@@ -16,7 +16,10 @@ public class AdPayoutSaveRequest {
     @Schema(description = "付款单id（编辑时必填，新建留空）")
     private String id;
 
-    @Schema(description = "关联订单")
+    @Schema(description = "付款单类型:10订单类型/20非订单类型，默认10")
+    private Integer billType;
+
+    @Schema(description = "关联订单(非订单类型时不传)")
     private String orderId;
 
     @Schema(description = "付款金额（默认=应付-已付）")

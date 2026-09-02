@@ -88,12 +88,12 @@
                   <tr>
                     <th style="width: 50px">序号</th>
                     <th>下游客户</th>
-                    <th style="width: 90px">应付</th>
-                    <th style="width: 90px">不记返</th>
-                    <th style="width: 90px">返点方式</th>
-                    <th style="width: 80px">返点值</th>
-                    <th style="width: 90px">返点金额</th>
-                    <th style="width: 90px">实际应付</th>
+                    <th v-if="!isDetailPayoutNonOrder" style="width: 90px">应付</th>
+                    <th v-if="!isDetailPayoutNonOrder" style="width: 90px">不记返</th>
+                    <th v-if="!isDetailPayoutNonOrder" style="width: 90px">返点方式</th>
+                    <th v-if="!isDetailPayoutNonOrder" style="width: 80px">返点值</th>
+                    <th v-if="!isDetailPayoutNonOrder" style="width: 90px">返点金额</th>
+                    <th v-if="!isDetailPayoutNonOrder" style="width: 90px">实际应付</th>
                     <th style="width: 100px">本次付款</th>
                     <th style="width: 220px">收款账户</th>
                   </tr>
@@ -102,12 +102,12 @@
                   <tr v-for="(m, idx) in detailMediaList" :key="idx">
                     <td>{{ idx + 1 }}</td>
                     <td>{{ m.mediaName || m.mediaId || '-' }}</td>
-                    <td>¥{{ fmtPayoutMoney(m.payableAmount) }}</td>
-                    <td>¥{{ fmtPayoutMoney(m.noRebateAmount) }}</td>
-                    <td>{{ rebateModeLabel(m.rebateMode) }}</td>
-                    <td>{{ fmtRebateValue(m) }}</td>
-                    <td>¥{{ fmtPayoutMoney(m.rebateAmount) }}</td>
-                    <td>¥{{ fmtPayoutMoney(m.actualPayable) }}</td>
+                    <td v-if="!isDetailPayoutNonOrder">¥{{ fmtPayoutMoney(m.payableAmount) }}</td>
+                    <td v-if="!isDetailPayoutNonOrder">¥{{ fmtPayoutMoney(m.noRebateAmount) }}</td>
+                    <td v-if="!isDetailPayoutNonOrder">{{ rebateModeLabel(m.rebateMode) }}</td>
+                    <td v-if="!isDetailPayoutNonOrder">{{ fmtRebateValue(m) }}</td>
+                    <td v-if="!isDetailPayoutNonOrder">¥{{ fmtPayoutMoney(m.rebateAmount) }}</td>
+                    <td v-if="!isDetailPayoutNonOrder">¥{{ fmtPayoutMoney(m.actualPayable) }}</td>
                     <td>¥{{ fmtPayoutMoney(m.paidAmount) }}</td>
                     <td>{{ formatAccountCell(m) }}</td>
                   </tr>
@@ -145,7 +145,11 @@
     useMessage,
   } from 'naive-ui';
 
-  import { AD_ORDER_CHANGE_FIELD_META } from '@lib/shared/enums/advertisingEnum';
+  import {
+    AD_ORDER_CHANGE_FIELD_META,
+    AdPayoutBillTypeEnum,
+    getAdPayoutBillTypeLabel,
+  } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type {
     AdApprovalPageParams,
@@ -198,6 +202,9 @@
   const detailVisible = ref(false);
   const detailLoading = ref(false);
   const detailType = ref<string>('');
+  /** 详情抽屉的付款单类型：20=非订单类型，10/其它=订单类型。仅 payout 详情有效。 */
+  const detailPayoutBillType = ref<number>(AdPayoutBillTypeEnum.ORDER);
+  const isDetailPayoutNonOrder = computed(() => detailPayoutBillType.value === AdPayoutBillTypeEnum.NON_ORDER);
   // 基础字段：value 为显示文本，link 为跳转路由名（点击新页面查看），attachmentUrl 为附件地址（渲染预览/下载）
   const detailBaseFields = ref<
     Array<{ label: string; value: string; link?: string; linkId?: string; attachmentUrl?: string }>
@@ -598,20 +605,34 @@
     }
     if (type === 'payout') {
       const res: any = await getAdPayoutDetail(id);
-      return {
-        base: [
-          { label: '付款单号', value: res?.paymentNo || '-' },
+      const billType = res?.billType ?? AdPayoutBillTypeEnum.ORDER;
+      const isOrderBill = billType === AdPayoutBillTypeEnum.ORDER;
+      detailPayoutBillType.value = billType;
+      // 非订单类型没有订单信息，只展示下游客户
+      const base: BaseField[] = [
+        { label: '付款单号', value: res?.paymentNo || '-' },
+        { label: '付款单类型', value: res?.billTypeLabel || getAdPayoutBillTypeLabel(billType) },
+      ];
+      if (isOrderBill) {
+        base.push(
           {
             label: '关联订单',
             value: res?.orderNo || res?.orderId || '-',
             link: res?.orderId ? AdvertisingRouteEnum.ADVERTISING_ORDER_DETAIL : undefined,
             linkId: res?.orderId,
           },
-          { label: '订单名称', value: res?.orderName || '-' },
-          { label: t('advertising.approval.column.amount'), value: res?.amount != null ? fmtAmount(res.amount) : '-' },
-          { label: '付款时间', value: fmtDateTime(res?.paymentTime) },
-          { label: '备注', value: res?.remark || '-' },
-        ],
+          { label: '订单名称', value: res?.orderName || '-' }
+        );
+      } else {
+        base.push({ label: '下游客户', value: res?.mediaDetails?.[0]?.mediaName || '-' });
+      }
+      base.push(
+        { label: t('advertising.approval.column.amount'), value: res?.amount != null ? fmtAmount(res.amount) : '-' },
+        { label: '付款时间', value: fmtDateTime(res?.paymentTime) },
+        { label: '备注', value: res?.remark || '-' }
+      );
+      return {
+        base,
         compare: [],
         mediaDetails: res?.mediaDetails || [],
       };
@@ -630,6 +651,8 @@
     detailCompareRows.value = [];
     detailMediaList.value = [];
     detailType.value = type;
+    // 切换类型时重置付款单类型，避免上次非订单类型状态残留
+    detailPayoutBillType.value = AdPayoutBillTypeEnum.ORDER;
     try {
       const { base, compare, mediaDetails } = await loadDetail(type, id);
       detailBaseFields.value = base;
@@ -667,6 +690,13 @@
       },
       width: 180,
       ellipsis: { tooltip: true },
+    },
+    {
+      key: 'billType',
+      title: () => (currentType.value === 'payout' ? '付款单类型' : ''),
+      width: 110,
+      render: (row) =>
+        currentType.value === 'payout' ? h('span', getAdPayoutBillTypeLabel((row as any).billType)) : '',
     },
     {
       key: 'amount',

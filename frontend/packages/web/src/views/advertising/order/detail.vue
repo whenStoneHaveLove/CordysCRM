@@ -73,9 +73,12 @@
           <n-descriptions-item label="上游代理">{{ upstreamAgentName || '-' }}</n-descriptions-item>
           <n-descriptions-item label="代理订单号">{{ detail.order.agentOrderNo || '-' }}</n-descriptions-item>
           <n-descriptions-item label="下游客户">{{ downstreamMediaNames || '-' }}</n-descriptions-item>
-          <n-descriptions-item label="关联合同">{{
-            [detail.contractNo, detail.contractName].filter(Boolean).join(' ') || '-'
-          }}</n-descriptions-item>
+          <n-descriptions-item label="关联合同">
+            <n-button v-if="detail.contractId" text type="primary" size="small" @click="openContractDetail">
+              {{ [detail.contractNo, detail.contractName].filter(Boolean).join(' ') || detail.contractId }}
+            </n-button>
+            <span v-else>{{ [detail.contractNo, detail.contractName].filter(Boolean).join(' ') || '-' }}</span>
+          </n-descriptions-item>
           <n-descriptions-item label="订单类型">{{ getAdOrderTypeLabel(detail.order.orderType) }}</n-descriptions-item>
           <n-descriptions-item label="收款方式">{{
             getAdReceiptMethodLabel(detail.order.receiptMethod)
@@ -799,6 +802,17 @@
 
   function goBack() {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_ORDER });
+  }
+
+  /** 新 tab 打开关联合同详情 */
+  function openContractDetail() {
+    const contractId = detail.value?.contractId;
+    if (!contractId) return;
+    const { href } = router.resolve({
+      name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_DETAIL,
+      params: { id: contractId },
+    });
+    window.open(href, '_blank');
   }
 
   function openModal(type: 'approve' | 'reject' | 'void' | 'forceArchive') {

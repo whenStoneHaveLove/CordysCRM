@@ -68,6 +68,7 @@
         </if>
         <if test="request.keyword != null and request.keyword != ''">
             AND (o.order_no LIKE CONCAT('%', #{request.keyword}, '%')
+                 OR o.order_name LIKE CONCAT('%', #{request.keyword}, '%')
                  OR c.name LIKE CONCAT('%', #{request.keyword}, '%'))
         </if>
         <if test="request.entityIds != null and request.entityIds.size() > 0">
