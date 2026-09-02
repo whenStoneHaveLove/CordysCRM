@@ -373,6 +373,8 @@ export default {
   'advertising.approval.rejectRemark': '驳回理由',
   'advertising.approval.detail': '详情',
   'advertising.approval.detail.title': '审批详情',
+  'advertising.approval.opinion': '审批意见',
+  'advertising.approval.opinionPlaceholder': '请输入审批意见（通过/驳回）',
 
   // 报表中心
   'module.advertising.report': '报表中心',

@@ -117,6 +117,38 @@
           </template>
           <n-empty v-else-if="!detailLoading" :description="t('advertising.approval.empty')" />
         </n-spin>
+
+        <!-- 详情页底部审批栏：审批意见 + 取消/通过/驳回 -->
+        <template #footer>
+          <div v-if="currentDetailRow && canApproveDetail" class="detail-approve-footer">
+            <n-input
+              v-model:value="detailOpinion"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 4 }"
+              :placeholder="t('advertising.approval.opinionPlaceholder')"
+              style="flex: 1"
+            />
+            <n-space align="center" :size="8" style="margin-left: 12px">
+              <n-button @click="closeDetail">{{ t('advertising.common.cancel') }}</n-button>
+              <n-button
+                v-if="hasPermission(rejectPermissionOf(currentDetailRow.type))"
+                type="error"
+                :loading="detailRejecting"
+                @click="detailReject"
+              >
+                {{ t('advertising.approval.reject') }}
+              </n-button>
+              <n-button
+                v-if="hasPermission(approvePermissionOf(currentDetailRow.type))"
+                type="primary"
+                :loading="detailApproving"
+                @click="detailApprove"
+              >
+                {{ t('advertising.approval.approve') }}
+              </n-button>
+            </n-space>
+          </div>
+        </template>
       </n-drawer-content>
     </n-drawer>
   </div>
@@ -202,6 +234,13 @@
   const detailVisible = ref(false);
   const detailLoading = ref(false);
   const detailType = ref<string>('');
+  // 详情抽屉底部审批栏相关
+  const currentDetailRow = ref<AdApprovalTodoItem | null>(null);
+  const detailOpinion = ref('');
+  const detailApproving = ref(false);
+  const detailRejecting = ref(false);
+  /** 仅当详情来自列表待办且当前用户有审批/驳回权限时展示底部审批栏 */
+  const canApproveDetail = computed(() => !!currentDetailRow.value);
   /** 详情抽屉的付款单类型：20=非订单类型，10/其它=订单类型。仅 payout 详情有效。 */
   const detailPayoutBillType = ref<number>(AdPayoutBillTypeEnum.ORDER);
   const isDetailPayoutNonOrder = computed(() => detailPayoutBillType.value === AdPayoutBillTypeEnum.NON_ORDER);
@@ -330,14 +369,48 @@
     }
   }
 
-  async function handleApprove(row: AdApprovalTodoItem) {
+  async function handleApprove(row: AdApprovalTodoItem, remark?: string) {
     try {
-      await approveOne(row);
+      await approveOne(row, remark);
       message.success(t('advertising.common.operateSuccess'));
       fetchData();
     } catch (e) {
       message.error((e as Error).message || '操作失败');
     }
+  }
+
+  async function detailApprove() {
+    if (!currentDetailRow.value) return;
+    detailApproving.value = true;
+    try {
+      await approveOne(currentDetailRow.value, detailOpinion.value);
+      message.success(t('advertising.common.operateSuccess'));
+      detailVisible.value = false;
+      fetchData();
+    } catch (e) {
+      message.error((e as Error).message || '操作失败');
+    } finally {
+      detailApproving.value = false;
+    }
+  }
+
+  async function detailReject() {
+    if (!currentDetailRow.value) return;
+    detailRejecting.value = true;
+    try {
+      await rejectOne(currentDetailRow.value, detailOpinion.value);
+      message.success(t('advertising.common.operateSuccess'));
+      detailVisible.value = false;
+      fetchData();
+    } catch (e) {
+      message.error((e as Error).message || '操作失败');
+    } finally {
+      detailRejecting.value = false;
+    }
+  }
+
+  function closeDetail() {
+    detailVisible.value = false;
   }
 
   // 各类型「审批通过」对应后端权限码
@@ -645,6 +718,8 @@
     const id = row.businessId || row.id;
     const { type } = row;
     if (!id || !type) return;
+    currentDetailRow.value = row;
+    detailOpinion.value = '';
     detailVisible.value = true;
     detailLoading.value = true;
     detailBaseFields.value = [];

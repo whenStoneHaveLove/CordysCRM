@@ -366,6 +366,8 @@ export default {
   'advertising.approval.rejectRemark': 'Reject reason',
   'advertising.approval.detail': 'Detail',
   'advertising.approval.detail.title': 'Approval Detail',
+  'advertising.approval.opinion': 'Approval Opinion',
+  'advertising.approval.opinionPlaceholder': 'Enter approval opinion (approve/reject)',
 
   // Report Center
   'module.advertising.report': 'Report Center',
