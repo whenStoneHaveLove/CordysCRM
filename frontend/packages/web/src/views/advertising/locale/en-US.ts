@@ -489,6 +489,7 @@ export default {
   'advertising.log.action.APPROVE_ARCHIVE': 'Approve Archive',
   'advertising.log.action.REJECT_ARCHIVE': 'Reject Archive',
   'advertising.log.action.OVERDUE_AUTO_50_TO_80': 'Overdue Auto Settle',
+  'advertising.log.action.PAY': 'Pay',
   'advertising.log.detail': 'Log Detail',
   'advertising.log.beforeChange': 'Before',
   'advertising.log.afterChange': 'After',

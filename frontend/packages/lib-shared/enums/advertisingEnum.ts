@@ -155,18 +155,22 @@ export const AdReceiptTypeOptions = Object.keys(AdReceiptTypeLabel).map((k) => (
   value: Number(k),
 }));
 
-/** 付款单状态。 */
+/** 付款单状态。
+ *
+ * V3.1.1 流程调整：去掉「驳回」中间态（驳回后直接回草稿），
+ * 「审核通过」改为「待付款」语义，由「付款」动作回写订单金额并置为「已付款」。
+ */
 export enum AdPayoutStatusEnum {
   DRAFT = 0,
   PENDING_APPROVAL = 10,
-  APPROVED = 20,
-  REJECTED = 30,
+  PENDING_PAYMENT = 20,
+  PAID = 30,
 }
 export const AdPayoutStatusLabel: Record<number, string> = {
   [AdPayoutStatusEnum.DRAFT]: '草稿',
   [AdPayoutStatusEnum.PENDING_APPROVAL]: '待审核',
-  [AdPayoutStatusEnum.APPROVED]: '审核通过',
-  [AdPayoutStatusEnum.REJECTED]: '驳回',
+  [AdPayoutStatusEnum.PENDING_PAYMENT]: '待付款',
+  [AdPayoutStatusEnum.PAID]: '已付款',
 };
 export const AdPayoutStatusOptions = Object.keys(AdPayoutStatusLabel).map((k) => ({
   label: AdPayoutStatusLabel[Number(k)],

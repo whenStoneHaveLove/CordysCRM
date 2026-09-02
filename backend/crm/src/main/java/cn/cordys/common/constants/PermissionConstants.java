@@ -305,6 +305,8 @@ public class PermissionConstants {
     public static final String AD_PAYOUT_UPDATE = "AD_PAYOUT:UPDATE";
     public static final String AD_PAYOUT_DELETE = "AD_PAYOUT:DELETE";
     public static final String AD_PAYOUT_APPROVE = "AD_PAYOUT:APPROVE";
+    /** 付款（待付款 → 已付款），需在「系统-角色权限」中分配。 */
+    public static final String AD_PAYOUT_PAY = "AD_PAYOUT:PAY";
     /*------ end: AD_PAYOUT ------*/
 
     /*------ start: AD_CONTRACT（§3.3 / §9.3） ------*/

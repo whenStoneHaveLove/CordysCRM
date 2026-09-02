@@ -516,7 +516,8 @@
           { "id": "AD_PAYOUT:CREATE" },
           { "id": "AD_PAYOUT:UPDATE" },
           { "id": "AD_PAYOUT:DELETE" },
-          { "id": "AD_PAYOUT:APPROVE" }
+          { "id": "AD_PAYOUT:APPROVE" },
+          { "id": "AD_PAYOUT:PAY" }
         ]
       },
       {

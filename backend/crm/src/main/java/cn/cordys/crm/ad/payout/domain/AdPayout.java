@@ -33,7 +33,7 @@ public class AdPayout extends BaseModel {
     @Schema(description = "类型:10普通付款/20坏账")
     private Integer type = 10;
 
-    @Schema(description = "状态:0草稿/10待审核/20审核通过/30驳回")
+    @Schema(description = "状态:0草稿/10待审核/20待付款/30已付款")
     private Integer status = 0;
 
     @Schema(description = "勾选的id列表(JSON数组，默认全部)")
@@ -50,6 +50,15 @@ public class AdPayout extends BaseModel {
 
     @Schema(description = "审批备注")
     private String approveRemark;
+
+    @Schema(description = "付款人")
+    private String payUser;
+
+    @Schema(description = "付款时间")
+    private Long payTime;
+
+    @Schema(description = "付款备注")
+    private String payRemark;
 
     @Schema(description = "备注")
     private String remark;

@@ -7,6 +7,7 @@ import cn.cordys.context.OrganizationContext;
 import cn.cordys.crm.ad.payout.domain.AdPayout;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutApproveRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutPageRequest;
+import cn.cordys.crm.ad.payout.dto.request.AdPayoutPayRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutSaveRequest;
 import cn.cordys.crm.ad.payout.dto.response.AdPayoutDetailResponse;
 import cn.cordys.crm.ad.payout.dto.response.AdPayoutListResponse;
@@ -73,6 +74,13 @@ public class AdPayoutController {
     @Operation(summary = "审核付款单（通过/驳回）")
     public AdPayout approve(@PathVariable("id") String id, @RequestBody AdPayoutApproveRequest request) {
         return adPayoutService.approve(id, request, userId(), orgId());
+    }
+
+    @PutMapping("/{id}/pay")
+    @CsPermission(PermissionConstants.AD_PAYOUT_PAY)
+    @Operation(summary = "付款（待付款→已付款，回写订单金额）")
+    public AdPayout pay(@PathVariable("id") String id, @RequestBody(required = false) AdPayoutPayRequest request) {
+        return adPayoutService.pay(id, request, userId(), orgId());
     }
 
     @GetMapping("/{id}")

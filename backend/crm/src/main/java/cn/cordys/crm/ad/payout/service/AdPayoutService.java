@@ -19,6 +19,7 @@ import cn.cordys.crm.ad.payout.domain.AdPayout;
 import cn.cordys.crm.ad.payout.domain.AdPaymentMedia;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutMediaDetail;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutApproveRequest;
+import cn.cordys.crm.ad.payout.dto.request.AdPayoutPayRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutPageRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutSaveRequest;
 import cn.cordys.crm.ad.payout.dto.response.AdPayoutDetailResponse;
@@ -42,8 +43,9 @@ import java.util.List;
 /**
  * 广告付款单服务。
  *
- * <p>一个订单对应一个付款单，可勾选多个（默认全部）。流程：新建(草稿)→保存→编辑→提交(待审核)→审核通过/驳回。
- * 审核通过后：订单 media_paid_amount += amount，并置 payment_done=1。</p>
+ * <p>一个订单对应一个付款单，可勾选多个（默认全部）。流程：
+ * 新建(草稿)→保存→编辑→提交(待审核)→审核通过(待付款)/驳回(草稿)→付款(已付款)。
+ * 审核通过只更新付款单状态；付款动作才会回写订单 media_paid_amount 并置 payment_done=1。</p>
  */
 @Slf4j
 @Service
@@ -100,7 +102,7 @@ public class AdPayoutService {
         return p;
     }
 
-    /** 编辑（仅草稿/驳回状态可编辑）。 */
+    /** 编辑（仅草稿状态可编辑）。 */
     @OperationLog(module = "AD_PAYOUT", action = "UPDATE", targetId = "#request.id")
     public AdPayout update(AdPayoutSaveRequest request, String userId, String orgId) {
         if (request.getId() == null || request.getId().isBlank()) {
@@ -108,8 +110,8 @@ public class AdPayoutService {
         }
         validate(request);
         AdPayout p = requirePayout(request.getId());
-        if (p.getStatus() != PayoutStatus.DRAFT.getCode() && p.getStatus() != PayoutStatus.REJECTED.getCode()) {
-            throw new GenericException("仅草稿或驳回状态的付款单可编辑");
+        if (p.getStatus() != PayoutStatus.DRAFT.getCode()) {
+            throw new GenericException("仅草稿状态的付款单可编辑");
         }
         p.setBillType(PayoutBillType.ofOrDefault(request.getBillType()).getCode());
         p.setOrderId(request.getOrderId());
@@ -130,12 +132,12 @@ public class AdPayoutService {
         return p;
     }
 
-    /** 提交（草稿/驳回 → 待审核）。 */
+    /** 提交（草稿 → 待审核）。 */
     @OperationLog(module = "AD_PAYOUT", action = "SUBMIT", targetId = "#id")
     public AdPayout submit(String id, String userId, String orgId) {
         AdPayout p = requirePayout(id);
-        if (p.getStatus() != PayoutStatus.DRAFT.getCode() && p.getStatus() != PayoutStatus.REJECTED.getCode()) {
-            throw new GenericException("仅草稿或驳回状态的付款单可提交");
+        if (p.getStatus() != PayoutStatus.DRAFT.getCode()) {
+            throw new GenericException("仅草稿状态的付款单可提交");
         }
         p.setStatus(PayoutStatus.PENDING_APPROVAL.getCode());
         p.setUpdateUser(userId);
@@ -144,7 +146,11 @@ public class AdPayoutService {
         return p;
     }
 
-    /** 审核通过/驳回。通过后回写订单金额并置 payment_done=1。 */
+    /**
+     * 审核通过/驳回。
+     * 通过：仅更新付款单状态为「待付款」，不回写订单金额——订单金额由「付款」动作回写。
+     * 驳回：直接回到草稿状态（去掉中间态），可重新编辑/提交。
+     */
     @OperationLog(module = "AD_PAYOUT", action = "APPROVE", targetId = "#id")
     public AdPayout approve(String id, AdPayoutApproveRequest request, String userId, String orgId) {
         AdPayout p = requirePayout(id);
@@ -159,16 +165,36 @@ public class AdPayoutService {
         p.setUpdateTime(System.currentTimeMillis());
 
         if (reject) {
-            p.setStatus(PayoutStatus.REJECTED.getCode());
-            payoutMapper.update(p);
-            return p;
+            // 驳回直接回草稿
+            p.setStatus(PayoutStatus.DRAFT.getCode());
+        } else {
+            p.setStatus(PayoutStatus.PENDING_PAYMENT.getCode());
         }
+        payoutMapper.update(p);
+        return p;
+    }
 
-        p.setStatus(PayoutStatus.APPROVED.getCode());
+    /**
+     * 付款（待付款 → 已付款），仅订单类型回写订单金额。
+     */
+    @OperationLog(module = "AD_PAYOUT", action = "PAY", targetId = "#id")
+    public AdPayout pay(String id, AdPayoutPayRequest request, String userId, String orgId) {
+        AdPayout p = requirePayout(id);
+        if (p.getStatus() != PayoutStatus.PENDING_PAYMENT.getCode()) {
+            throw new GenericException("仅待付款状态的付款单可付款");
+        }
+        long now = System.currentTimeMillis();
+        p.setStatus(PayoutStatus.PAID.getCode());
+        p.setPayUser(userId);
+        p.setPayTime(now);
+        p.setPayRemark(request == null ? null : request.getPayRemark());
+        p.setUpdateUser(userId);
+        p.setUpdateTime(now);
         payoutMapper.update(p);
 
-        // 回写订单：仅订单类型（非订单类型无关联订单）
-        if (PayoutBillType.ofOrDefault(p.getBillType()).isOrder() && p.getOrderId() != null && !p.getOrderId().isBlank()) {
+        // 仅订单类型回写订单金额
+        if (PayoutBillType.ofOrDefault(p.getBillType()).isOrder()
+                && p.getOrderId() != null && !p.getOrderId().isBlank()) {
             AdOrder order = extAdOrderMapper.selectByPrimaryKey(p.getOrderId());
             if (order != null) {
                 BigDecimal added = p.getAmount() == null ? BigDecimal.ZERO : p.getAmount();
@@ -176,7 +202,7 @@ public class AdPayoutService {
                 order.setMediaPaidAmount(current.add(added));
                 order.setPaymentDone(1);
                 order.setUpdateUser(userId);
-                order.setUpdateTime(System.currentTimeMillis());
+                order.setUpdateTime(now);
                 extAdOrderMapper.update(order);
             }
         }
@@ -209,6 +235,9 @@ public class AdPayoutService {
         resp.setApproveUser(p.getApproveUser());
         resp.setApproveTime(p.getApproveTime());
         resp.setApproveRemark(p.getApproveRemark());
+        resp.setPayUser(p.getPayUser());
+        resp.setPayTime(p.getPayTime());
+        resp.setPayRemark(p.getPayRemark());
 
         // 订单信息 + 关联合同（非订单类型无订单，跳过）
         if (PayoutBillType.ofOrDefault(p.getBillType()).isOrder()
@@ -314,12 +343,12 @@ public class AdPayoutService {
         return PageUtils.setPageInfoWithOption(page, list, null);
     }
 
-    /** 逻辑删除（仅草稿/驳回可删）。 */
+    /** 逻辑删除（仅草稿可删）。 */
     @OperationLog(module = "AD_PAYOUT", action = "DELETE", targetId = "#id")
     public void delete(String id, String userId, String orgId) {
         AdPayout p = requirePayout(id);
-        if (p.getStatus() != PayoutStatus.DRAFT.getCode() && p.getStatus() != PayoutStatus.REJECTED.getCode()) {
-            throw new GenericException("仅草稿或驳回状态的付款单可删除");
+        if (p.getStatus() != PayoutStatus.DRAFT.getCode()) {
+            throw new GenericException("仅草稿状态的付款单可删除");
         }
         p.setDeleted(1);
         p.setUpdateUser(userId);

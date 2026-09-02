@@ -207,6 +207,22 @@
       </template>
     </n-modal>
 
+    <!-- 付款弹窗（待付款 → 已付款，需 AD_PAYOUT:PAY 权限） -->
+    <n-modal v-model:show="showPay" preset="card" title="付款" style="width: 480px">
+      <n-space vertical>
+        <div>
+          <div class="action-modal-label">付款备注</div>
+          <n-input v-model:value="payRemark" type="textarea" :rows="3" placeholder="请输入付款备注" />
+        </div>
+      </n-space>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showPay = false">取消</n-button>
+          <n-button v-permission="['AD_PAYOUT:PAY']" type="primary" :loading="paying" @click="doPay">付款</n-button>
+        </n-space>
+      </template>
+    </n-modal>
+
     <!-- 详情弹窗 -->
     <n-modal v-model:show="showDetail" preset="card" title="付款单详情" style="width: 760px">
       <n-spin :show="detailLoading">
@@ -231,6 +247,9 @@
           <n-descriptions-item label="审批人">{{ getUserName(detail.approveUser) }}</n-descriptions-item>
           <n-descriptions-item label="审批时间">{{ fmtDateTime(detail.approveTime) }}</n-descriptions-item>
           <n-descriptions-item label="审批备注" :span="2">{{ detail.approveRemark || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="付款人">{{ getUserName(detail.payUser) }}</n-descriptions-item>
+          <n-descriptions-item label="付款时间">{{ fmtDateTime(detail.payTime) }}</n-descriptions-item>
+          <n-descriptions-item label="付款备注" :span="2">{{ detail.payRemark || '-' }}</n-descriptions-item>
         </n-descriptions>
 
         <template v-if="detail.billType !== 20 && detail.orderId">
@@ -359,6 +378,7 @@
     getAdPayoutMedia,
     getAdPayoutPage,
     getAdPayoutRemaining,
+    payAdPayout,
     submitAdPayout,
     updateAdPayout,
   } from '@/api/modules';
@@ -862,13 +882,37 @@
     saving.value = true;
     try {
       await approveAdPayout(approveId.value, { action, remark: approveRemark.value });
-      message.success(action === 'APPROVE' ? '已通过' : '已驳回');
+      message.success(action === 'APPROVE' ? '已通过' : '已驳回，已退回草稿');
       showApprove.value = false;
       fetchData();
     } catch (e) {
       message.error((e as Error).message || '操作失败');
     } finally {
       saving.value = false;
+    }
+  }
+
+  /* ========== 付款（待付款 → 已付款） ========== */
+  const showPay = ref(false);
+  const payId = ref('');
+  const payRemark = ref('');
+  const paying = ref(false);
+  function openPay(row: AdPayoutInfo) {
+    payId.value = row.id!;
+    payRemark.value = '';
+    showPay.value = true;
+  }
+  async function doPay() {
+    paying.value = true;
+    try {
+      await payAdPayout(payId.value, { payRemark: payRemark.value });
+      message.success('付款成功');
+      showPay.value = false;
+      fetchData();
+    } catch (e) {
+      message.error((e as Error).message || '付款失败');
+    } finally {
+      paying.value = false;
     }
   }
 
@@ -879,9 +923,9 @@
       case 10:
         return 'warning';
       case 20:
-        return 'success';
+        return 'info';
       case 30:
-        return 'error';
+        return 'success';
       default:
         return 'default';
     }
@@ -952,7 +996,8 @@
             default: () => {
               const actions: any[] = [];
               actions.push(h(NButton, { size: 'small', onClick: () => openDetail(row) }, { default: () => '详情' }));
-              if (row.status === 0 || row.status === 30) {
+              // 草稿：可编辑、可提交
+              if (row.status === 0) {
                 actions.push(
                   withDirectives(
                     h(
@@ -972,6 +1017,7 @@
                   )
                 );
               }
+              // 待审核：审批
               if (row.status === 10) {
                 actions.push(
                   withDirectives(
@@ -984,6 +1030,20 @@
                   )
                 );
               }
+              // 待付款：付款（需独立权限点 AD_PAYOUT:PAY）
+              if (row.status === 20) {
+                actions.push(
+                  withDirectives(
+                    h(
+                      NButton,
+                      { size: 'small', type: 'primary', onClick: () => openPay(row) },
+                      { default: () => '付款' }
+                    ),
+                    [[permissionDirective, ['AD_PAYOUT:PAY']]]
+                  )
+                );
+              }
+              // 已付款：只展示详情
               return actions;
             },
           }

@@ -42,7 +42,7 @@ public class AdPayoutDetailResponse {
     @Schema(description = "类型标签")
     private String typeLabel;
 
-    @Schema(description = "状态:0草稿/10待审核/20审核通过/30驳回")
+    @Schema(description = "状态:0草稿/10待审核/20待付款/30已付款")
     private Integer status;
 
     @Schema(description = "状态标签")
@@ -78,6 +78,15 @@ public class AdPayoutDetailResponse {
 
     @Schema(description = "审批备注")
     private String approveRemark;
+
+    @Schema(description = "付款人")
+    private String payUser;
+
+    @Schema(description = "付款时间")
+    private Long payTime;
+
+    @Schema(description = "付款备注")
+    private String payRemark;
 
     /* ---- 关联订单信息 ---- */
     @Schema(description = "订单编号")

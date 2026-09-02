@@ -1,20 +1,21 @@
 import type { CordysAxios } from '@lib/shared/api/http/Axios';
 import {
   AdPayoutCreateUrl,
-  AdPayoutUpdateUrl,
   AdPayoutDetailUrl,
+  AdPayoutMediaUrl,
   AdPayoutPageUrl,
   AdPayoutRemainingUrl,
-  AdPayoutMediaUrl,
+  AdPayoutUpdateUrl,
 } from '@lib/shared/api/requrls/adPayout';
 import type {
-  AdPayoutSaveParams,
   AdPayoutApproveParams,
+  AdPayoutDetail,
+  AdPayoutInfo,
+  AdPayoutMediaOption,
   AdPayoutPageParams,
   AdPayoutPageResult,
-  AdPayoutInfo,
-  AdPayoutDetail,
-  AdPayoutMediaOption,
+  AdPayoutPayParams,
+  AdPayoutSaveParams,
 } from '@lib/shared/models/advertising';
 
 export default function useAdPayoutApi(CDR: CordysAxios) {
@@ -36,6 +37,11 @@ export default function useAdPayoutApi(CDR: CordysAxios) {
   // 审核付款单
   function approveAdPayout(id: string, data: AdPayoutApproveParams) {
     return CDR.put<AdPayoutInfo>({ url: `${AdPayoutUpdateUrl}/${id}/approve`, data });
+  }
+
+  // 付款（待付款 → 已付款）
+  function payAdPayout(id: string, data: AdPayoutPayParams) {
+    return CDR.put<AdPayoutInfo>({ url: `${AdPayoutUpdateUrl}/${id}/pay`, data });
   }
 
   // 付款单详情
@@ -70,6 +76,7 @@ export default function useAdPayoutApi(CDR: CordysAxios) {
     updateAdPayout,
     submitAdPayout,
     approveAdPayout,
+    payAdPayout,
     getAdPayoutDetail,
     getAdPayoutRemaining,
     getAdPayoutMedia,

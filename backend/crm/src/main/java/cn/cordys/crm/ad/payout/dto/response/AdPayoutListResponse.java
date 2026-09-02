@@ -42,7 +42,7 @@ public class AdPayoutListResponse {
     @Schema(description = "类型标签")
     private String typeLabel;
 
-    @Schema(description = "状态:0草稿/10待审核/20审核通过/30驳回")
+    @Schema(description = "状态:0草稿/10待审核/20待付款/30已付款")
     private Integer status;
 
     @Schema(description = "状态标签")

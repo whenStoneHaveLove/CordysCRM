@@ -1080,6 +1080,10 @@ export interface AdPayoutApproveParams {
   remark?: string;
 }
 
+export interface AdPayoutPayParams {
+  payRemark?: string;
+}
+
 export interface AdPayoutPageParams {
   current?: number;
   pageSize?: number;
@@ -1137,6 +1141,9 @@ export interface AdPayoutDetail {
   approveUser?: string;
   approveTime?: number;
   approveRemark?: string;
+  payUser?: string;
+  payTime?: number;
+  payRemark?: string;
   orderNo?: string;
   orderName?: string;
   contracts?: AdContractBriefInfo[];

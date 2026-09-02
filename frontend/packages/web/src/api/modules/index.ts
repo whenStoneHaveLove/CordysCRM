@@ -927,6 +927,7 @@ export const {
   updateAdPayout,
   submitAdPayout,
   approveAdPayout,
+  payAdPayout,
   getAdPayoutDetail,
   getAdPayoutRemaining,
   getAdPayoutMedia,
