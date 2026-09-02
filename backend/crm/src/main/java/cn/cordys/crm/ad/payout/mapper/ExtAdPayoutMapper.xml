@@ -27,6 +27,9 @@
         <if test="request.status != null">
             AND p.status = #{request.status}
         </if>
+        <if test="request.billType != null">
+            AND p.bill_type = #{request.billType}
+        </if>
         <if test="request.type != null">
             AND p.type = #{request.type}
         </if>

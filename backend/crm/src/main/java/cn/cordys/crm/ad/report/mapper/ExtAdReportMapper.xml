@@ -61,6 +61,8 @@
              WHERE p.organization_id = #{organizationId} AND p.deleted = 0 AND p.status = 0)  AS payoutDraft,
             (SELECT COUNT(1) FROM ad_payment p
              WHERE p.organization_id = #{organizationId} AND p.deleted = 0 AND p.status = 10) AS payoutApprove,
+            (SELECT COUNT(1) FROM ad_payment p
+             WHERE p.organization_id = #{organizationId} AND p.deleted = 0 AND p.status = 20) AS payoutPending,
             (SELECT COUNT(1) FROM ad_contract c
              WHERE c.organization_id = #{organizationId} AND c.deleted = 0 AND c.seal_status = 0)  AS sealApply,
             (SELECT COUNT(1) FROM ad_seal_record s

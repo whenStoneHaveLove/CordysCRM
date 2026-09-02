@@ -132,7 +132,8 @@ public class AdDashboardService {
         }
         if (roles.contains("FINANCE")) {
             todos.put("FINANCE", List.of(
-                    item("receiptDraft", "待提交收款单", num(counts, "receiptDraft"), "/advertising/order-management/receipt?status=0")
+                    item("receiptDraft", "待提交收款单", num(counts, "receiptDraft"), "/advertising/order-management/receipt?status=0"),
+                    item("payoutPending", "待确认付款单", num(counts, "payoutPending"), "/advertising/order-management/payout?status=20")
             ));
         }
 

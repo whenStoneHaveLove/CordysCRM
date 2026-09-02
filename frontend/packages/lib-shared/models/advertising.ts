@@ -956,6 +956,7 @@ export interface AdReceiptPageParams {
   orderId?: string;
   status?: number | null;
   type?: number | null;
+  billType?: number | null;
   [key: string]: any;
 }
 
@@ -1092,6 +1093,7 @@ export interface AdPayoutPageParams {
   orderId?: string;
   status?: number | null;
   type?: number | null;
+  billType?: number | null;
   [key: string]: any;
 }
 

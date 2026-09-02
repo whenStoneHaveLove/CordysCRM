@@ -23,6 +23,13 @@
           clearable
           style="width: 140px"
         />
+        <n-select
+          v-model:value="searchForm.billType"
+          :options="billTypeOptions"
+          placeholder="付款单类型"
+          clearable
+          style="width: 160px"
+        />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">重置</n-button>
         <n-button v-permission="['AD_PAYOUT:CREATE']" type="primary" @click="openCreate">新建付款</n-button>
@@ -406,6 +413,7 @@
   const searchForm = reactive({
     keyword: '',
     status: null as number | null,
+    billType: null as number | null,
     type: null as number | null,
   });
 
@@ -436,6 +444,7 @@
         pageSize: pagination.pageSize,
         keyword: searchForm.keyword || undefined,
         status: searchForm.status,
+        billType: searchForm.billType,
         type: searchForm.type,
       };
       const res = await getAdPayoutPage(params);
@@ -1058,6 +1067,7 @@
   function handleReset() {
     searchForm.keyword = '';
     searchForm.status = null;
+    searchForm.billType = null;
     searchForm.type = null;
     handleSearch();
   }
@@ -1065,6 +1075,7 @@
   function applyQuery() {
     const q = router.currentRoute.value.query;
     if (q.status != null && q.status !== '') searchForm.status = Number(q.status);
+    if (q.billType != null && q.billType !== '') searchForm.billType = Number(q.billType);
     if (q.type != null && q.type !== '') searchForm.type = Number(q.type);
   }
 

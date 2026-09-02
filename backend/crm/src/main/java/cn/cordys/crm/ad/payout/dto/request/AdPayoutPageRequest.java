@@ -24,9 +24,12 @@ public class AdPayoutPageRequest extends BasePageRequest {
     @Schema(description = "关联订单")
     private String orderId;
 
-    @Schema(description = "状态:0草稿/10待审核/20审核通过/30驳回")
+    @Schema(description = "状态:0草稿/10待审核/20待付款/30已付款")
     private Integer status;
 
     @Schema(description = "类型:10普通付款/20坏账")
     private Integer type;
+
+    @Schema(description = "付款单类型:10订单一类/20非订单一类")
+    private Integer billType;
 }

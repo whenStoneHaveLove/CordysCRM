@@ -184,6 +184,7 @@
       archiveApprove: 'iconicon_folder_open',
       receiptApprove: 'iconicon_money_circle',
       payoutApprove: 'iconicon_money_circle',
+      payoutPending: 'iconicon_creditcard',
       receiptDraft: 'iconicon_money_circle',
     };
     return map[key || ''] || 'iconicon_file';
