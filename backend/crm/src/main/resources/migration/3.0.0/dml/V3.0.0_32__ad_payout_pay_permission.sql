@@ -1,6 +1,6 @@
 -- ============================================================
 -- 广告付款单付款权限分配（DML）
--- 版本: 3.0.0.21  描述: AD_PAYOUT:PAY 权限授予 org_admin
+-- 版本: 3.0.0.32  描述: AD_PAYOUT:PAY 权限授予 org_admin
 -- 说明:
 --   1) 新权限点 AD_PAYOUT:PAY（付款：待付款 → 已付款），需在「系统-角色权限」中分配。
 --   2) 三处一致红线：PermissionConstants.java == permission.json == 本脚本。
