@@ -32,4 +32,7 @@ public class AdPayoutPageRequest extends BasePageRequest {
 
     @Schema(description = "付款单类型:10订单一类/20非订单一类")
     private Integer billType;
+
+    @Schema(description = "下游客户id(筛选：通过下游客户反查付款单)")
+    private String downstreamMediaId;
 }

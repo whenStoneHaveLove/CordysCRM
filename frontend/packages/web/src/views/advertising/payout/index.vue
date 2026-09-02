@@ -414,6 +414,7 @@
     keyword: '',
     status: null as number | null,
     billType: null as number | null,
+    downstreamMediaId: null as string | null,
     type: null as number | null,
   });
 
@@ -445,6 +446,7 @@
         keyword: searchForm.keyword || undefined,
         status: searchForm.status,
         billType: searchForm.billType,
+        downstreamMediaId: searchForm.downstreamMediaId || undefined,
         type: searchForm.type,
       };
       const res = await getAdPayoutPage(params);
@@ -984,6 +986,7 @@
       render: (row) => h('span', row.billTypeLabel || getAdPayoutBillTypeLabel(row.billType)),
     },
     { key: 'orderName', title: '关联订单', minWidth: 160, ellipsis: { tooltip: true } },
+    { key: 'mediaNames', title: '下游客户', minWidth: 160, ellipsis: { tooltip: true }, render: (row) => h('span', row.mediaNames || '-') },
     { key: 'amount', title: '付款金额', width: 120, render: (row) => h('span', `¥${row.amount ?? 0}`) },
     { key: 'paymentTime', title: '付款时间', width: 110, render: (row) => h('span', fmtDate(row.paymentTime)) },
     { key: 'type', title: '类型', width: 100, render: (row) => h('span', getAdPayoutTypeLabel(row.type)) },
@@ -1070,6 +1073,7 @@
     searchForm.keyword = '';
     searchForm.status = null;
     searchForm.billType = null;
+    searchForm.downstreamMediaId = null;
     searchForm.type = null;
     handleSearch();
   }
@@ -1078,6 +1082,7 @@
     const q = router.currentRoute.value.query;
     if (q.status != null && q.status !== '') searchForm.status = Number(q.status);
     if (q.billType != null && q.billType !== '') searchForm.billType = Number(q.billType);
+    if (q.downstreamMediaId != null && q.downstreamMediaId !== '') searchForm.downstreamMediaId = String(q.downstreamMediaId);
     if (q.type != null && q.type !== '') searchForm.type = Number(q.type);
   }
 

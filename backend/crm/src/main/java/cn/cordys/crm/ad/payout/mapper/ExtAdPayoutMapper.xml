@@ -16,11 +16,21 @@
             p.type            AS type,
             p.status          AS status,
             p.remark          AS remark,
-            p.create_time     AS createTime
+            p.create_time     AS createTime,
+            (SELECT GROUP_CONCAT(DISTINCT m.media_name ORDER BY m.media_name SEPARATOR ',')
+             FROM ad_payment_media m
+             WHERE m.payment_id = p.id AND m.deleted = 0) AS mediaNames
         FROM ad_payment p
         LEFT JOIN ad_order o ON o.id = p.order_id AND o.deleted = 0
         WHERE p.organization_id = #{request.organizationId}
           AND p.deleted = 0
+        <if test="request.downstreamMediaId != null and request.downstreamMediaId != ''">
+            AND EXISTS (
+                SELECT 1 FROM ad_payment_media m
+                WHERE m.payment_id = p.id AND m.deleted = 0
+                  AND m.media_id = #{request.downstreamMediaId}
+            )
+        </if>
         <if test="request.orderId != null and request.orderId != ''">
             AND p.order_id = #{request.orderId}
         </if>

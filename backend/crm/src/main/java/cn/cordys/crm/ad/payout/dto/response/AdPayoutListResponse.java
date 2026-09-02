@@ -30,6 +30,9 @@ public class AdPayoutListResponse {
     @Schema(description = "订单名称")
     private String orderName;
 
+    @Schema(description = "下游客户名称(多个逗号分割)")
+    private String mediaNames;
+
     @Schema(description = "付款金额")
     private BigDecimal amount;
 
