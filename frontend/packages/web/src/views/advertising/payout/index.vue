@@ -599,10 +599,12 @@
   }
 
   function accountOptionsOf(m: AdPayoutMediaOption) {
-    const opts = (m.accountList || []).map((a) => ({
-      label: `${a.payeeName || ''} - ${a.bankName || ''} - ${a.bankAccount || ''}${a.disabled === 1 ? '（停用）' : ''}`,
-      value: a.id || '',
-    }));
+    const opts = (m.accountList || [])
+      .filter((a) => a.disabled !== 1)
+      .map((a) => ({
+        label: `${a.payeeName || ''} - ${a.bankName || ''} - ${a.bankAccount || ''}`,
+        value: a.id || '',
+      }));
     return opts;
   }
 

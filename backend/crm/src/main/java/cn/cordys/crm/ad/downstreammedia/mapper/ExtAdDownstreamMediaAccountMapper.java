@@ -27,6 +27,7 @@ public interface ExtAdDownstreamMediaAccountMapper {
             + " organization_id, create_time, update_time, create_user, update_user, deleted"
             + " FROM ad_downstream_media_account"
             + " WHERE deleted = 0"
+            + " AND disabled = 0"
             + " AND downstream_media_id IN"
             + " <foreach item='mid' collection='downstreamMediaIds' open='(' separator=',' close=')'>"
             + " #{mid}"
