@@ -116,39 +116,41 @@
             </template>
           </template>
           <n-empty v-else-if="!detailLoading" :description="t('advertising.approval.empty')" />
-        </n-spin>
 
-        <!-- 详情页底部审批栏：审批意见 + 取消/通过/驳回 -->
-        <template #footer>
-          <div v-if="currentDetailRow && canApproveDetail" class="detail-approve-footer">
-            <n-input
-              v-model:value="detailOpinion"
-              type="textarea"
-              :autosize="{ minRows: 2, maxRows: 4 }"
-              :placeholder="t('advertising.approval.opinionPlaceholder')"
-              style="flex: 1"
-            />
-            <n-space align="center" :size="8" style="margin-left: 12px">
-              <n-button @click="closeDetail">{{ t('advertising.common.cancel') }}</n-button>
-              <n-button
-                v-if="hasPermission(rejectPermissionOf(currentDetailRow.type))"
-                type="error"
-                :loading="detailRejecting"
-                @click="detailReject"
-              >
-                {{ t('advertising.approval.reject') }}
-              </n-button>
-              <n-button
-                v-if="hasPermission(approvePermissionOf(currentDetailRow.type))"
-                type="primary"
-                :loading="detailApproving"
-                @click="detailApprove"
-              >
-                {{ t('advertising.approval.approve') }}
-              </n-button>
-            </n-space>
-          </div>
-        </template>
+          <!-- 详情页审批栏：放在其他字段下方，审批意见 + 取消/通过/驳回 -->
+          <template v-if="currentDetailRow && canApproveDetail && detailBaseFields.length">
+            <n-divider />
+            <div class="detail-approve-section">
+              <div class="detail-approve-label">{{ t('advertising.approval.opinion') }}</div>
+              <n-input
+                v-model:value="detailOpinion"
+                type="textarea"
+                :autosize="{ minRows: 4, maxRows: 6 }"
+                :placeholder="t('advertising.approval.opinionPlaceholder')"
+                class="detail-approve-input"
+              />
+              <n-space justify="center" align="center" :size="16" class="detail-approve-actions">
+                <n-button @click="closeDetail">{{ t('advertising.common.cancel') }}</n-button>
+                <n-button
+                  v-if="hasPermission(approvePermissionOf(currentDetailRow.type))"
+                  type="primary"
+                  :loading="detailApproving"
+                  @click="detailApprove"
+                >
+                  {{ t('advertising.approval.approve') }}
+                </n-button>
+                <n-button
+                  v-if="hasPermission(rejectPermissionOf(currentDetailRow.type))"
+                  type="error"
+                  :loading="detailRejecting"
+                  @click="detailReject"
+                >
+                  {{ t('advertising.approval.reject') }}
+                </n-button>
+              </n-space>
+            </div>
+          </template>
+        </n-spin>
       </n-drawer-content>
     </n-drawer>
   </div>
@@ -843,5 +845,21 @@
   .after-value {
     color: #18a058;
     word-break: break-all;
+  }
+  .detail-approve-section {
+    margin-top: 8px;
+  }
+  .detail-approve-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(31, 34, 37, 0.9);
+    margin-bottom: 8px;
+  }
+  .detail-approve-input {
+    width: 100%;
+    margin-bottom: 16px;
+  }
+  .detail-approve-actions {
+    width: 100%;
   }
 </style>
