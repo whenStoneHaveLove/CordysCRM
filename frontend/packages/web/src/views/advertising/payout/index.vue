@@ -30,6 +30,16 @@
           clearable
           style="width: 160px"
         />
+        <n-select
+          v-model:value="searchForm.downstreamMediaId"
+          :options="allMediaOptions"
+          :loading="mediaListLoading"
+          placeholder="下游客户"
+          clearable
+          filterable
+          style="width: 180px"
+          @focus="loadAllMedia"
+        />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">重置</n-button>
         <n-button v-permission="['AD_PAYOUT:CREATE']" type="primary" @click="openCreate">新建付款</n-button>
@@ -1088,6 +1098,7 @@
 
   onMounted(() => {
     loadUserMap();
+    loadAllMedia();
     applyQuery();
     fetchData();
   });

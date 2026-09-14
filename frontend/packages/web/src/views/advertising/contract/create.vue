@@ -304,7 +304,7 @@
     try {
       const [beRes, orderRes] = await Promise.all([
         getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
-        getAdOrderPage({ current: 1, pageSize: 200 }),
+        getAdOrderPage({ current: 1, pageSize: 1000 }),
       ]);
       businessEntityOptions.value = (beRes.list || []).map((it) => ({
         label: it.name || it.id,

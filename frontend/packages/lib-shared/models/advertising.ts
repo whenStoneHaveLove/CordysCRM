@@ -1112,6 +1112,8 @@ export interface AdPayoutInfo {
   status?: number;
   statusLabel?: string;
   mediaIds?: string;
+  /** 下游客户名称（逗号分隔） */
+  mediaNames?: string;
   voucherUrl?: string;
   approveUser?: string;
   approveTime?: number;
@@ -1134,6 +1136,8 @@ export interface AdPayoutDetail {
   status?: number;
   statusLabel?: string;
   mediaIds?: string;
+  /** 下游客户名称（逗号分隔） */
+  mediaNames?: string;
   voucherUrl?: string;
   remark?: string;
   createUser?: string;
