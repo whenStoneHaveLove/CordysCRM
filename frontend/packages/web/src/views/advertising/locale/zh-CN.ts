@@ -33,6 +33,8 @@ export default {
   'advertising.order.column.mediaPayable': '应付金额',
   'advertising.order.column.actualMediaPayable': '实际应付',
   'advertising.order.column.mediaRebate': '应付返点',
+  'advertising.order.column.receivableRebateRatio': '应收返点比例',
+  'advertising.order.column.payableRebateRatio': '应付返点比例',
   'advertising.order.column.orderIncome': '订单收入',
   'advertising.order.column.rebate': '应收返点',
   'advertising.order.column.receiptMethod': '收款方式',

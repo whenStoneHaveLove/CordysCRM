@@ -114,6 +114,12 @@
           <n-descriptions-item :label="t('advertising.order.column.mediaRebate')">{{
             fmtAmount(detail.order.mediaRebateAmount)
           }}</n-descriptions-item>
+          <n-descriptions-item :label="t('advertising.order.column.receivableRebateRatio')">
+            {{ fmtRatio(receivableRebateRatio) }}
+          </n-descriptions-item>
+          <n-descriptions-item :label="t('advertising.order.column.payableRebateRatio')">
+            {{ fmtRatio(payableRebateRatio) }}
+          </n-descriptions-item>
           <n-descriptions-item :label="t('advertising.order.column.orderIncome')">{{
             fmtAmount(detail.order.orderIncomeAmount)
           }}</n-descriptions-item>
@@ -392,7 +398,7 @@
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
   import useUserMap from '../useUserMap';
-  import { fmtAmount, fmtDate, fmtDateTime } from '../utils';
+  import { calcRatio, fmtAmount, fmtDate, fmtDateTime, fmtRatio } from '../utils';
 
   const { t } = useI18n();
   const route = useRoute();
@@ -410,6 +416,16 @@
   const mediaPayableTotal = computed(() => {
     return (detail.value?.downstreamMediaPayables || []).reduce((sum, p) => sum + Number(p.payableAmount || 0), 0);
   });
+
+  // 应收返点比例 = 应收返点 / 订单金额
+  const receivableRebateRatio = computed(() =>
+    calcRatio(detail.value?.order.rebateAmount, detail.value?.order.totalAmount)
+  );
+
+  // 应付返点比例 = 应付返点 / 应付金额
+  const payableRebateRatio = computed(() =>
+    calcRatio(detail.value?.order.mediaRebateAmount, detail.value?.order.mediaPayableAmount)
+  );
 
   // 实际应付总额(返点后) = 各客户 (应付金额 - 返点金额) 累加
   const actualPayableTotal = computed(() => {

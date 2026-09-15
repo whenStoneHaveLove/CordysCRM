@@ -32,6 +32,8 @@ export default {
   'advertising.order.column.mediaPayable': 'Amount Payable',
   'advertising.order.column.actualMediaPayable': 'Actual Payable',
   'advertising.order.column.mediaRebate': 'Payable Rebate',
+  'advertising.order.column.receivableRebateRatio': 'Receivable Rebate Ratio',
+  'advertising.order.column.payableRebateRatio': 'Payable Rebate Ratio',
   'advertising.order.column.orderIncome': 'Order Income',
   'advertising.order.column.rebate': 'Receivable Rebate',
   'advertising.order.column.receiptMethod': 'Receipt Method',

@@ -26,6 +26,26 @@ export function fmtAmount(value?: number | string | null): string {
 }
 
 /**
+ * 比例格式化：入参已为百分比数值（如 5 表示 5%），保留两位小数并追加 %。
+ * 分母为 0 / 空 / 非数值时返回 '-'，避免出现 Infinity / NaN。
+ */
+export function fmtRatio(value?: number | string | null): string {
+  if (value == null || value === '') return '-';
+  const n = typeof value === 'string' ? Number(value) : value;
+  if (Number.isNaN(n) || !Number.isFinite(n)) return '-';
+  return `${n.toFixed(2)}%`;
+}
+
+/** 比率计算：denominator 为 0 / 空 / 非数值时返回 null。 */
+export function calcRatio(numerator?: number | string | null, denominator?: number | string | null): number | null {
+  const d = typeof denominator === 'string' ? Number(denominator) : denominator;
+  if (d == null || Number.isNaN(d) || d === 0) return null;
+  const n = typeof numerator === 'string' ? Number(numerator) : numerator;
+  if (n == null || Number.isNaN(n)) return null;
+  return (n / d) * 100;
+}
+
+/**
  * 后端部分数值字段以字符串形式返回（如 rateCard：DB 中为 VARCHAR(512)，后端 DTO 定义为 String）。
  * 回填到 Naive UI 数值控件（n-input-number，要求 number 类型）前统一转换为 number | null，
  * 避免控件显示空值或 NaN。非数值字符串安全回退为 null。
