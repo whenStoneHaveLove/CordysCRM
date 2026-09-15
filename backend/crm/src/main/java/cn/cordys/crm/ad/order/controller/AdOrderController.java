@@ -232,8 +232,9 @@ public class AdOrderController {
      * 默认导出列（字段 key，与前端列表页保持一致，排除操作列）。
      */
     private static final List<String> DEFAULT_HEAD_KEYS = Arrays.asList(
-            "orderNo", "orderName", "upstreamAgentName", "customerName", "orderType", "status",
+            "orderNo", "agentOrderNo", "orderName", "upstreamAgentName", "creatorName", "customerName", "orderType", "status",
             "totalAmount", "receivableAmount", "mediaPayableAmount", "rebateAmount",
+            "receivableRebateRatio", "payableRebateRatio",
             "receiptMethod", "paymentMethod", "deliveryStartDate", "deliveryEndDate", "createTime",
             "receiptDone", "paymentDone", "missingContract"
     );
@@ -258,10 +259,12 @@ public class AdOrderController {
     static {
         // key 统一用字段名（与前端 headList.key 一致），避免列名（中文 title）变更导致取值失败
         HEAD_VALUE_MAPPER.put("orderNo", AdOrderListResponse::getOrderNo);
+        HEAD_VALUE_MAPPER.put("agentOrderNo", AdOrderListResponse::getAgentOrderNo);
         HEAD_VALUE_MAPPER.put("orderName", AdOrderListResponse::getOrderName);
         HEAD_VALUE_MAPPER.put("businessEntityName", AdOrderListResponse::getBusinessEntityName);
         HEAD_VALUE_MAPPER.put("upstreamAgentName", AdOrderListResponse::getUpstreamAgentName);
         HEAD_VALUE_MAPPER.put("customerName", AdOrderListResponse::getCustomerName);
+        HEAD_VALUE_MAPPER.put("creatorName", AdOrderListResponse::getCreatorName);
         HEAD_VALUE_MAPPER.put("orderType", r -> {
             if (r.getOrderType() == null) return "";
             return OrderType.labelOf(r.getOrderType());
@@ -297,6 +300,14 @@ public class AdOrderController {
         HEAD_VALUE_MAPPER.put("rebateAmount", r -> {
             if (r.getRebateAmount() == null) return "";
             return r.getRebateAmount().toPlainString();
+        });
+        HEAD_VALUE_MAPPER.put("receivableRebateRatio", r -> {
+            if (r.getReceivableRebateRatio() == null) return "";
+            return r.getReceivableRebateRatio().toPlainString() + "%";
+        });
+        HEAD_VALUE_MAPPER.put("payableRebateRatio", r -> {
+            if (r.getPayableRebateRatio() == null) return "";
+            return r.getPayableRebateRatio().toPlainString() + "%";
         });
         HEAD_VALUE_MAPPER.put("receiptMethod", r -> {
             if (r.getReceiptMethod() == null) return "";

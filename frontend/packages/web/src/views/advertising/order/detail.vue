@@ -35,7 +35,7 @@
               v-permission="['AD_ORDER:CONFIRM_EXECUTE']"
               type="primary"
               @click="handleConfirmExecute"
-              >确认执行</n-button
+              >确认下单</n-button
             >
             <n-button
               v-if="detail.order.status !== 90 && detail.order.status !== 100"

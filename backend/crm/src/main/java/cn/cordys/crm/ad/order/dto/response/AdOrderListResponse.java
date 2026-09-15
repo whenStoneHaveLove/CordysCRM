@@ -22,6 +22,9 @@ public class AdOrderListResponse {
     @Schema(description = "订单名称")
     private String orderName;
 
+    @Schema(description = "代理订单号")
+    private String agentOrderNo;
+
     @Schema(description = "业务主体id")
     private String businessEntityId;
 
@@ -94,6 +97,9 @@ public class AdOrderListResponse {
     @Schema(description = "下单人")
     private String creatorId;
 
+    @Schema(description = "创建人姓名")
+    private String creatorName;
+
     @Schema(description = "创建时间")
     private Long createTime;
 
@@ -105,4 +111,10 @@ public class AdOrderListResponse {
 
     @Schema(description = "缺合同标记:0否/1是（LEFT JOIN ad_order_contract 计数）")
     private Integer missingContract;
+
+    @Schema(description = "应收返点比例(%)")
+    private BigDecimal receivableRebateRatio;
+
+    @Schema(description = "应付返点比例(%)")
+    private BigDecimal payableRebateRatio;
 }

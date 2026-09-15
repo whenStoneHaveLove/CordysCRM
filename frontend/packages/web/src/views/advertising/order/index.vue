@@ -9,6 +9,20 @@
           style="width: 220px"
           @keyup.enter="handleSearch"
         />
+        <n-input
+          v-model:value="searchForm.agentOrderNo"
+          :placeholder="t('advertising.order.column.agentOrderNo')"
+          clearable
+          style="width: 180px"
+          @keyup.enter="handleSearch"
+        />
+        <n-input
+          v-model:value="searchForm.creatorName"
+          :placeholder="t('advertising.order.column.creatorName')"
+          clearable
+          style="width: 120px"
+          @keyup.enter="handleSearch"
+        />
         <n-select
           v-model:value="searchForm.status"
           :placeholder="t('advertising.order.filter.status')"
@@ -143,6 +157,8 @@
   const list = ref<AdOrderListItem[]>([]);
   const searchForm = reactive({
     keyword: '',
+    agentOrderNo: '',
+    creatorName: '',
     status: null as number | null,
     orderType: null as number | null,
     receiptMethod: null as number | null,
@@ -179,6 +195,8 @@
         current: pagination.page,
         pageSize: pagination.pageSize,
         keyword: searchForm.keyword || undefined,
+        agentOrderNo: searchForm.agentOrderNo || undefined,
+        creatorName: searchForm.creatorName || undefined,
         status: searchForm.status,
         orderType: searchForm.orderType,
         receiptMethod: searchForm.receiptMethod,
@@ -234,6 +252,13 @@
       columnSelectorDisabled: true,
     },
     {
+      key: 'agentOrderNo',
+      title: t('advertising.order.column.agentOrderNo'),
+      width: 150,
+      ellipsis: { tooltip: true },
+      showInTable: true,
+    },
+    {
       key: 'orderName',
       title: t('advertising.order.column.orderName'),
       minWidth: 160,
@@ -252,6 +277,13 @@
       key: 'customerName',
       title: t('advertising.order.column.customer'),
       width: 120,
+      ellipsis: { tooltip: true },
+      showInTable: true,
+    },
+    {
+      key: 'creatorName',
+      title: t('advertising.order.column.creatorName'),
+      width: 100,
       ellipsis: { tooltip: true },
       showInTable: true,
     },
@@ -309,6 +341,24 @@
       align: 'right',
       showInTable: false,
       render: (row) => h('span', { style: 'display: block' }, fmtAmount(row.rebateAmount)),
+    },
+    {
+      key: 'receivableRebateRatio',
+      title: t('advertising.order.column.receivableRebateRatio'),
+      width: 120,
+      align: 'right',
+      showInTable: true,
+      render: (row) =>
+        row.receivableRebateRatio != null ? h('span', `${row.receivableRebateRatio}%`) : '',
+    },
+    {
+      key: 'payableRebateRatio',
+      title: t('advertising.order.column.payableRebateRatio'),
+      width: 120,
+      align: 'right',
+      showInTable: true,
+      render: (row) =>
+        row.payableRebateRatio != null ? h('span', `${row.payableRebateRatio}%`) : '',
     },
     {
       key: 'mediaRebateAmount',
@@ -539,6 +589,8 @@
   }
   function handleReset() {
     searchForm.keyword = '';
+    searchForm.agentOrderNo = '';
+    searchForm.creatorName = '';
     searchForm.status = null;
     searchForm.orderType = null;
     searchForm.receiptMethod = null;
@@ -590,6 +642,8 @@
         current: pagination.page,
         pageSize: pagination.pageSize,
         keyword: searchForm.keyword || undefined,
+        agentOrderNo: searchForm.agentOrderNo || undefined,
+        creatorName: searchForm.creatorName || undefined,
         status: searchForm.status,
         orderType: searchForm.orderType,
         receiptMethod: searchForm.receiptMethod,

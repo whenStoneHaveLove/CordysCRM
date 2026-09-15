@@ -23,6 +23,10 @@ export interface AdOrderPageParams {
   missingContract?: number | null;
   deliveryStartFrom?: number | null;
   deliveryStartTo?: number | null;
+  /** 代理订单号 */
+  agentOrderNo?: string;
+  /** 创建人 */
+  creatorName?: string;
   /** 导出表头（key+title），仅导出接口使用 */
   headList?: { key: string; title: string }[];
   [key: string]: any;
@@ -84,12 +88,14 @@ export interface AdOrderListItem {
   id: string;
   orderNo?: string;
   orderName?: string;
+  agentOrderNo?: string;
   businessEntityId?: string;
   businessEntityName?: string;
   upstreamAgentId?: string;
   upstreamAgentName?: string;
   customerId?: string;
   customerName?: string;
+  creatorName?: string;
   orderType?: number;
   status?: number;
   totalAmount?: number;
@@ -99,6 +105,8 @@ export interface AdOrderListItem {
   mediaRebateAmount?: number;
   orderIncomeAmount?: number;
   rebateAmount?: number;
+  receivableRebateRatio?: number;
+  payableRebateRatio?: number;
   receiptMethod?: number;
   paymentMethod?: number;
   deliveryStartDate?: number | string | null;

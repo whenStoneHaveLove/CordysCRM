@@ -56,4 +56,10 @@ public class AdOrderPageRequest extends BasePageRequest {
 
     @Schema(description = "投放起始日-止（含）")
     private Date deliveryStartTo;
+
+    @Schema(description = "代理订单号")
+    private String agentOrderNo;
+
+    @Schema(description = "创建人")
+    private String creatorName;
 }
