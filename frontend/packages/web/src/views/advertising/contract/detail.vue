@@ -8,6 +8,9 @@
             <n-tag :type="sealStatusTagType(detail.contract.sealStatus)">
               {{ detail.sealStatusLabel || '-' }}
             </n-tag>
+            <n-tag :type="contractStatusTagType(detail.contract.status)">
+              {{ detail.statusLabel || '-' }}
+            </n-tag>
           </n-space>
         </template>
         <template #header-extra>
@@ -25,6 +28,18 @@
             <template v-if="detail.contract.sealStatus === 40">
               <n-button v-permission="['AD_CONTRACT:ARCHIVE_APPROVE']" type="warning" @click="showArchiveAudit = true"
                 >归档审核</n-button
+              >
+            </template>
+            <!-- 生效/失效 → 媒介可提交作废 -->
+            <template v-if="detail.contract.status === 10 || detail.contract.status === 20">
+              <n-button v-permission="['AD_CONTRACT:VOID_SUBMIT']" type="error" @click="showSubmitVoid = true"
+                >提交作废</n-button
+              >
+            </template>
+            <!-- 作废审批中 → 管理组可作废审核 -->
+            <template v-if="detail.contract.status === 70">
+              <n-button v-permission="['AD_CONTRACT:VOID_APPROVE']" type="warning" @click="showVoidAudit = true"
+                >作废审核</n-button
               >
             </template>
             <n-button @click="goBack">返回</n-button>
@@ -118,6 +133,29 @@
           </n-descriptions>
         </template>
 
+        <!-- 作废信息 -->
+        <template v-if="detail.contract.voidReason || detail.contract.voidApplicantId">
+          <n-divider title-placement="left">作废信息</n-divider>
+          <n-descriptions label-placement="left" :column="3" bordered size="small">
+            <n-descriptions-item label="作废原因">{{ detail.contract.voidReason || '-' }}</n-descriptions-item>
+            <n-descriptions-item label="作废申请人">{{
+              getUserName(detail.contract.voidApplicantId)
+            }}</n-descriptions-item>
+            <n-descriptions-item label="作废申请时间">{{
+              fmtDateTime(detail.contract.voidAppliedAt)
+            }}</n-descriptions-item>
+            <n-descriptions-item label="作废审批人">{{
+              getUserName(detail.contract.voidApproveUser)
+            }}</n-descriptions-item>
+            <n-descriptions-item label="作废审批时间">{{
+              fmtDateTime(detail.contract.voidApproveTime)
+            }}</n-descriptions-item>
+            <n-descriptions-item label="作废审批备注">{{
+              detail.contract.voidApproveRemark || '-'
+            }}</n-descriptions-item>
+          </n-descriptions>
+        </template>
+
         <!-- 用印记录 -->
         <n-divider title-placement="left">用印记录</n-divider>
         <n-empty v-if="!detail.sealRecords || detail.sealRecords.length === 0" description="暂无用印记录" />
@@ -178,6 +216,39 @@
         </n-space>
       </template>
     </n-modal>
+
+    <!-- 提交作废对话框 -->
+    <n-modal v-model:show="showSubmitVoid" preset="card" title="提交作废" style="width: 480px">
+      <n-space vertical>
+        <div>
+          <div class="action-modal-label">作废原因</div>
+          <n-input v-model:value="voidReason" type="textarea" :rows="3" placeholder="请输入作废原因" />
+        </div>
+      </n-space>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showSubmitVoid = false">取消</n-button>
+          <n-button type="error" :loading="submitting" @click="handleSubmitVoid">确认作废</n-button>
+        </n-space>
+      </template>
+    </n-modal>
+
+    <!-- 作废审核对话框 -->
+    <n-modal v-model:show="showVoidAudit" preset="card" title="作废审核" style="width: 480px">
+      <n-space vertical>
+        <div>
+          <div class="action-modal-label">审批备注</div>
+          <n-input v-model:value="voidAuditRemark" type="textarea" :rows="3" placeholder="请输入审批备注" />
+        </div>
+      </n-space>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="showVoidAudit = false">取消</n-button>
+          <n-button type="success" @click="handleApproveVoid">通过</n-button>
+          <n-button type="error" @click="handleRejectVoid">驳回</n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
@@ -207,10 +278,14 @@
 
   import {
     approveArchive,
+    approveVoid,
     deleteAdContractAttachment,
+    getAdContractDeletedDetail,
     getAdContractDetail,
     rejectArchive,
+    rejectVoid,
     submitArchive,
+    submitVoid,
     uploadAdContractAttachment,
     uploadTempAttachment,
   } from '@/api/modules';
@@ -240,6 +315,10 @@
   const doubleSealAttachments = computed(() => (detail.value?.attachments || []).filter((a) => a.type === 20));
   const showArchiveAudit = ref(false);
   const archiveAuditRemark = ref('');
+  const showSubmitVoid = ref(false);
+  const voidReason = ref('');
+  const showVoidAudit = ref(false);
+  const voidAuditRemark = ref('');
 
   function sealStatusTagType(status?: number): 'success' | 'warning' | 'error' | 'info' | 'default' {
     if (status === 20 || status === 60) return 'success';
@@ -281,7 +360,9 @@
   async function fetchDetail() {
     loading.value = true;
     try {
-      detail.value = await getAdContractDetail(contractId);
+      detail.value = route.query.deleted === '1'
+        ? await getAdContractDeletedDetail(contractId)
+        : await getAdContractDetail(contractId);
     } catch (e) {
       message.error((e as Error).message || '加载失败');
     } finally {
@@ -369,6 +450,58 @@
     } catch (e) {
       message.error((e as Error).message || '操作失败');
     }
+  }
+
+  // ===================== 作废审批 =====================
+
+  async function handleSubmitVoid() {
+    if (!voidReason.value.trim()) {
+      message.warning('请输入作废原因');
+      return;
+    }
+    try {
+      submitting.value = true;
+      await submitVoid(contractId, voidReason.value.trim());
+      message.success('已提交作废审批');
+      showSubmitVoid.value = false;
+      voidReason.value = '';
+      await fetchDetail();
+    } catch (e) {
+      message.error((e as Error).message || '提交失败');
+    } finally {
+      submitting.value = false;
+    }
+  }
+
+  async function handleApproveVoid() {
+    try {
+      await approveVoid(contractId, voidAuditRemark.value);
+      message.success('作废审批通过，合同已删除');
+      showVoidAudit.value = false;
+      voidAuditRemark.value = '';
+      await fetchDetail();
+    } catch (e) {
+      message.error((e as Error).message || '操作失败');
+    }
+  }
+
+  async function handleRejectVoid() {
+    try {
+      await rejectVoid(contractId, voidAuditRemark.value);
+      message.success('已驳回');
+      showVoidAudit.value = false;
+      voidAuditRemark.value = '';
+      await fetchDetail();
+    } catch (e) {
+      message.error((e as Error).message || '操作失败');
+    }
+  }
+
+  function contractStatusTagType(status?: number): 'success' | 'warning' | 'error' | 'info' | 'default' {
+    if (status === 10 || status === 20) return 'success';
+    if (status === 70) return 'warning';
+    if (status === 30) return 'error';
+    return 'default';
   }
 
   /** 附件预览 */

@@ -315,6 +315,8 @@ public class PermissionConstants {
     public static final String AD_CONTRACT_UPDATE = "AD_CONTRACT:UPDATE";
     public static final String AD_CONTRACT_DELETE = "AD_CONTRACT:DELETE";
     public static final String AD_CONTRACT_ARCHIVE_APPROVE = "AD_CONTRACT:ARCHIVE_APPROVE";
+    public static final String AD_CONTRACT_VOID_SUBMIT = "AD_CONTRACT:VOID_SUBMIT";
+    public static final String AD_CONTRACT_VOID_APPROVE = "AD_CONTRACT:VOID_APPROVE";
     /*------ end: AD_CONTRACT ------*/
 
     /*------ start: AD_SEAL（§3.3 / §9.3，替代旧 AD_CONTRACT:SEAL_*） ------*/

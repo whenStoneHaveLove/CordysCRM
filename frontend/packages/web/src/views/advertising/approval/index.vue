@@ -6,6 +6,7 @@
         <n-tab-pane name="change" :tab="t('advertising.approval.tab.change')" />
         <n-tab-pane name="seal" :tab="t('advertising.approval.tab.seal')" />
         <n-tab-pane name="archive" :tab="t('advertising.approval.tab.archive')" />
+        <n-tab-pane name="void" :tab="t('advertising.approval.tab.void')" />
         <n-tab-pane name="receipt" :tab="t('advertising.approval.tab.receipt')" />
         <n-tab-pane name="payout" :tab="t('advertising.approval.tab.payout')" />
       </n-tabs>
@@ -212,6 +213,7 @@
     approveAdReceipt,
     approveAdSeal,
     approveArchive,
+    approveVoid,
     getAdApprovalPendingPage,
     getAdContractDetail,
     getAdDownstreamMediaPage,
@@ -224,6 +226,7 @@
     rejectAdOrderChange,
     rejectAdSeal,
     rejectArchive,
+    rejectVoid,
   } from '@/api/modules';
   import useUserStore from '@/store/modules/user';
   import { hasPermission } from '@/utils/permission';
@@ -357,6 +360,8 @@
       await approveAdSeal(id, { approveRemark: remark });
     } else if (type === 'archive') {
       await approveArchive(id, remark);
+    } else if (type === 'void') {
+      await approveVoid(id, remark);
     } else if (type === 'receipt') {
       await approveAdReceipt(id, { action: 'approve', remark });
     } else if (type === 'payout') {
@@ -377,6 +382,8 @@
       await rejectAdSeal(id, { approveRemark: remark });
     } else if (type === 'archive') {
       await rejectArchive(id, remark);
+    } else if (type === 'void') {
+      await rejectVoid(id, remark);
     } else if (type === 'receipt') {
       await approveAdReceipt(id, { action: 'reject', remark });
     } else if (type === 'payout') {
@@ -439,6 +446,8 @@
         return 'AD_SEAL:APPROVE';
       case 'archive':
         return 'AD_CONTRACT:ARCHIVE_APPROVE';
+      case 'void':
+        return 'AD_CONTRACT:VOID_APPROVE';
       case 'receipt':
         return 'AD_RECEIPT:APPROVE';
       case 'payout':
@@ -459,6 +468,8 @@
         return 'AD_SEAL:REJECT';
       case 'archive':
         return 'AD_CONTRACT:ARCHIVE_APPROVE';
+      case 'void':
+        return 'AD_CONTRACT:VOID_APPROVE';
       case 'receipt':
         return 'AD_RECEIPT:APPROVE';
       case 'payout':
@@ -712,6 +723,29 @@
           { label: '用印状态', value: res?.sealStatusLabel || '-' },
           { label: '业务主体', value: res?.businessEntityName || '-' },
         ],
+        compare: [],
+      };
+    }
+    if (type === 'void') {
+      const res: any = await getAdContractDetail(id);
+      const c = res?.contract || {};
+      const base: BaseField[] = [
+        {
+          label: '合同编号',
+          value: c.contractNo || '-',
+          link: c.id || id ? AdvertisingRouteEnum.ADVERTISING_CONTRACT_DETAIL : undefined,
+          linkId: c.id || id,
+        },
+        { label: '合同名称', value: c.contractName || '-' },
+        { label: t('advertising.approval.column.amount'), value: c.amount != null ? fmtAmount(c.amount) : '-' },
+        { label: '业务主体', value: res?.businessEntityName || '-' },
+        { label: '用印状态', value: res?.sealStatusLabel || '-' },
+        { label: '合同状态', value: res?.statusLabel || '-' },
+        { label: '作废原因', value: c.voidReason || '-' },
+        { label: '作废申请人', value: c.voidApplicantId || '-' },
+      ];
+      return {
+        base,
         compare: [],
       };
     }

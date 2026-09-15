@@ -528,7 +528,9 @@
           { "id": "AD_CONTRACT:CREATE" },
           { "id": "AD_CONTRACT:UPDATE" },
           { "id": "AD_CONTRACT:DELETE" },
-          { "id": "AD_CONTRACT:ARCHIVE_APPROVE" }
+          { "id": "AD_CONTRACT:ARCHIVE_APPROVE" },
+          { "id": "AD_CONTRACT:VOID_SUBMIT" },
+          { "id": "AD_CONTRACT:VOID_APPROVE" }
         ]
       },
       {

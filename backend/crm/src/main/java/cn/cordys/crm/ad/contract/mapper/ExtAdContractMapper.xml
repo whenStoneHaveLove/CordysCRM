@@ -25,12 +25,84 @@
             c.double_seal_file_url AS doubleSealFileUrl,
             c.seal_status       AS sealStatus,
             c.status            AS status,
+            c.void_reason       AS voidReason,
             c.organization_id   AS organizationId,
             c.create_time       AS createTime
         FROM ad_contract c
         LEFT JOIN ad_business_entity be ON be.id = c.business_entity_id AND be.deleted = 0
         WHERE c.organization_id = #{request.organizationId}
           AND c.deleted = 0
+        <if test="request.contractDirection != null">
+            AND c.contract_direction = #{request.contractDirection}
+        </if>
+        <if test="request.contractType != null">
+            AND c.contract_type = #{request.contractType}
+        </if>
+        <if test="request.relatedPartyType != null">
+            AND c.related_party_type = #{request.relatedPartyType}
+        </if>
+        <if test="request.status != null">
+            AND c.status = #{request.status}
+        </if>
+        <if test="request.sealStatus != null">
+            AND c.seal_status = #{request.sealStatus}
+        </if>
+        <if test="request.businessEntityId != null and request.businessEntityId != ''">
+            AND c.business_entity_id = #{request.businessEntityId}
+        </if>
+        <if test="request.changeOrderId != null and request.changeOrderId != ''">
+            AND c.change_order_id = #{request.changeOrderId}
+        </if>
+        <if test="request.keyword != null and request.keyword != ''">
+            AND (c.contract_no LIKE CONCAT('%', #{request.keyword}, '%')
+                 OR c.contract_name LIKE CONCAT('%', #{request.keyword}, '%'))
+        </if>
+        <if test="request.validFromFrom != null">
+            AND c.valid_from &gt;= #{request.validFromFrom}
+        </if>
+        <if test="request.validFromTo != null">
+            AND c.valid_to &lt;= #{request.validFromTo}
+        </if>
+        <if test="request.entityIds != null and request.entityIds.size() > 0">
+            AND c.business_entity_id IN
+            <foreach collection="request.entityIds" item="eid" open="(" separator="," close=")">
+                #{eid}
+            </foreach>
+        </if>
+        <include refid="cn.cordys.common.mapper.CommonMapper.sort">
+            <property name="sort" value="request.sort"/>
+            <property name="prefix" value="c"/>
+            <property name="defaultSort" value="create_time DESC"/>
+        </include>
+    </select>
+
+    <!-- 已删除合同分页列表（deleted=1） -->
+    <select id="pageDeletedList" resultType="cn.cordys.crm.ad.contract.dto.response.AdContractListResponse">
+        SELECT
+            c.id                AS id,
+            c.contract_no       AS contractNo,
+            c.contract_name     AS contractName,
+            c.business_entity_id AS businessEntityId,
+            be.name             AS businessEntityName,
+            c.contract_direction AS contractDirection,
+            c.contract_type     AS contractType,
+            c.related_party_id  AS relatedPartyId,
+            c.related_party_type AS relatedPartyType,
+            c.signing_entity    AS signingEntity,
+            c.valid_from        AS validFrom,
+            c.valid_to          AS validTo,
+            c.amount            AS amount,
+            c.file_url          AS fileUrl,
+            c.double_seal_file_url AS doubleSealFileUrl,
+            c.seal_status       AS sealStatus,
+            c.status            AS status,
+            c.void_reason       AS voidReason,
+            c.organization_id   AS organizationId,
+            c.create_time       AS createTime
+        FROM ad_contract c
+        LEFT JOIN ad_business_entity be ON be.id = c.business_entity_id AND be.deleted = 0
+        WHERE c.organization_id = #{request.organizationId}
+          AND c.deleted = 1
         <if test="request.contractDirection != null">
             AND c.contract_direction = #{request.contractDirection}
         </if>

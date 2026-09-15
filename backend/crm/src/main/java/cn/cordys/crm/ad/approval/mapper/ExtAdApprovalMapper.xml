@@ -67,6 +67,21 @@
         ORDER BY ct.create_time DESC
     </select>
 
+    <!-- 作废待审批：status=70（作废审批中） -->
+    <select id="pendingVoids" resultType="java.util.HashMap">
+        SELECT
+            ct.id,
+            ct.contract_no   AS refNo,
+            ct.contract_name AS summary,
+            ct.create_user   AS applicantId,
+            ct.amount        AS amount,
+            ct.create_time   AS createTime,
+            ct.status
+        FROM ad_contract ct
+        WHERE ct.organization_id = #{orgId} AND ct.status = #{status} AND ct.deleted = 0
+        ORDER BY ct.create_time DESC
+    </select>
+
     <!-- 收款单待审批：status=10（待审核） -->
     <select id="pendingReceipts" resultType="java.util.HashMap">
         SELECT

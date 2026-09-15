@@ -38,6 +38,8 @@ public class AdApprovalService {
     private static final int SEAL_PENDING = 0;
     /** 合同表 ad_contract.seal_status 的「归档审批中」值。 */
     private static final int ARCHIVE_PENDING = 40;
+    /** 合同表 ad_contract.status 的「作废审批中」值。 */
+    private static final int VOID_PENDING = 70;
     /** 收款/付款表 status 的「待审核」值。 */
     private static final int RECEIPT_PAYOUT_PENDING = 10;
 
@@ -88,6 +90,17 @@ public class AdApprovalService {
                 a.put("typeLabel", "归档审批");
                 a.put("businessId", a.get("id"));
                 items.add(a);
+            }
+        }
+
+        if (type == null || "void".equals(type)) {
+            List<Map<String, Object>> voids = sqlSession.selectList(NS + ".pendingVoids",
+                    Map.of("orgId", orgId, "status", VOID_PENDING));
+            for (Map<String, Object> v : voids) {
+                v.put("type", "void");
+                v.put("typeLabel", "合同作废");
+                v.put("businessId", v.get("id"));
+                items.add(v);
             }
         }
 

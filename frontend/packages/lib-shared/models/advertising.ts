@@ -386,6 +386,13 @@ export interface AdContractInfo {
   archiveApproveRemark?: string;
   archiveApproveUser?: string;
   archiveApproveTime?: number;
+  /** 作废相关 */
+  voidReason?: string;
+  voidApplicantId?: string;
+  voidAppliedAt?: number;
+  voidApproveRemark?: string;
+  voidApproveUser?: string;
+  voidApproveTime?: number;
   sealStatus?: number;
   status?: number;
   organizationId?: string;
@@ -421,6 +428,13 @@ export interface AdContractListItem {
   statusLabel?: string;
   organizationId?: string;
   createTime?: number;
+  /** 作废相关（已删除列表展示） */
+  voidReason?: string;
+  voidApplicantId?: string;
+  voidAppliedAt?: number;
+  voidApproveRemark?: string;
+  voidApproveUser?: string;
+  voidApproveTime?: number;
 }
 
 export interface AdContractOrderVO {
@@ -652,8 +666,8 @@ export interface AdSettingInfo {
 
 /* ----------------------------- 审批中心 ----------------------------- */
 
-/** 审批类型（对应三 Tab：订单/改单/用印）。 */
-export type AdApprovalType = 'order' | 'change' | 'seal' | 'archive' | 'receipt' | 'payout';
+/** 审批类型（对应各 Tab：订单/改单/用印/归档/收款/付款/合同作废）。 */
+export type AdApprovalType = 'order' | 'change' | 'seal' | 'archive' | 'receipt' | 'payout' | 'void';
 
 export interface AdApprovalPageParams {
   current?: number;

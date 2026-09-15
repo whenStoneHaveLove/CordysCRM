@@ -32,27 +32,49 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">{{ t('advertising.order.reset') }}</n-button>
-        <n-button v-permission="['AD_CONTRACT:CREATE']" type="primary" @click="goCreate">{{ t('advertising.contract.new') }}</n-button>
+        <n-button
+          v-if="activeTab === 'contract'"
+          v-permission="['AD_CONTRACT:CREATE']"
+          type="primary"
+          @click="goCreate"
+          >{{ t('advertising.contract.new') }}</n-button
+        >
       </n-space>
     </n-card>
 
     <n-card :bordered="false" class="mt-4">
-      <n-data-table
-        :columns="columns"
-        :data="list"
-        :loading="loading"
-        :pagination="pagination"
-        :row-key="(row: any) => row.id"
-        remote
-      />
+      <n-tabs v-model:value="activeTab" type="line" @update:value="handleTabChange">
+        <n-tab-pane name="contract" :tab="t('advertising.contract.tab.contract')">
+          <n-data-table
+            :columns="columns"
+            :data="list"
+            :loading="loading"
+            :pagination="pagination"
+            :row-key="(row: any) => row.id"
+            :scroll-x="tableScrollX"
+            remote
+          />
+        </n-tab-pane>
+        <n-tab-pane name="deleted" :tab="t('advertising.contract.tab.deleted')">
+          <n-data-table
+            :columns="columns"
+            :data="list"
+            :loading="loading"
+            :pagination="pagination"
+            :row-key="(row: any) => row.id"
+            :scroll-x="tableScrollX"
+            remote
+          />
+        </n-tab-pane>
+      </n-tabs>
     </n-card>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { h, onMounted, reactive, ref, resolveDirective, withDirectives } from 'vue';
+  import { computed, h, onMounted, reactive, ref, resolveDirective, withDirectives } from 'vue';
   import { useRouter } from 'vue-router';
-  import { NButton, NCard, NDataTable, NInput, NSelect, NSpace, NTag, useMessage } from 'naive-ui';
+  import { NButton, NCard, NDataTable, NInput, NSelect, NSpace, NTabPane, NTabs, NTag, useMessage } from 'naive-ui';
 
   import {
     AdContractDirectionOptions,
@@ -65,7 +87,7 @@
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type { AdContractListItem, AdContractPageParams } from '@lib/shared/models/advertising';
 
-  import { getAdContractPage } from '@/api/modules';
+  import { getAdContractDeletedPage, getAdContractPage } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
@@ -84,6 +106,7 @@
 
   const loading = ref(false);
   const list = ref<AdContractListItem[]>([]);
+  const activeTab = ref<'contract' | 'deleted'>('contract');
   const searchForm = reactive({
     keyword: '',
     contractDirection: null as number | null,
@@ -123,7 +146,8 @@
         contractType: searchForm.contractType,
         sealStatus: searchForm.sealStatus,
       };
-      const res = await getAdContractPage(params);
+      const res =
+        activeTab.value === 'deleted' ? await getAdContractDeletedPage(params) : await getAdContractPage(params);
       list.value = res.list || [];
       pagination.itemCount = res.total || 0;
     } catch (e) {
@@ -160,114 +184,141 @@
   }
 
   function openDetail(row: AdContractListItem) {
-    router.push({ name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_DETAIL, params: { id: row.id } });
+    router.push({
+      name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_DETAIL,
+      params: { id: row.id },
+      query: activeTab.value === 'deleted' ? { deleted: '1' } : undefined,
+    });
   }
   function openEdit(row: AdContractListItem) {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_CONTRACT_EDIT, params: { id: row.id } });
   }
 
-  const columns: DataTableColumn<AdContractListItem>[] = [
-    { key: 'contractNo', title: t('advertising.contract.column.contractNo'), width: 160, ellipsis: { tooltip: true } },
-    {
-      key: 'contractName',
-      title: t('advertising.contract.column.contractName'),
-      minWidth: 160,
-      ellipsis: { tooltip: true },
-    },
-    {
-      key: 'businessEntityName',
-      title: t('advertising.contract.column.businessEntity'),
-      width: 140,
-      ellipsis: { tooltip: true },
-    },
-    {
-      key: 'contractDirection',
-      title: t('advertising.contract.column.direction'),
-      width: 100,
-      render: (row) =>
-        h(
-          NTag,
-          { type: row.contractDirection === 10 ? 'success' : 'warning' },
-          { default: () => getAdContractDirectionLabel(row.contractDirection) }
-        ),
-    },
-    {
-      key: 'contractType',
-      title: t('advertising.contract.column.type'),
-      width: 90,
-      render: (row) => h('span', getAdContractTypeLabel(row.contractType)),
-    },
-    {
-      key: 'amount',
-      title: t('advertising.contract.column.amount'),
-      width: 130,
-      align: 'right',
-      render: (row) => h('span', fmtAmount(row.amount)),
-    },
-    {
-      key: 'sealStatus',
-      title: t('advertising.contract.column.sealStatus'),
-      width: 110,
-      render: (row) =>
-        h(NTag, { type: sealStatusTagType(row.sealStatus) }, { default: () => getAdSealStatusLabel(row.sealStatus) }),
-    },
-    {
-      key: 'status',
-      title: t('advertising.contract.column.status'),
-      width: 100,
-      render: (row) => h('span', row.statusLabel || row.status || '-'),
-    },
-    {
-      key: 'validFrom',
-      title: t('advertising.contract.column.validFrom'),
-      width: 120,
-      render: (row) => h('span', fmtDate(row.validFrom)),
-    },
-    {
-      key: 'validTo',
-      title: t('advertising.contract.column.validTo'),
-      width: 120,
-      render: (row) => h('span', fmtDate(row.validTo)),
-    },
-    {
-      key: 'createTime',
-      title: t('advertising.order.column.createTime'),
-      width: 160,
-      render: (row) => h('span', fmtDateTime(row.createTime)),
-    },
-    {
-      key: 'action',
-      title: t('advertising.order.detail'),
-      width: 150,
-      fixed: 'right' as const,
-      render: (row) =>
-        h(
-          NSpace,
-          {},
-          {
-            default: () => [
-              h(
-                NButton,
-                { size: 'small', onClick: () => openDetail(row) },
-                { default: () => t('advertising.order.detail') }
-              ),
-              canEdit(row)
-                ? withDirectives(
-                    h(
-                      NButton,
-                      { size: 'small', type: 'primary', onClick: () => openEdit(row) },
-                      { default: () => t('advertising.order.edit') }
-                    ),
-                    [[permissionDirective, ['AD_CONTRACT:UPDATE']]]
-                  )
-                : null,
-            ],
-          }
-        ),
-    },
-  ];
+  const columns = computed<DataTableColumn<AdContractListItem>[]>(() => {
+    const base: DataTableColumn<AdContractListItem>[] = [
+      { key: 'contractNo', title: t('advertising.contract.column.contractNo'), width: 160, ellipsis: { tooltip: true } },
+      {
+        key: 'contractName',
+        title: t('advertising.contract.column.contractName'),
+        minWidth: 160,
+        ellipsis: { tooltip: true },
+      },
+      {
+        key: 'businessEntityName',
+        title: t('advertising.contract.column.businessEntity'),
+        width: 140,
+        ellipsis: { tooltip: true },
+      },
+      {
+        key: 'contractDirection',
+        title: t('advertising.contract.column.direction'),
+        width: 100,
+        render: (row) =>
+          h(
+            NTag,
+            { type: row.contractDirection === 10 ? 'success' : 'warning' },
+            { default: () => getAdContractDirectionLabel(row.contractDirection) }
+          ),
+      },
+      {
+        key: 'contractType',
+        title: t('advertising.contract.column.type'),
+        width: 90,
+        render: (row) => h('span', getAdContractTypeLabel(row.contractType)),
+      },
+      {
+        key: 'amount',
+        title: t('advertising.contract.column.amount'),
+        width: 130,
+        align: 'right',
+        render: (row) => h('span', fmtAmount(row.amount)),
+      },
+      {
+        key: 'sealStatus',
+        title: t('advertising.contract.column.sealStatus'),
+        width: 110,
+        render: (row) =>
+          h(NTag, { type: sealStatusTagType(row.sealStatus) }, { default: () => getAdSealStatusLabel(row.sealStatus) }),
+      },
+      {
+        key: 'status',
+        title: t('advertising.contract.column.status'),
+        width: 100,
+        render: (row) => h('span', row.statusLabel || row.status || '-'),
+      },
+    ];
+    // 已删除列表：仅展示「作废原因」列；正常合同列表不展示作废相关列
+    if (activeTab.value === 'deleted') {
+      base.push({
+        key: 'voidReason',
+        title: t('advertising.contract.column.voidReason'),
+        width: 160,
+        ellipsis: { tooltip: true },
+        render: (row) => h('span', row.voidReason || '-'),
+      });
+    }
+    base.push(
+      {
+        key: 'validFrom',
+        title: t('advertising.contract.column.validFrom'),
+        width: 120,
+        render: (row) => h('span', fmtDate(row.validFrom)),
+      },
+      {
+        key: 'validTo',
+        title: t('advertising.contract.column.validTo'),
+        width: 120,
+        render: (row) => h('span', fmtDate(row.validTo)),
+      },
+      {
+        key: 'createTime',
+        title: t('advertising.order.column.createTime'),
+        width: 160,
+        render: (row) => h('span', fmtDateTime(row.createTime)),
+      },
+      {
+        key: 'action',
+        title: t('advertising.order.detail'),
+        width: 150,
+        fixed: 'right' as const,
+        render: (row) =>
+          h(
+            NSpace,
+            {},
+            {
+              default: () => [
+                h(
+                  NButton,
+                  { size: 'small', onClick: () => openDetail(row) },
+                  { default: () => t('advertising.order.detail') }
+                ),
+                activeTab.value === 'contract' && canEdit(row)
+                  ? withDirectives(
+                      h(
+                        NButton,
+                        { size: 'small', type: 'primary', onClick: () => openEdit(row) },
+                        { default: () => t('advertising.order.edit') }
+                      ),
+                      [[permissionDirective, ['AD_CONTRACT:UPDATE']]]
+                    )
+                  : null,
+              ],
+            }
+          ),
+      }
+    );
+    return base;
+  });
+
+  // 横向滚动宽度：需 ≥ 所有列宽之和（含 fixed 列）+ 余量，否则末列被裁剪且无法滚动。
+  // 合同列表列宽合计 1540；已删除多一列「作废原因」(160) 合计 1700。
+  const tableScrollX = computed(() => (activeTab.value === 'deleted' ? 1760 : 1600));
 
   function handleSearch() {
+    pagination.page = 1;
+    fetchData();
+  }
+  function handleTabChange() {
     pagination.page = 1;
     fetchData();
   }
@@ -284,7 +335,8 @@
 
   function applyQuery() {
     const q = router.currentRoute.value.query;
-    if (q.contractDirection != null && q.contractDirection !== '') searchForm.contractDirection = Number(q.contractDirection);
+    if (q.contractDirection != null && q.contractDirection !== '')
+      searchForm.contractDirection = Number(q.contractDirection);
     if (q.contractType != null && q.contractType !== '') searchForm.contractType = Number(q.contractType);
     if (q.sealStatus != null && q.sealStatus !== '') searchForm.sealStatus = Number(q.sealStatus);
   }

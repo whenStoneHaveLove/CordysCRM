@@ -70,6 +70,13 @@ public class AdContractController {
         return adContractService.detail(id, userId(), orgId());
     }
 
+    @GetMapping("/deleted/{id}")
+    @CsPermission(PermissionConstants.AD_CONTRACT_READ)
+    @Operation(summary = "已删除合同详情（忽略 deleted 标记，供「已删除」列表查看）")
+    public AdContractDetailResponse deletedDetail(@PathVariable("id") String id) {
+        return adContractService.deletedDetail(id, userId(), orgId());
+    }
+
     @PostMapping("/page")
     @CsPermission(PermissionConstants.AD_CONTRACT_READ)
     @Operation(summary = "合同分页（多筛选+关键字+主体隔离+排序）")
@@ -100,5 +107,38 @@ public class AdContractController {
     public AdContract rejectArchive(@PathVariable("id") String id, @RequestBody(required = false) Map<String, String> body) {
         String remark = body == null ? null : body.get("remark");
         return adContractService.rejectArchive(id, remark, userId(), orgId());
+    }
+
+    // ===================== 作废审批 =====================
+
+    @PutMapping("/{id}/submit-void")
+    @CsPermission(PermissionConstants.AD_CONTRACT_VOID_SUBMIT)
+    @Operation(summary = "提交作废（媒介发起，status→作废审批中）")
+    public AdContract submitVoid(@PathVariable("id") String id, @RequestBody(required = false) Map<String, String> body) {
+        String reason = body == null ? null : body.get("reason");
+        return adContractService.submitVoid(id, reason, userId(), orgId());
+    }
+
+    @PutMapping("/{id}/approve-void")
+    @CsPermission(PermissionConstants.AD_CONTRACT_VOID_APPROVE)
+    @Operation(summary = "作废审批通过（status→已作废并逻辑删除，管理组操作）")
+    public AdContract approveVoid(@PathVariable("id") String id, @RequestBody(required = false) Map<String, String> body) {
+        String remark = body == null ? null : body.get("remark");
+        return adContractService.approveVoid(id, remark, userId(), orgId());
+    }
+
+    @PutMapping("/{id}/reject-void")
+    @CsPermission(PermissionConstants.AD_CONTRACT_VOID_APPROVE)
+    @Operation(summary = "作废审批驳回（status→生效，管理组操作）")
+    public AdContract rejectVoid(@PathVariable("id") String id, @RequestBody(required = false) Map<String, String> body) {
+        String remark = body == null ? null : body.get("remark");
+        return adContractService.rejectVoid(id, remark, userId(), orgId());
+    }
+
+    @PostMapping("/deleted-page")
+    @CsPermission(PermissionConstants.AD_CONTRACT_READ)
+    @Operation(summary = "已删除合同分页")
+    public PagerWithOption<List<AdContractListResponse>> deletedPage(@RequestBody AdContractPageRequest request) {
+        return adContractService.pageDeleted(request, userId(), orgId());
     }
 }

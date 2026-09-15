@@ -78,6 +78,9 @@ public class AdContractListResponse {
     @Schema(description = "状态标签")
     private String statusLabel;
 
+    @Schema(description = "作废原因")
+    private String voidReason;
+
     @Schema(description = "组织(租户)id")
     private String organizationId;
 

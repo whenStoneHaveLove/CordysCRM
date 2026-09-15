@@ -29,6 +29,11 @@ public interface ExtAdContractMapper extends BaseMapper<AdContract> {
     List<AdContractListResponse> pageList(@Param("request") AdContractPageRequest request);
 
     /**
+     * 已删除合同分页列表（deleted=1）。
+     */
+    List<AdContractListResponse> pageDeletedList(@Param("request") AdContractPageRequest request);
+
+    /**
      * 统计某组织当天的合同数（用于合同号 CN{yyyyMMdd}-{3位流水} 流水号）。
      */
     long countTodayContracts(@Param("orgId") String orgId,

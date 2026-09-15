@@ -222,6 +222,89 @@ public class AdContractService {
         return c;
     }
 
+    // ===================== 作废审批 =====================
+
+    /**
+     * 提交作废：媒介发起，status(10生效/20失效) → 70(作废审批中)。
+     * 不回媒介，管理组审批通过后直接逻辑删除。
+     */
+    @OperationLog(module = "AD_CONTRACT", action = "VOID_SUBMIT", targetId = "#id")
+    public AdContract submitVoid(String id, String reason, String userId, String orgId) {
+        AdContract c = requireContract(id);
+        Integer status = c.getStatus();
+        if (status == null || (status != 10 && status != 20)) {
+            throw new GenericException("仅生效或失效状态的合同可提交作废");
+        }
+        long now = System.currentTimeMillis();
+        c.setStatus(70);
+        c.setVoidReason(reason);
+        c.setVoidApplicantId(userId);
+        c.setVoidAppliedAt(now);
+        c.setUpdateUser(userId);
+        c.setUpdateTime(now);
+        contractMapper.update(c);
+        return c;
+    }
+
+    /**
+     * 作废审批通过：status 70 → 30(已作废) 且 deleted=1（直接删除，不回媒介）。
+     */
+    @OperationLog(module = "AD_CONTRACT", action = "VOID_APPROVE", targetId = "#id")
+    public AdContract approveVoid(String id, String remark, String userId, String orgId) {
+        AdContract c = requireContract(id);
+        if (c.getStatus() == null || c.getStatus() != 70) {
+            throw new GenericException("当前合同不处于作废审批中，无法审批");
+        }
+        long now = System.currentTimeMillis();
+        c.setStatus(30);
+        c.setDeleted(1);
+        c.setVoidApproveRemark(remark);
+        c.setVoidApproveUser(userId);
+        c.setVoidApproveTime(now);
+        c.setUpdateUser(userId);
+        c.setUpdateTime(now);
+        contractMapper.update(c);
+        return c;
+    }
+
+    /**
+     * 作废审批驳回：status 70 → 10(生效)。
+     */
+    @OperationLog(module = "AD_CONTRACT", action = "VOID_REJECT", targetId = "#id")
+    public AdContract rejectVoid(String id, String remark, String userId, String orgId) {
+        AdContract c = requireContract(id);
+        if (c.getStatus() == null || c.getStatus() != 70) {
+            throw new GenericException("当前合同不处于作废审批中，无法审批");
+        }
+        long now = System.currentTimeMillis();
+        c.setStatus(10);
+        c.setVoidApproveRemark(remark);
+        c.setVoidApproveUser(userId);
+        c.setVoidApproveTime(now);
+        c.setUpdateUser(userId);
+        c.setUpdateTime(now);
+        contractMapper.update(c);
+        return c;
+    }
+
+    /**
+     * 已删除合同分页（deleted=1）。
+     */
+    public PagerWithOption<List<AdContractListResponse>> pageDeleted(AdContractPageRequest request, String userId, String orgId) {
+        request.setOrganizationId(orgId);
+        request.setEntityIds(entityPermissionProvider.buildEntityFilter());
+        Page<AdContractListResponse> page = PageHelper.startPage(request.getCurrent(), request.getPageSize());
+        List<AdContractListResponse> list = extAdContractMapper.pageDeletedList(request);
+        for (AdContractListResponse r : list) {
+            r.setContractDirectionLabel(ContractDirection.labelOf(r.getContractDirection()));
+            r.setContractTypeLabel(ContractType.labelOf(r.getContractType()));
+            r.setRelatedPartyTypeLabel(RelatedPartyType.labelOf(r.getRelatedPartyType()));
+            r.setSealStatusLabel(SealStatus.labelOf(r.getSealStatus()));
+            r.setStatusLabel(contractStatusLabel(r.getStatus()));
+        }
+        return PageUtils.setPageInfoWithOption(page, list, null);
+    }
+
     // ===================== 详情 / 分页 =====================
 
     /**
@@ -229,6 +312,29 @@ public class AdContractService {
      */
     public AdContractDetailResponse detail(String id, String userId, String orgId) {
         AdContract c = requireContract(id);
+        AdContractDetailResponse resp = new AdContractDetailResponse();
+        resp.setContract(c);
+        resp.setBusinessEntityName(resolveBusinessEntityName(c.getBusinessEntityId()));
+        resp.setRelatedPartyName(resolveRelatedPartyName(c.getRelatedPartyType(), c.getRelatedPartyId()));
+        resp.setOrderList(resolveOrderList(c.getId()));
+        resp.setDirectionLabel(ContractDirection.labelOf(c.getContractDirection()));
+        resp.setTypeLabel(ContractType.labelOf(c.getContractType()));
+        resp.setSealStatusLabel(SealStatus.labelOf(c.getSealStatus()));
+        resp.setStatusLabel(contractStatusLabel(c.getStatus()));
+        resp.setAttachments(contractAttachmentService.listByContractId(id));
+        List<AdSealRecord> seals = sealRecordMapper.selectByContractId(id);
+        resp.setSealRecords(seals);
+        return resp;
+    }
+
+    /**
+     * 已删除合同详情（忽略 deleted 标记，供「已删除」列表查看）。
+     */
+    public AdContractDetailResponse deletedDetail(String id, String userId, String orgId) {
+        AdContract c = contractMapper.selectByPrimaryKey(id);
+        if (c == null) {
+            throw new GenericException("合同不存在");
+        }
         AdContractDetailResponse resp = new AdContractDetailResponse();
         resp.setContract(c);
         resp.setBusinessEntityName(resolveBusinessEntityName(c.getBusinessEntityId()));
@@ -303,6 +409,7 @@ public class AdContractService {
             case 10: return "生效";
             case 20: return "失效";
             case 30: return "已作废";
+            case 70: return "作废审批中";
             default: return String.valueOf(status);
         }
     }

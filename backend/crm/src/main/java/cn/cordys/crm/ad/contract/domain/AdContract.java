@@ -69,6 +69,24 @@ public class AdContract extends BaseModel {
     @Schema(description = "归档审批时间")
     private Long archiveApproveTime;
 
+    @Schema(description = "作废原因")
+    private String voidReason;
+
+    @Schema(description = "作废申请人")
+    private String voidApplicantId;
+
+    @Schema(description = "作废申请时间")
+    private Long voidAppliedAt;
+
+    @Schema(description = "作废审批意见")
+    private String voidApproveRemark;
+
+    @Schema(description = "作废审批人")
+    private String voidApproveUser;
+
+    @Schema(description = "作废审批时间")
+    private Long voidApproveTime;
+
     @Schema(description = "用印状态:0未申请/10审批中/20已用印/30已驳回/40归档审批中/50归档审批驳回/60已归档")
     private Integer sealStatus = 0;
 

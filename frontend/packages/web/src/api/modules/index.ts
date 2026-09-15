@@ -946,6 +946,11 @@ export const {
   submitArchive,
   approveArchive,
   rejectArchive,
+  submitVoid,
+  approveVoid,
+  rejectVoid,
+  getAdContractDeletedPage,
+  getAdContractDeletedDetail,
 } = adContractApi;
 
 export const { applyAdSeal, approveAdSeal, rejectAdSeal, uploadAdSeal, getAdSealDetail, getAdSealPage } = adSealApi;

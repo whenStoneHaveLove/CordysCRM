@@ -2,6 +2,8 @@ import type { CordysAxios } from '@lib/shared/api/http/Axios';
 import {
   AdContractCreateUrl,
   AdContractDeleteUrl,
+  AdContractDeletedDetailUrl,
+  AdContractDeletedPageUrl,
   AdContractDetailUrl,
   AdContractPageUrl,
   AdContractUpdateUrl,
@@ -61,6 +63,45 @@ export default function useAdContractApi(CDR: CordysAxios) {
     });
   }
 
+  // 提交作废（媒介发起）
+  function submitVoid(id: string, reason?: string) {
+    return CDR.put<AdContractInfo>({
+      url: `${AdContractUpdateUrl}/${id}/submit-void`,
+      data: { reason },
+    });
+  }
+
+  // 作废审批通过（管理组）
+  function approveVoid(id: string, remark?: string) {
+    return CDR.put<AdContractInfo>({
+      url: `${AdContractUpdateUrl}/${id}/approve-void`,
+      data: { remark },
+    });
+  }
+
+  // 作废审批驳回（管理组）
+  function rejectVoid(id: string, remark?: string) {
+    return CDR.put<AdContractInfo>({
+      url: `${AdContractUpdateUrl}/${id}/reject-void`,
+      data: { remark },
+    });
+  }
+
+  // 已删除合同分页
+  function getAdContractDeletedPage(data: AdContractPageParams) {
+    return CDR.post<AdContractPageResult>({
+      url: AdContractDeletedPageUrl,
+      data,
+    });
+  }
+
+  // 已删除合同详情（忽略 deleted 标记，供「已删除」列表查看）
+  function getAdContractDeletedDetail(id: string) {
+    return CDR.get<AdContractDetailResponse>({
+      url: `${AdContractDeletedDetailUrl}/${id}`,
+    });
+  }
+
   return {
     createAdContract,
     updateAdContract,
@@ -70,5 +111,10 @@ export default function useAdContractApi(CDR: CordysAxios) {
     submitArchive,
     approveArchive,
     rejectArchive,
+    submitVoid,
+    approveVoid,
+    rejectVoid,
+    getAdContractDeletedPage,
+    getAdContractDeletedDetail,
   };
 }
