@@ -1,0 +1,26 @@
+feat(ad): 用印附件与合同跳转、审批金额补齐、收付款订单状态过滤等
+
+1. 用印详情/审批中心补充用印附件与合同跳转
+   - AdSealRecordDetailResponse 增加 contractId、contractFileUrl
+     (用印附件不在 ad_seal_record 上，实际存在 ad_contract.file_url)
+   - 用印详情页新增「用印附件」预览/下载，合同编号改为可点击
+     新 tab 打开合同详情
+   - 审批中心抽屉支持 attachmentUrl 渲染附件，用印审批加入用印附件
+
+2. 审批中心列表修复
+   - pendingSeals / pendingChanges 的 SQL 补充 amount 字段，
+     修复用印、改单两个 Tab 金额列一直显示 - 的问题
+   - 关联单号列头按 type 动态显示：合同编号/订单编号/收款单编号/
+     付款单编号
+   - 归档审批详情的合同编号补充跳转链接
+   - 订单审批详情补充实际应付、订单收入两个金额字段
+   - 投放周期统一走 fmtDate 格式化，修复 ISO 时间原样展示
+
+3. 收款单/付款单可选订单限定为待执行/执行中/结算中
+   - AdOrderPageRequest 增加 statusList，订单分页 XML 支持
+     status IN 过滤，避免前端只过滤第一页导致下拉为空
+
+4. 合同创建/编辑
+   - 移除单笔合同关联订单必填校验，合同与订单为多对多关系
+   - 修复编辑时关联订单不回显：AdContract 无 orderIds 字段，
+     改为从详情接口 orderList 提取 orderId

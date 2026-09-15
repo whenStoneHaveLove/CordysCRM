@@ -81,6 +81,8 @@
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  import { AD_SELECT_PAGE_PARAMS } from '../utils';
+
   const levelOptions = AdCustomerLevelOptions;
   const statusOptions = AdCustomerStatusOptions;
 
@@ -133,7 +135,7 @@
   /** 拉取行业类别(字典 industry)下拉选项 */
   async function loadIndustryOptions() {
     try {
-      const res = await getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' });
+      const res = await getAdDictPage({ ...AD_SELECT_PAGE_PARAMS, dictCode: 'industry' });
       industryOptions.value = (res.list || []).map((it) => ({
         label: it.dictLabel || it.dictValue || it.id,
         value: it.dictValue || it.id,

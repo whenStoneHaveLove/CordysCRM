@@ -259,7 +259,13 @@
               <span>创建时间: {{ fmtDateTime(ch.createTime) }}</span>
             </n-space>
             <div style="margin-top: 6px">原因: {{ ch.reason || '-' }}</div>
-            <n-table :bordered="true" size="small" :single-line="false" style="margin-top: 8px">
+            <n-table
+              v-if="changeCompareRows(ch).length"
+              :bordered="true"
+              size="small"
+              :single-line="false"
+              style="margin-top: 8px"
+            >
               <thead>
                 <tr>
                   <th style="width: 160px">变更字段</th>
@@ -275,6 +281,16 @@
                 </tr>
               </tbody>
             </n-table>
+
+            <!-- 下游客户付款返点明细变更：结构化表格展示，避免裸 ID / [object Object] -->
+            <template v-if="changeHasDownstream(ch)">
+              <div style="margin-top: 10px; font-weight: 600">下游客户付款返点明细变更</div>
+              <DownstreamMediaCompareTable
+                :before="changeDownstreamBefore(ch)"
+                :after="changeDownstreamAfter(ch)"
+                :media-name-map="downstreamMediaNameCache"
+              />
+            </template>
           </n-card>
         </n-space>
 
@@ -378,6 +394,8 @@
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type { AdOrderChange, AdOrderDetail } from '@lib/shared/models/advertising';
 
+  import DownstreamMediaCompareTable from '../components/DownstreamMediaCompareTable.vue';
+
   import {
     approveAdOrder,
     confirmExecuteAdOrder,
@@ -398,7 +416,7 @@
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
   import useUserMap from '../useUserMap';
-  import { calcRatio, fmtAmount, fmtDate, fmtDateTime, fmtRatio } from '../utils';
+  import { AD_SELECT_PAGE_PARAMS, calcRatio, fmtAmount, fmtDate, fmtDateTime, fmtRatio } from '../utils';
 
   const { t } = useI18n();
   const route = useRoute();
@@ -508,8 +526,8 @@
   async function loadEntityNames() {
     try {
       const [beRes, cuRes] = await Promise.all([
-        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
-        getAdCustomerPage({ current: 1, pageSize: 200 }),
+        getAdBusinessEntityPage({ ...AD_SELECT_PAGE_PARAMS }),
+        getAdCustomerPage({ ...AD_SELECT_PAGE_PARAMS }),
       ]);
       (beRes.list || []).forEach((it: any) => {
         if (it.id) entityNameCache[`entity-${it.id}`] = it.name || '';
@@ -528,9 +546,10 @@
   /** 加载下游客户名称到缓存 */
   async function loadDownstreamMediaNames() {
     try {
-      const res = await getAdDownstreamMediaPage({ current: 1, pageSize: 200 });
+      const res = await getAdDownstreamMediaPage({ ...AD_SELECT_PAGE_PARAMS });
       (res.list || []).forEach((it: any) => {
-        if (it.id) downstreamMediaNameCache[it.id] = it.name || '';
+        // 接口返回的客户展示名是 resourceName（不是 name），否则名称会退化成裸 ID
+        if (it.id) downstreamMediaNameCache[it.id] = it.resourceName || it.name || '';
       });
     } catch {
       // 静默失败
@@ -543,7 +562,7 @@
   /** 加载行业类别字典 */
   async function loadIndustryDict() {
     try {
-      const res = await getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' });
+      const res = await getAdDictPage({ ...AD_SELECT_PAGE_PARAMS, dictCode: 'industry' });
       (res.list || []).forEach((it: any) => {
         const value = it.dictValue || it.id;
         if (value) industryLabelMap[value] = it.dictLabel || value;
@@ -566,7 +585,7 @@
   /** 加载上游代理名称到缓存 */
   async function loadUpstreamAgentNames() {
     try {
-      const res = await getAdUpstreamAgentPage({ current: 1, pageSize: 200 });
+      const res = await getAdUpstreamAgentPage({ ...AD_SELECT_PAGE_PARAMS });
       (res.list || []).forEach((it: any) => {
         if (it.id) upstreamAgentNameCache[it.id] = it.name || '';
       });
@@ -698,19 +717,39 @@
     }
   }
 
-  /** 单个改单的字段前后值对比行 */
+  /** 下游客户明细相关的特殊变更字段，走独立结构化表格渲染 */
+  const DOWNSTREAM_SPECIAL_FIELDS = ['downstreamMediaIds', 'downstreamMediaPayables'];
+
+  /** 单个改单的字段前后值对比行（排除下游客户明细等结构化字段） */
   function changeCompareRows(ch: AdOrderChange): { label: string; before: string; after: string }[] {
     const before = parseSnapshotJson(ch.snapshotBefore);
     const after = parseSnapshotJson(ch.snapshotAfter);
     const fields = parseChangeFields(ch.changeFields);
-    return fields.map((field) => {
-      const meta = AD_ORDER_CHANGE_FIELD_META.find((m) => m.field === field);
-      return {
-        label: meta?.label || field,
-        before: changeValLabel(field, before[field]),
-        after: changeValLabel(field, after[field]),
-      };
-    });
+    return fields
+      .filter((field) => !DOWNSTREAM_SPECIAL_FIELDS.includes(field))
+      .map((field) => {
+        const meta = AD_ORDER_CHANGE_FIELD_META.find((m) => m.field === field);
+        return {
+          label: meta?.label || field,
+          before: changeValLabel(field, before[field]),
+          after: changeValLabel(field, after[field]),
+        };
+      });
+  }
+
+  /** 该改单是否涉及下游客户付款返点明细变更 */
+  function changeHasDownstream(ch: AdOrderChange): boolean {
+    return parseChangeFields(ch.changeFields).some((f) => DOWNSTREAM_SPECIAL_FIELDS.includes(f));
+  }
+
+  /** 改单改前的下游客户明细快照 */
+  function changeDownstreamBefore(ch: AdOrderChange): any {
+    return parseSnapshotJson(ch.snapshotBefore).downstreamMediaPayables ?? null;
+  }
+
+  /** 改单改后的下游客户明细快照 */
+  function changeDownstreamAfter(ch: AdOrderChange): any {
+    return parseSnapshotJson(ch.snapshotAfter).downstreamMediaPayables ?? null;
   }
 
   /** 解析 before/after JSON 中的 status 字段为可读文字 */

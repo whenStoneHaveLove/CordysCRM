@@ -54,7 +54,8 @@
         </n-descriptions>
 
         <n-divider title-placement="left">字段变更对比</n-divider>
-        <n-table :bordered="true" size="small" :single-line="false">
+        <n-empty v-if="!compareRows.length && !hasDownstreamChange" size="small" description="无变更内容" />
+        <n-table v-if="compareRows.length" :bordered="true" size="small" :single-line="false">
           <thead>
             <tr>
               <th style="width: 160px">变更字段</th>
@@ -70,6 +71,15 @@
             </tr>
           </tbody>
         </n-table>
+
+        <template v-if="hasDownstreamChange">
+          <n-divider title-placement="left">下游客户付款返点明细变更</n-divider>
+          <DownstreamMediaCompareTable
+            :before="downstreamBefore"
+            :after="downstreamAfter"
+            :media-name-map="downstreamMediaNameMap"
+          />
+        </template>
       </n-card>
     </n-spin>
   </div>
@@ -84,6 +94,7 @@
     NDescriptions,
     NDescriptionsItem,
     NDivider,
+    NEmpty,
     NSpace,
     NSpin,
     NTable,
@@ -103,12 +114,15 @@
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type { AdOrderChangeDetail } from '@lib/shared/models/advertising';
 
+  import DownstreamMediaCompareTable from '../components/DownstreamMediaCompareTable.vue';
+
   import {
     approveAdOrderChange,
     executeAdOrderChange,
     getAdBusinessEntityPage,
     getAdCustomerPage,
     getAdDictPage,
+    getAdDownstreamMediaPage,
     getAdOrderChangeDetail,
     getAdUpstreamAgentPage,
     rejectAdOrderChange,
@@ -118,7 +132,7 @@
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
   import useUserMap from '../useUserMap';
-  import { fmtDateTime } from '../utils';
+  import { AD_SELECT_PAGE_PARAMS, fmtDateTime } from '../utils';
 
   const { t } = useI18n();
   const route = useRoute();
@@ -168,6 +182,8 @@
   const upstreamAgentOptions = ref<SelectItem[]>([]);
   const industryOptions = ref<SelectItem[]>([]);
   const businessEntityOptions = ref<SelectItem[]>([]);
+  /** 下游客户 id → 名称，用于明细快照的可读展示 */
+  const downstreamMediaNameMap = ref<Record<string, string>>({});
 
   const enumOptionsMap: Record<string, SelectItem[]> = {
     'enum-orderType': AdOrderTypeOptions as SelectItem[],
@@ -212,31 +228,42 @@
     return String(v);
   }
 
-  const compareRows = computed<CompareRow[]>(() => {
-    const change = detail.value?.change;
-    if (!change) return [];
-    const before = parseSnapshot(change.snapshotBefore);
-    const after = parseSnapshot(change.snapshotAfter);
-    const fields = parseFields(change.changeFields);
+  /** 下游客户明细相关的特殊变更字段，走独立表格渲染 */
+  const DOWNSTREAM_SPECIAL_FIELDS = ['downstreamMediaIds', 'downstreamMediaPayables'];
 
-    return fields.map((field) => {
-      const meta = AD_ORDER_CHANGE_FIELD_META.find((m) => m.field === field);
-      return {
-        field,
-        label: meta?.label || field,
-        before: fmtVal(before[field], meta?.type, meta?.control),
-        after: fmtVal(after[field], meta?.type, meta?.control),
-      };
-    });
+  const beforeSnapshot = computed<Record<string, any>>(() => parseSnapshot(detail.value?.change.snapshotBefore));
+  const afterSnapshot = computed<Record<string, any>>(() => parseSnapshot(detail.value?.change.snapshotAfter));
+  const changedFields = computed<string[]>(() => parseFields(detail.value?.change.changeFields));
+
+  const hasDownstreamChange = computed(() => changedFields.value.some((f) => DOWNSTREAM_SPECIAL_FIELDS.includes(f)));
+
+  const downstreamBefore = computed(() => beforeSnapshot.value.downstreamMediaPayables ?? null);
+  const downstreamAfter = computed(() => afterSnapshot.value.downstreamMediaPayables ?? null);
+
+  const compareRows = computed<CompareRow[]>(() => {
+    const before = beforeSnapshot.value;
+    const after = afterSnapshot.value;
+
+    return changedFields.value
+      .filter((field) => !DOWNSTREAM_SPECIAL_FIELDS.includes(field))
+      .map((field) => {
+        const meta = AD_ORDER_CHANGE_FIELD_META.find((m) => m.field === field);
+        return {
+          field,
+          label: meta?.label || field,
+          before: fmtVal(before[field], meta?.type, meta?.control),
+          after: fmtVal(after[field], meta?.type, meta?.control),
+        };
+      });
   });
 
   async function loadSelectOptions() {
     try {
       const [cuRes, uaRes, dictRes, beRes] = await Promise.all([
-        getAdCustomerPage({ current: 1, pageSize: 200 }),
-        getAdUpstreamAgentPage({ current: 1, pageSize: 200, status: 10 }),
-        getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' }),
-        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
+        getAdCustomerPage({ ...AD_SELECT_PAGE_PARAMS }),
+        getAdUpstreamAgentPage({ ...AD_SELECT_PAGE_PARAMS, status: 10 }),
+        getAdDictPage({ ...AD_SELECT_PAGE_PARAMS, dictCode: 'industry' }),
+        getAdBusinessEntityPage({ ...AD_SELECT_PAGE_PARAMS }),
       ]);
       customerOptions.value = (cuRes.list || []).map((it: any) => ({
         label: it.customerName || it.name || it.id,
@@ -260,10 +287,26 @@
     }
   }
 
+  async function loadDownstreamMediaMap() {
+    try {
+      const res = await getAdDownstreamMediaPage({ current: 1, pageSize: 500 });
+      const map: Record<string, string> = {};
+      (res.list || []).forEach((it: any) => {
+        map[String(it.id)] = it.resourceName || it.name || String(it.id);
+      });
+      downstreamMediaNameMap.value = map;
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
+  }
+
   async function fetchDetail() {
     loading.value = true;
     try {
       detail.value = await getAdOrderChangeDetail(changeId);
+      // 快照里只存了客户 id，需映射成名称便于阅读
+      if (hasDownstreamChange.value) await loadDownstreamMediaMap();
     } catch (e) {
       message.error((e as Error).message || '加载失败');
     } finally {

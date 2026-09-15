@@ -27,6 +27,129 @@
             </n-checkbox-group>
           </n-form-item>
 
+          <n-form-item label="付款返点明细（下游客户）">
+            <n-space vertical>
+              <n-checkbox v-model:checked="changeDownstream">变更下游客户明细</n-checkbox>
+              <template v-if="changeDownstream">
+                <n-select
+                  v-model:value="downstreamMediaIds"
+                  :options="downstreamMediaOptions"
+                  multiple
+                  filterable
+                  placeholder="请选择下游客户"
+                  style="width: 480px"
+                  @update:value="onDownstreamMediaChange"
+                />
+                <n-table
+                  v-if="downstreamMediaPayables.length"
+                  :bordered="true"
+                  size="small"
+                  :single-line="false"
+                  class="dm-table"
+                >
+                  <thead>
+                    <tr>
+                      <th style="width: 140px">下游客户</th>
+                      <th style="width: 120px">应付金额</th>
+                      <th style="width: 110px">不记返金额</th>
+                      <th style="width: 110px">返点方式</th>
+                      <th style="width: 110px">返点值</th>
+                      <th style="width: 120px">实际应付</th>
+                      <th style="width: 120px">付款方式</th>
+                      <th style="width: 120px">预付模式</th>
+                      <th style="width: 110px">预付比例%</th>
+                      <th style="width: 150px">预付截止日</th>
+                      <th style="width: 120px">后付触发</th>
+                      <th style="width: 110px">后付天数</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in downstreamMediaPayables" :key="item.downstreamMediaId">
+                      <td>{{ downstreamMediaName(item.downstreamMediaId) }}</td>
+                      <td>
+                        <n-input-number
+                          v-model:value="item.payableAmount"
+                          :min="0"
+                          :precision="2"
+                          :show-button="false"
+                          style="width: 100%"
+                        />
+                      </td>
+                      <td>
+                        <n-input-number
+                          v-model:value="item.noRebateAmount"
+                          :min="0"
+                          :precision="2"
+                          :show-button="false"
+                          style="width: 100%"
+                        />
+                      </td>
+                      <td>
+                        <n-select v-model:value="item.rebateMode" :options="AdModeOptions" style="width: 100%" />
+                      </td>
+                      <td>
+                        <n-input-number
+                          v-model:value="item.rebateValue"
+                          :min="0"
+                          :precision="2"
+                          :show-button="false"
+                          style="width: 100%"
+                        />
+                      </td>
+                      <td>{{ actualPayable(item) }}</td>
+                      <td>
+                        <n-select
+                          v-model:value="item.paymentMethod"
+                          :options="AdPaymentMethodOptions"
+                          style="width: 100%"
+                        />
+                      </td>
+                      <td>
+                        <n-select v-model:value="item.paymentPrepayMode" :options="AdModeOptions" style="width: 100%" />
+                      </td>
+                      <td>
+                        <n-input-number
+                          v-model:value="item.paymentPrepayRatio"
+                          :min="0"
+                          :precision="2"
+                          :show-button="false"
+                          style="width: 100%"
+                        />
+                      </td>
+                      <td>
+                        <n-date-picker
+                          v-model:value="item.paymentPrepayDeadline"
+                          type="date"
+                          clearable
+                          style="width: 100%"
+                        />
+                      </td>
+                      <td>
+                        <n-select
+                          v-model:value="item.paymentPostpayTrigger"
+                          :options="AdPostpayTriggerOptions"
+                          style="width: 100%"
+                        />
+                      </td>
+                      <td>
+                        <n-input-number
+                          v-model:value="item.paymentPostpayDays"
+                          :min="0"
+                          :precision="0"
+                          :show-button="false"
+                          style="width: 100%"
+                        />
+                      </td>
+                    </tr>
+                  </tbody>
+                </n-table>
+                <div v-if="downstreamMediaPayables.length" class="payable-total">
+                  合计应付金额：{{ payableTotal }}
+                </div>
+              </template>
+            </n-space>
+          </n-form-item>
+
           <template v-if="selectedMetas.length">
             <n-divider title-placement="left"
               >{{ t('advertising.change.detail.snapshotBefore') }} →
@@ -100,7 +223,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, reactive, ref } from 'vue';
+  import { computed, onMounted, reactive, ref, watch } from 'vue';
   import { useRouter } from 'vue-router';
   import {
     NButton,
@@ -136,6 +259,7 @@
     getAdBusinessEntityPage,
     getAdCustomerPage,
     getAdDictPage,
+    getAdDownstreamMediaPage,
     getAdOrderDetail,
     getAdOrderPage,
     getAdUpstreamAgentPage,
@@ -144,6 +268,8 @@
   import { hasPermission } from '@/utils/permission';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
+
+  import { AD_SELECT_PAGE_PARAMS } from '../utils';
 
   const { t } = useI18n();
   const router = useRouter();
@@ -164,6 +290,14 @@
 
   // 选中订单的原值（用于左右对比展示）
   const originalOrder = ref<AdOrderInfo | null>(null);
+
+  // 下游客户付款返点明细（改单整体重填）
+  const changeDownstream = ref(false);
+  const downstreamMediaIds = ref<string[]>([]);
+  const downstreamMediaPayables = ref<any[]>([]);
+  const downstreamMediaOptions = ref<SelectItem[]>([]);
+  // 原订单的下游客户明细，勾选"变更下游客户明细"时作为默认值回填
+  const originalDownstream = ref<{ ids: string[]; payables: any[] }>({ ids: [], payables: [] });
 
   // 下拉数据源（与建单页一致）
   type SelectItem = { label: string; value: string | number };
@@ -199,10 +333,35 @@
 
   async function onOrderChange(val: string | null) {
     originalOrder.value = null;
+    changeDownstream.value = false;
+    downstreamMediaIds.value = [];
+    downstreamMediaPayables.value = [];
     if (!val) return;
     try {
       const detail = await getAdOrderDetail(val);
-      originalOrder.value = detail.order ?? null;
+      const o = (detail.order ?? null) as any;
+      originalOrder.value = o;
+      // 下游客户明细在详情响应顶层（AdOrderDetailResponse），不在 order 实体里
+      const ids = (detail.downstreamMediaIds || []).map(String);
+      const payables = (detail.downstreamMediaPayables || []).map((p: any) => ({
+        downstreamMediaId: String(p.downstreamMediaId),
+        payableAmount: p.payableAmount,
+        noRebateAmount: p.noRebateAmount,
+        rebateMode: p.rebateMode,
+        rebateValue: p.rebateValue,
+        actualPayableAmount: p.actualPayable ?? p.actualPayableAmount,
+        paymentMethod: p.paymentMethod,
+        paymentPrepayMode: p.paymentPrepayMode,
+        paymentPrepayRatio: p.paymentPrepayRatio,
+        paymentPrepayDeadline: p.paymentPrepayDeadline,
+        paymentPostpayTrigger: p.paymentPostpayTrigger,
+        paymentPostpayDays: p.paymentPostpayDays,
+      }));
+      originalDownstream.value = { ids, payables };
+      // 选订单即把下游客户原值带入明细编辑区（整体重填：带原值提交=整表覆盖无变化）
+      downstreamMediaIds.value = [...ids];
+      downstreamMediaPayables.value = payables.map((p) => ({ ...p }));
+      changeDownstream.value = true;
     } catch (e) {
       // 拿不到原值不阻塞，仅影响"原值"列展示
     }
@@ -225,11 +384,12 @@
 
   async function loadSelectOptions() {
     try {
-      const [cuRes, uaRes, dictRes, beRes] = await Promise.all([
-        getAdCustomerPage({ current: 1, pageSize: 200 }),
-        getAdUpstreamAgentPage({ current: 1, pageSize: 200, status: 10 }),
-        getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' }),
-        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
+      const [cuRes, uaRes, dictRes, beRes, dmRes] = await Promise.all([
+        getAdCustomerPage({ ...AD_SELECT_PAGE_PARAMS }),
+        getAdUpstreamAgentPage({ ...AD_SELECT_PAGE_PARAMS, status: 10 }),
+        getAdDictPage({ ...AD_SELECT_PAGE_PARAMS, dictCode: 'industry' }),
+        getAdBusinessEntityPage({ ...AD_SELECT_PAGE_PARAMS }),
+        getAdDownstreamMediaPage({ ...AD_SELECT_PAGE_PARAMS }),
       ]);
       customerOptions.value = (cuRes.list || []).map((it: any) => ({
         label: it.customerName || it.name || it.id,
@@ -247,10 +407,78 @@
         label: it.name || it.id,
         value: it.id,
       }));
+      downstreamMediaOptions.value = (dmRes.list || []).map((it: any) => ({
+        label: it.resourceName || it.name || it.id,
+        value: String(it.id),
+      }));
     } catch (e) {
       // eslint-disable-next-line no-console
       console.error(e);
     }
+  }
+
+  // 下游客户明细：勾选"变更"时以原订单当前明细作为默认值回填
+  watch(changeDownstream, (v) => {
+    if (v) {
+      downstreamMediaIds.value = [...originalDownstream.value.ids];
+      downstreamMediaPayables.value = originalDownstream.value.payables.map((p) => ({ ...p }));
+    } else {
+      downstreamMediaIds.value = [];
+      downstreamMediaPayables.value = [];
+    }
+  });
+
+  function downstreamMediaName(id: string): string {
+    const f = downstreamMediaOptions.value.find((o) => String(o.value) === String(id));
+    return f ? String(f.label) : id || '-';
+  }
+
+  // 实际应付 = (应付金额 - 不记返金额) - 返点（比例/固定金额）
+  function actualPayable(item: any): number {
+    if (!item) return 0;
+    const base = Number(item.payableAmount || 0) - Number(item.noRebateAmount || 0);
+    if (item.rebateMode === 10) {
+      return base - base * (Number(item.rebateValue || 0) / 100);
+    }
+    if (item.rebateMode === 20) {
+      return base - Number(item.rebateValue || 0);
+    }
+    return base;
+  }
+
+  const payableTotal = computed(() =>
+    downstreamMediaPayables.value.reduce((s, it) => s + Number(actualPayable(it) || 0), 0).toFixed(2)
+  );
+
+  // 多选变化：同步明细数组（删除未选、新增选中并按原值/默认值初始化）
+  function onDownstreamMediaChange(val: string[]) {
+    const items = downstreamMediaPayables.value;
+    for (let i = items.length - 1; i >= 0; i--) {
+      if (!val.includes(items[i].downstreamMediaId)) items.splice(i, 1);
+    }
+    val.forEach((id) => {
+      if (!items.find((it) => it.downstreamMediaId === id)) {
+        const orig = originalDownstream.value.payables.find((p) => String(p.downstreamMediaId) === String(id));
+        items.push(
+          orig
+            ? { ...orig }
+            : {
+                downstreamMediaId: id,
+                payableAmount: null,
+                noRebateAmount: null,
+                rebateMode: 10,
+                rebateValue: null,
+                actualPayableAmount: 0,
+                paymentMethod: null,
+                paymentPrepayMode: null,
+                paymentPrepayRatio: null,
+                paymentPrepayDeadline: null,
+                paymentPostpayTrigger: null,
+                paymentPostpayDays: null,
+              }
+        );
+      }
+    });
   }
 
   function buildPayload(): AdOrderChangeSaveParams | null {
@@ -282,6 +510,25 @@
         changeFields.push(field);
       }
     });
+    // 下游客户付款返点明细（整表覆盖式变更）
+    if (changeDownstream.value && downstreamMediaIds.value.length) {
+      after.downstreamMediaIds = downstreamMediaIds.value.map(String);
+      after.downstreamMediaPayables = downstreamMediaPayables.value.map((it) => ({
+        downstreamMediaId: String(it.downstreamMediaId),
+        payableAmount: it.payableAmount == null ? null : Number(it.payableAmount),
+        noRebateAmount: it.noRebateAmount == null ? null : Number(it.noRebateAmount),
+        rebateMode: it.rebateMode,
+        rebateValue: it.rebateValue == null ? null : Number(it.rebateValue),
+        paymentMethod: it.paymentMethod,
+        paymentPrepayMode: it.paymentPrepayMode,
+        paymentPrepayRatio: it.paymentPrepayRatio == null ? null : Number(it.paymentPrepayRatio),
+        paymentPrepayDeadline: it.paymentPrepayDeadline == null ? null : Number(it.paymentPrepayDeadline),
+        paymentPostpayTrigger: it.paymentPostpayTrigger,
+        paymentPostpayDays: it.paymentPostpayDays == null ? null : Number(it.paymentPostpayDays),
+      }));
+      changeFields.push('downstreamMediaIds');
+      changeFields.push('downstreamMediaPayables');
+    }
     if (changeFields.length === 0) {
       message.warning('请至少填写一个变更字段');
       return null;
@@ -316,7 +563,7 @@
   async function loadOrders() {
     orderLoading.value = true;
     try {
-      const res = await getAdOrderPage({ current: 1, pageSize: 200 });
+      const res = await getAdOrderPage({ ...AD_SELECT_PAGE_PARAMS });
       // 可提交改单的订单：仅 待执行(45)/执行中(50)/结算中(80)；排除 草稿(0)/审批中(10)/改单审核中(60)/已归档(90)/已作废(100)
       const excluded = [0, 10, 60, 90, 100];
       orderOptions.value = (res.list || [])
@@ -345,5 +592,12 @@
   .before-value {
     color: #999;
     word-break: break-all;
+  }
+  .dm-table {
+    min-width: 1400px;
+  }
+  .payable-total {
+    font-weight: 600;
+    margin-top: 8px;
   }
 </style>

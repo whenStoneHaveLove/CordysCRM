@@ -1,17 +1,17 @@
 import type { CordysAxios } from '@lib/shared/api/http/Axios';
 import {
   AdContractCreateUrl,
-  AdContractUpdateUrl,
   AdContractDeleteUrl,
   AdContractDetailUrl,
   AdContractPageUrl,
+  AdContractUpdateUrl,
 } from '@lib/shared/api/requrls/adContract';
 import type {
-  AdContractSaveParams,
-  AdContractPageParams,
-  AdContractPageResult,
   AdContractDetailResponse,
   AdContractInfo,
+  AdContractPageParams,
+  AdContractPageResult,
+  AdContractSaveParams,
 } from '@lib/shared/models/advertising';
 
 export default function useAdContractApi(CDR: CordysAxios) {
@@ -40,14 +40,9 @@ export default function useAdContractApi(CDR: CordysAxios) {
     return CDR.post<AdContractPageResult>({ url: AdContractPageUrl, data }, { ignoreCancelToken: true });
   }
 
-  // 上传双盖附件（仅保存）
-  function uploadDoubleSeal(id: string, fileUrl: string) {
-    return CDR.put<AdContractInfo>({ url: `${AdContractUpdateUrl}/${id}/double-seal`, data: { fileUrl } });
-  }
-
-  // 提交归档审批
-  function submitArchive(id: string, fileUrl?: string) {
-    return CDR.put<AdContractInfo>({ url: `${AdContractUpdateUrl}/${id}/submit-archive`, data: { fileUrl } });
+  // 提交归档审批（双盖附件已由前端经附件接口写入）
+  function submitArchive(id: string) {
+    return CDR.put<AdContractInfo>({ url: `${AdContractUpdateUrl}/${id}/submit-archive`, data: {} });
   }
 
   // 归档审批通过（管理组）
@@ -72,7 +67,6 @@ export default function useAdContractApi(CDR: CordysAxios) {
     deleteAdContract,
     getAdContractDetail,
     getAdContractPage,
-    uploadDoubleSeal,
     submitArchive,
     approveArchive,
     rejectArchive,

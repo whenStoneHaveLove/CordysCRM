@@ -61,6 +61,6 @@ public class AdContractSaveRequest {
     @Schema(description = "返点条款")
     private String rebateTerms;
 
-    @Schema(description = "合同文件(单笔用印前可空,L-07)")
-    private String fileUrl;
+    @Schema(description = "合同用印附件(支持多文件，传临时文件ID+文件名，type=10)")
+    private List<AdContractAttachmentItem> sealFileUrls;
 }

@@ -1,0 +1,31 @@
+
+F:\git_kaiyuan\CordysCRM\frontend\packages\web\src\views\advertising\businessEntity\index.vue
+   21:101  warning  Replace `·t('advertising.businessEntity.new')` with `␍⏎··········t('advertising.businessEntity.new')␍⏎·······`                                                                                                                      prettier/prettier
+   36:13   warning  Replace `␍⏎······v-model:show="showModal"␍⏎······:title="modalTitle"␍⏎······preset="card"␍⏎······style="width:·560px"␍⏎····` with `·v-model:show="showModal"·:title="modalTitle"·preset="card"·style="width:·560px"`                prettier/prettier
+  226:23   warning  Replace `␍⏎········`${t('advertising.businessEntity.form.name')}·${t('advertising.businessEntity.form.required')}`␍⏎······` with ``${t('advertising.businessEntity.form.name')}·${t('advertising.businessEntity.form.required')}``  prettier/prettier
+  232:23   warning  Replace `␍⏎········`${t('advertising.businessEntity.form.code')}·${t('advertising.businessEntity.form.required')}`␍⏎······` with ``${t('advertising.businessEntity.form.code')}·${t('advertising.businessEntity.form.required')}``  prettier/prettier
+
+F:\git_kaiyuan\CordysCRM\frontend\packages\web\src\views\advertising\contract\index.vue
+   35:92  warning  Replace `·t('advertising.contract.new')` with `␍⏎··········t('advertising.contract.new')␍⏎·······`  prettier/prettier
+  287:67  warning  Insert `␍⏎·····`                                                                                    prettier/prettier
+
+F:\git_kaiyuan\CordysCRM\frontend\packages\web\src\views\advertising\customer\create.vue
+  16:13  warning  Replace `>{{·t('advertising.customer.form.save')·}}</n-button` with `··>{{·t('advertising.customer.form.save')·}}</n-button⏎············`  prettier/prettier
+
+F:\git_kaiyuan\CordysCRM\frontend\packages\web\src\views\advertising\order\index.vue
+  351:23  warning  Replace `␍⏎········row.receivableRebateRatio·!=·null·?·h('span',·`${row.receivableRebateRatio}%`)·:·''` with `·(row.receivableRebateRatio·!=·null·?·h('span',·`${row.receivableRebateRatio}%`)·:·'')`  prettier/prettier
+  360:23  warning  Replace `␍⏎········row.payableRebateRatio·!=·null·?·h('span',·`${row.payableRebateRatio}%`)·:·''` with `·(row.payableRebateRatio·!=·null·?·h('span',·`${row.payableRebateRatio}%`)·:·'')`              prettier/prettier
+
+F:\git_kaiyuan\CordysCRM\frontend\packages\web\src\views\advertising\payout\index.vue
+   999:6   warning  Replace `·key:·'mediaNames',·title:·'下游客户',·minWidth:·160,·ellipsis:·{·tooltip:·true·},·render:·(row)·=>·h('span',·row.mediaNames·||·'-')` with `⏎······key:·'mediaNames',⏎······title:·'下游客户',⏎······minWidth:·160,⏎······ellipsis:·{·tooltip:·true·},⏎······render:·(row)·=>·h('span',·row.mediaNames·||·'-'),⏎···`  prettier/prettier
+  1095:67  warning  Insert `⏎·····`                                                                                                                                                                                                                                                                                                        prettier/prettier
+
+F:\git_kaiyuan\CordysCRM\frontend\packages\web\src\views\advertising\seal\apply.vue
+  11:111  warning  Replace `·t('advertising.seal.submit')` with `␍⏎··············t('advertising.seal.submit')␍⏎···········`  prettier/prettier
+
+F:\git_kaiyuan\CordysCRM\frontend\packages\web\src\views\advertising\seal\index.vue
+  28:86  warning  Replace `·t('advertising.seal.apply')` with `␍⏎··········t('advertising.seal.apply')␍⏎·······`  prettier/prettier
+
+✖ 13 problems (0 errors, 13 warnings)
+  0 errors and 13 warnings potentially fixable with the `--fix` option.
+

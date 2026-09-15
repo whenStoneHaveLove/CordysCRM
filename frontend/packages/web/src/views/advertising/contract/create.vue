@@ -90,21 +90,24 @@
                 <n-date-picker v-model:value="form.validTo" type="date" style="width: 100%" />
               </n-form-item-gi>
               <n-form-item-gi :span="2" :label="t('advertising.contract.form.fileUrl')">
-                <div class="flex items-center gap-3">
+                <div class="flex flex-col gap-2">
                   <n-upload
-                    :custom-request="handleFileUpload"
+                    :custom-request="handleSealUpload"
+                    :multiple="true"
                     :show-file-list="false"
                     accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
                   >
-                    <n-button size="small" :loading="uploading">{{
-                      form.fileUrl ? '重新上传' : '上传合同文件'
-                    }}</n-button>
+                    <n-button size="small" :loading="uploading">+ 添加合同文件</n-button>
                   </n-upload>
-                  <div v-if="form.fileUrl" class="contract-file-info">
-                    <span class="file-name" :title="form.fileName">{{ displayFileName }}</span>
-                    <n-button size="tiny" type="primary" ghost @click.prevent="handlePreview"> 预览 </n-button>
-                    <n-button size="tiny" type="primary" ghost @click.prevent="handleDownload"> 下载 </n-button>
-                    <n-button text size="tiny" type="error" @click="handleClearFile">清除</n-button>
+                  <div v-if="sealFileList.length" class="contract-file-list">
+                    <div v-for="file in sealFileList" :key="(file.id as string)" class="contract-file-item">
+                      <span class="file-name" :title="file.name">{{ file.name }}</span>
+                      <n-space size="small">
+                        <n-button size="tiny" type="primary" ghost @click="handleSealPreview(file)"> 预览 </n-button>
+                        <n-button size="tiny" type="primary" ghost @click="handleSealDownload(file)"> 下载 </n-button>
+                        <n-button text size="tiny" type="error" @click="handleRemoveSeal(file)">删除</n-button>
+                      </n-space>
+                    </div>
                   </div>
                 </div>
               </n-form-item-gi>
@@ -162,6 +165,9 @@
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  import { AD_SELECT_PAGE_PARAMS } from '../utils';
+  import type { UploadFileInfo } from 'naive-ui';
+
   const directionOptions = AdContractDirectionOptions;
   const typeOptions = AdContractTypeOptions;
   const relatedPartyTypeOptions = AdRelatedPartyTypeOptions;
@@ -189,10 +195,6 @@
     validTo?: number | null;
     amount?: number | null;
     rebateTerms?: string;
-    /** 合同文件ID（提交到后端 file_url 字段，对应 /attachment/preview/{id} /download/{id}） */
-    fileUrl?: string;
-    /** 合同文件名（仅前端展示用） */
-    fileName?: string;
   }
 
   const { t } = useI18n();
@@ -205,6 +207,8 @@
   const isEdit = computed(() => !!id);
   const saving = ref(false);
   const uploading = ref(false);
+  /** 用印附件列表（多文件，每个元素的 id 为临时文件ID / 已转存附件ID） */
+  const sealFileList = ref<UploadFileInfo[]>([]);
 
   const form = reactive<AdContractForm>({
     contractNo: undefined,
@@ -220,8 +224,6 @@
     validTo: null,
     amount: null,
     rebateTerms: undefined,
-    fileUrl: undefined,
-    fileName: undefined,
   });
 
   /** 根据合同方向过滤关联方类型选项：
@@ -244,19 +246,9 @@
 
   /** 当前用户 id（用于附件预览/下载鉴权） */
   const currentUserId = computed(() => userStore.userInfo?.id || '');
-  /** 文件预览地址（走 Vite dev proxy / 生产同源，必须是相对路径才能自动经过反代） */
-  const previewUrl = computed(() =>
-    form.fileUrl ? `/attachment/preview/${form.fileUrl}?userId=${currentUserId.value}` : ''
-  );
-  /** 文件下载地址 */
-  const downloadUrl = computed(() =>
-    form.fileUrl ? `/attachment/download/${form.fileUrl}?userId=${currentUserId.value}` : ''
-  );
-  /** 展示用的文件名：新建/重新上传时有原名；编辑回填时后端没返回，则显示通用提示 */
-  const displayFileName = computed(() => form.fileName || (form.fileUrl ? '已上传合同文件' : ''));
 
-  /** 上传合同文件 */
-  async function handleFileUpload(opts: { file: any; onFinish: () => void; onError: () => void }) {
+  /** 上传用印附件（多文件） */
+  async function handleSealUpload(opts: { file: any; onFinish: () => void; onError: () => void }) {
     uploading.value = true;
     try {
       const rawFile = opts.file.file as File;
@@ -265,8 +257,7 @@
       if (!fileId) {
         throw new Error('上传返回异常');
       }
-      form.fileUrl = fileId;
-      form.fileName = rawFile.name;
+      sealFileList.value.push({ id: fileId, name: rawFile.name, status: 'finished' } as UploadFileInfo);
       message.success('合同文件上传成功');
       opts.onFinish();
     } catch (e) {
@@ -277,22 +268,21 @@
     }
   }
 
-  /** 清除已上传的合同文件 */
-  function handleClearFile() {
-    form.fileUrl = undefined;
-    form.fileName = undefined;
+  /** 移除某个用印附件（仅前端列表，保存时由后端 reconcile 删除） */
+  function handleRemoveSeal(file: UploadFileInfo) {
+    sealFileList.value = sealFileList.value.filter((f) => f.id !== file.id);
   }
 
   /** 预览：新窗口打开，Cookie 继承当前页面 */
-  function handlePreview() {
-    window.open(previewUrl.value, '_blank');
+  function handleSealPreview(file: UploadFileInfo) {
+    window.open(`/attachment/preview/${file.id}?userId=${currentUserId.value}`, '_blank');
   }
 
   /** 下载：隐藏 iframe 触发下载，Cookie 继承当前页面 */
-  function handleDownload() {
+  function handleSealDownload(file: UploadFileInfo) {
     const a = document.createElement('a');
-    a.href = downloadUrl.value;
-    a.download = form.fileName || 'contract';
+    a.href = `/attachment/download/${file.id}?userId=${currentUserId.value}`;
+    a.download = file.name || 'contract';
     a.target = '_blank';
     document.body.appendChild(a);
     a.click();
@@ -303,7 +293,7 @@
   async function loadCommonOptions() {
     try {
       const [beRes, orderRes] = await Promise.all([
-        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
+        getAdBusinessEntityPage({ ...AD_SELECT_PAGE_PARAMS }),
         getAdOrderPage({ current: 1, pageSize: 1000 }),
       ]);
       businessEntityOptions.value = (beRes.list || []).map((it) => ({
@@ -334,7 +324,7 @@
   async function loadRelatedPartyOptions(type?: number | null) {
     if (type === 10) {
       try {
-        const res = await getAdCustomerPage({ current: 1, pageSize: 200 });
+        const res = await getAdCustomerPage({ ...AD_SELECT_PAGE_PARAMS });
         relatedPartyOptions.value = (res.list || []).map((it) => ({
           label: it.customerName || it.id,
           value: it.id,
@@ -345,7 +335,7 @@
       }
     } else if (type === 20) {
       try {
-        const res = await getAdUpstreamAgentPage({ current: 1, pageSize: 200, status: 10 });
+        const res = await getAdUpstreamAgentPage({ ...AD_SELECT_PAGE_PARAMS, status: 10 });
         relatedPartyOptions.value = (res.list || []).map((it: any) => ({
           label: it.name || it.id,
           value: it.id,
@@ -356,7 +346,7 @@
       }
     } else if (type === 30) {
       try {
-        const res = await getAdDownstreamMediaPage({ current: 1, pageSize: 200, status: 10 });
+        const res = await getAdDownstreamMediaPage({ ...AD_SELECT_PAGE_PARAMS, status: 10 });
         relatedPartyOptions.value = (res.list || []).map((it: any) => ({
           label: it.name || it.id,
           value: it.id,
@@ -385,7 +375,10 @@
       validTo: form.validTo ?? undefined,
       amount: form.amount ?? undefined,
       rebateTerms: form.rebateTerms,
-      fileUrl: form.fileUrl,
+      sealFileUrls: sealFileList.value.map((f) => ({
+        tempFileId: f.id as string,
+        fileName: f.name || '',
+      })),
     };
   }
 
@@ -466,7 +459,10 @@
       form.validTo = toDateValue(o.validTo);
       form.amount = o.amount ?? null;
       form.rebateTerms = o.rebateTerms;
-      form.fileUrl = o.fileUrl;
+      // 用印附件(type=10)：编辑回填到多文件列表（id 为已转存附件ID，可用于预览/下载）
+      sealFileList.value = (res.attachments || [])
+        .filter((a: any) => a.type === 10)
+        .map((a: any) => ({ id: a.fileUrl, name: a.fileName, status: 'finished' } as UploadFileInfo));
 
       // 防御：若历史数据的关联方类型不在当前方向的允许范围内，则清空
       const allowedTypes = filteredRelatedPartyTypeOptions.value.map((it) => it.value);
@@ -517,9 +513,16 @@
 </script>
 
 <style scoped>
-  .contract-file-info {
-    display: inline-flex;
+  .contract-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  .contract-file-item {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
     padding: 4px 10px;
     border: 1px solid var(--text-n8);
@@ -527,8 +530,8 @@
     background: var(--text-n10);
     font-size: 12px;
   }
-  .contract-file-info .file-name {
-    max-width: 220px;
+  .contract-file-item .file-name {
+    max-width: 320px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

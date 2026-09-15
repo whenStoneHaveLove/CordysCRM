@@ -55,27 +55,29 @@
           <n-descriptions-item label="有效期止">{{ fmtDate(detail.contract.validTo) }}</n-descriptions-item>
           <n-descriptions-item label="合同金额">{{ fmtAmount(detail.contract.amount) }}</n-descriptions-item>
           <n-descriptions-item label="用印附件">
-            <template v-if="detail.contract.fileUrl">
-              <n-space>
-                <n-button size="tiny" type="primary" ghost @click="handlePreview(detail.contract.fileUrl)"
-                  >预览</n-button
-                >
-                <n-button size="tiny" type="primary" ghost @click="handleDownload(detail.contract.fileUrl)"
-                  >下载</n-button
-                >
+            <template v-if="sealAttachments.length">
+              <n-space :size="6" vertical>
+                <div v-for="att in sealAttachments" :key="att.id" class="att-row">
+                  <span class="att-name" :title="att.fileName">{{ att.fileName || att.fileUrl }}</span>
+                  <n-space :size="4">
+                    <n-button size="tiny" type="primary" ghost @click="handlePreview(att.fileUrl)">预览</n-button>
+                    <n-button size="tiny" type="primary" ghost @click="handleDownload(att.fileUrl)">下载</n-button>
+                  </n-space>
+                </div>
               </n-space>
             </template>
             <span v-else>-</span>
           </n-descriptions-item>
           <n-descriptions-item label="双盖附件">
-            <template v-if="detail.contract.doubleSealFileUrl">
-              <n-space>
-                <n-button size="tiny" type="primary" ghost @click="handlePreview(detail.contract.doubleSealFileUrl!)"
-                  >预览</n-button
-                >
-                <n-button size="tiny" type="primary" ghost @click="handleDownload(detail.contract.doubleSealFileUrl!)"
-                  >下载</n-button
-                >
+            <template v-if="doubleSealAttachments.length">
+              <n-space :size="6" vertical>
+                <div v-for="att in doubleSealAttachments" :key="att.id" class="att-row">
+                  <span class="att-name" :title="att.fileName">{{ att.fileName || att.fileUrl }}</span>
+                  <n-space :size="4">
+                    <n-button size="tiny" type="primary" ghost @click="handlePreview(att.fileUrl)">预览</n-button>
+                    <n-button size="tiny" type="primary" ghost @click="handleDownload(att.fileUrl)">下载</n-button>
+                  </n-space>
+                </div>
               </n-space>
             </template>
             <span v-else>-</span>
@@ -104,9 +106,15 @@
         <template v-if="detail.contract.archiveApproveRemark || detail.contract.archiveApproveUser">
           <n-divider title-placement="left">归档审批信息</n-divider>
           <n-descriptions label-placement="left" :column="3" bordered size="small">
-            <n-descriptions-item label="审批人">{{ getUserName(detail.contract.archiveApproveUser) }}</n-descriptions-item>
-            <n-descriptions-item label="审批时间">{{ fmtDateTime(detail.contract.archiveApproveTime) }}</n-descriptions-item>
-            <n-descriptions-item label="审批备注">{{ detail.contract.archiveApproveRemark || '-' }}</n-descriptions-item>
+            <n-descriptions-item label="审批人">{{
+              getUserName(detail.contract.archiveApproveUser)
+            }}</n-descriptions-item>
+            <n-descriptions-item label="审批时间">{{
+              fmtDateTime(detail.contract.archiveApproveTime)
+            }}</n-descriptions-item>
+            <n-descriptions-item label="审批备注">{{
+              detail.contract.archiveApproveRemark || '-'
+            }}</n-descriptions-item>
           </n-descriptions>
         </template>
 
@@ -124,27 +132,32 @@
       </n-card>
     </n-spin>
 
-    <!-- 上传双盖附件弹窗 -->
-    <n-modal v-model:show="showDoubleSealUpload" preset="card" title="上传双盖附件" style="width: 520px">
+    <!-- 双盖附件管理弹窗（多文件） -->
+    <n-modal v-model:show="showDoubleSealUpload" preset="card" title="双盖附件管理" style="width: 560px">
       <div class="double-seal-upload">
         <n-upload
           :custom-request="handleDoubleSealUpload"
+          :multiple="true"
           :show-file-list="false"
           accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
         >
-          <n-button :loading="doubleSealUploading">
-            {{ doubleSealFileUrl ? '重新上传' : '选择文件' }}
-          </n-button>
+          <n-button :loading="doubleSealUploading">+ 添加双盖附件</n-button>
         </n-upload>
-        <div v-if="doubleSealFileUrl" class="text-n3 mt-2 text-[12px]">
-          {{ doubleSealFileName || '已选择文件' }}
-        </div>
+        <n-space :size="6" vertical class="mt-2">
+          <div v-for="att in doubleSealAttachments" :key="att.id" class="att-row">
+            <span class="att-name" :title="att.fileName">{{ att.fileName || att.fileUrl }}</span>
+            <n-space :size="4">
+              <n-button size="tiny" type="primary" ghost @click="handlePreview(att.fileUrl)">预览</n-button>
+              <n-button size="tiny" type="primary" ghost @click="handleDownload(att.fileUrl)">下载</n-button>
+              <n-button text size="tiny" type="error" @click="handleDeleteAttachment(att)">删除</n-button>
+            </n-space>
+          </div>
+        </n-space>
       </div>
       <template #footer>
         <n-space justify="end">
           <n-button @click="showDoubleSealUpload = false">取消</n-button>
-          <n-button :loading="doubleSealUploading" @click="handleSaveDoubleSeal">仅保存</n-button>
-          <n-button type="primary" :loading="doubleSealUploading" @click="handleSubmitArchive">提交归档审批</n-button>
+          <n-button type="primary" :loading="submitting" @click="handleSubmitArchive">提交归档审批</n-button>
         </n-space>
       </template>
     </n-modal>
@@ -154,12 +167,7 @@
       <n-space vertical>
         <div>
           <div class="action-modal-label">审批备注</div>
-          <n-input
-            v-model:value="archiveAuditRemark"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入审批备注"
-          />
+          <n-input v-model:value="archiveAuditRemark" type="textarea" :rows="3" placeholder="请输入审批备注" />
         </div>
       </n-space>
       <template #footer>
@@ -174,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-  import { h, onMounted, ref } from 'vue';
+  import { computed, h, onMounted, ref } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import {
     NButton,
@@ -199,10 +207,11 @@
 
   import {
     approveArchive,
+    deleteAdContractAttachment,
     getAdContractDetail,
     rejectArchive,
     submitArchive,
-    uploadDoubleSeal,
+    uploadAdContractAttachment,
     uploadTempAttachment,
   } from '@/api/modules';
   import useUserStore from '@/store/modules/user';
@@ -223,9 +232,12 @@
   const loading = ref(false);
   const detail = ref<AdContractDetailResponse | null>(null);
   const showDoubleSealUpload = ref(false);
-  const doubleSealFileUrl = ref('');
-  const doubleSealFileName = ref('');
   const doubleSealUploading = ref(false);
+  const submitting = ref(false);
+
+  /** 用印附件(type=10) / 双盖附件(type=20) 列表 */
+  const sealAttachments = computed(() => (detail.value?.attachments || []).filter((a) => a.type === 10));
+  const doubleSealAttachments = computed(() => (detail.value?.attachments || []).filter((a) => a.type === 20));
   const showArchiveAudit = ref(false);
   const archiveAuditRemark = ref('');
 
@@ -277,7 +289,7 @@
     }
   }
 
-  /** 上传双盖附件文件 */
+  /** 上传双盖附件（多文件，逐个写入 ad_contract_attachment type=20） */
   async function handleDoubleSealUpload(opts: { file: any; onFinish: () => void; onError: () => void }) {
     doubleSealUploading.value = true;
     try {
@@ -285,10 +297,10 @@
       const res: any = await uploadTempAttachment(rawFile);
       const fileId = res?.data?.[0] || res?.data || '';
       if (!fileId) throw new Error('上传返回异常');
-      doubleSealFileUrl.value = fileId;
-      doubleSealFileName.value = rawFile.name;
-      message.success('文件上传成功');
+      await uploadAdContractAttachment(contractId, 20, fileId, rawFile.name);
+      message.success('双盖附件上传成功');
       opts.onFinish();
+      await fetchDetail();
     } catch (e) {
       message.error((e as Error).message || '上传失败');
       opts.onError();
@@ -297,44 +309,38 @@
     }
   }
 
-  async function handleSaveDoubleSeal() {
-    if (!doubleSealFileUrl.value) {
-      message.warning('请先上传文件');
-      return;
-    }
+  /** 删除合同附件（用印/双盖通用） */
+  async function handleDeleteAttachment(att: { id: string; fileUrl: string }) {
     try {
-      await uploadDoubleSeal(contractId, doubleSealFileUrl.value);
-      message.success('保存成功');
-      showDoubleSealUpload.value = false;
-      doubleSealFileUrl.value = '';
-      doubleSealFileName.value = '';
+      await deleteAdContractAttachment(contractId, att.id);
+      message.success('已删除附件');
       await fetchDetail();
     } catch (e) {
-      message.error((e as Error).message || '保存失败');
+      message.error((e as Error).message || '删除失败');
     }
   }
 
   async function handleSubmitArchive() {
-    const fileUrl = doubleSealFileUrl.value || detail.value?.contract.doubleSealFileUrl;
-    if (!fileUrl) {
+    if (!doubleSealAttachments.value.length) {
       message.warning('请先上传双盖附件');
       return;
     }
     try {
-      await submitArchive(contractId, fileUrl);
+      submitting.value = true;
+      await submitArchive(contractId);
       message.success('已提交归档审批');
       showDoubleSealUpload.value = false;
-      doubleSealFileUrl.value = '';
-      doubleSealFileName.value = '';
       await fetchDetail();
     } catch (e) {
       message.error((e as Error).message || '提交失败');
+    } finally {
+      submitting.value = false;
     }
   }
 
   /** 右上角快捷提交归档审批：校验是否已有双盖附件 */
   function handleQuickSubmitArchive() {
-    if (!detail.value?.contract.doubleSealFileUrl) {
+    if (!doubleSealAttachments.value.length) {
       message.warning('请先上传双盖附件');
       return;
     }
@@ -395,6 +401,24 @@
   .action-modal-label {
     margin-bottom: 4px;
     font-size: 12px;
+    color: var(--text-n2);
+  }
+  .att-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 10px;
+    border: 1px solid var(--text-n8);
+    border-radius: 4px;
+    background: var(--text-n10);
+    font-size: 12px;
+  }
+  .att-row .att-name {
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--text-n2);
   }
 </style>

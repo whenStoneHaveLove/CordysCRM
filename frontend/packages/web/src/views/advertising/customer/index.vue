@@ -31,7 +31,9 @@
         />
         <n-button type="primary" @click="handleSearch">查询</n-button>
         <n-button @click="handleReset">{{ t('advertising.order.reset') }}</n-button>
-        <n-button v-permission="['AD_CUSTOMER:CREATE']" type="primary" @click="openCreate">{{ t('advertising.customer.new') }}</n-button>
+        <n-button v-permission="['AD_CUSTOMER:CREATE']" type="primary" @click="openCreate">{{
+          t('advertising.customer.new')
+        }}</n-button>
       </n-space>
     </n-card>
 
@@ -46,12 +48,7 @@
       />
     </n-card>
 
-    <n-modal
-      v-model:show="showModal"
-      :title="modalTitle"
-      preset="card"
-      style="width: 640px"
-    >
+    <n-modal v-model:show="showModal" :title="modalTitle" preset="card" style="width: 640px">
       <n-form ref="formRef" :model="form" label-placement="left" :label-width="120">
         <n-grid :cols="2" :x-gap="16" item-responsive>
           <n-form-item-gi :span="1" :label="t('advertising.customer.form.name')" path="customerName">
@@ -133,10 +130,17 @@
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import type { AdCustomerListItem, AdCustomerPageParams } from '@lib/shared/models/advertising';
 
-  import { createAdCustomer, getAdCustomerDetail, getAdCustomerPage, getAdDictPage, updateAdCustomer } from '@/api/modules';
+  import {
+    createAdCustomer,
+    getAdCustomerDetail,
+    getAdCustomerPage,
+    getAdDictPage,
+    updateAdCustomer,
+  } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  import { AD_SELECT_PAGE_PARAMS } from '../utils';
   import type { DataTableColumn } from 'naive-ui';
 
   const { t } = useI18n();
@@ -253,7 +257,7 @@
 
   async function loadIndustryOptions() {
     try {
-      const res = await getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' });
+      const res = await getAdDictPage({ ...AD_SELECT_PAGE_PARAMS, dictCode: 'industry' });
       industryOptions.value = (res.list || []).map((it: any) => ({
         label: it.dictLabel || it.dictValue || it.id,
         value: it.dictValue || it.id,

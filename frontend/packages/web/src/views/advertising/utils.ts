@@ -63,3 +63,13 @@ export function toTimeStamp(value?: number | string | null): number | null {
   if (Number.isNaN(d.getTime())) return null;
   return d.getTime();
 }
+
+/**
+ * 广告模块「下拉选择类」接口的默认分页大小。
+ * 订单/合同/收款/付款等模块的关联下拉（选择订单、选择合同等）需要一次性拉取全量数据，
+ * 数值偏小会导致订单量多时选项缺失。统一在此调整，改一处即可全模块生效。
+ */
+export const AD_SELECT_PAGE_SIZE = 1000;
+
+/** 广告模块下拉选择类接口的默认分页参数（固定第 1 页 + AD_SELECT_PAGE_SIZE 条）。 */
+export const AD_SELECT_PAGE_PARAMS = { current: 1, pageSize: AD_SELECT_PAGE_SIZE };

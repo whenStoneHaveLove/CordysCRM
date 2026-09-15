@@ -452,6 +452,8 @@
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  import { AD_SELECT_PAGE_PARAMS } from '../utils';
+
   const { t } = useI18n();
   const route = useRoute();
   const router = useRouter();
@@ -841,11 +843,11 @@
   async function loadSelectOptions() {
     try {
       const [beRes, cuRes, uaRes, dictRes, dmRes] = await Promise.all([
-        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
-        getAdCustomerPage({ current: 1, pageSize: 200 }),
-        getAdUpstreamAgentPage({ current: 1, pageSize: 200, status: 10 }),
-        getAdDictPage({ current: 1, pageSize: 200, dictCode: 'industry' }),
-        getAdDownstreamMediaPage({ current: 1, pageSize: 200, status: 10 }),
+        getAdBusinessEntityPage({ ...AD_SELECT_PAGE_PARAMS }),
+        getAdCustomerPage({ ...AD_SELECT_PAGE_PARAMS }),
+        getAdUpstreamAgentPage({ ...AD_SELECT_PAGE_PARAMS, status: 10 }),
+        getAdDictPage({ ...AD_SELECT_PAGE_PARAMS, dictCode: 'industry' }),
+        getAdDownstreamMediaPage({ ...AD_SELECT_PAGE_PARAMS, status: 10 }),
       ]);
       businessEntityOptions.value = (beRes.list || []).map((it: any) => ({
         label: it.name || it.id,
@@ -877,8 +879,7 @@
   async function loadContractOptions() {
     try {
       const res = await getAdContractPage({
-        current: 1,
-        pageSize: 200,
+        ...AD_SELECT_PAGE_PARAMS,
         contractType: form.orderType ?? undefined,
         sealStatus: 60, // 只可选已归档（双盖完成）的合同
       });

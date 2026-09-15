@@ -13,10 +13,12 @@ import cn.cordys.crm.ad.common.constants.AdOrderChangeStatus;
 import cn.cordys.crm.ad.common.constants.OrderStateMachine;
 import cn.cordys.crm.ad.order.domain.AdOrder;
 import cn.cordys.crm.ad.order.domain.AdOrderChange;
+import cn.cordys.crm.ad.order.domain.AdOrderDownstreamMedia;
 import cn.cordys.crm.ad.order.domain.AdOrderLog;
 import cn.cordys.crm.ad.order.dto.request.AdOrderChangeApproveRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderChangePageRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderChangeSaveRequest;
+import cn.cordys.crm.ad.order.dto.request.AdOrderSaveRequest;
 import cn.cordys.crm.ad.order.dto.response.AdOrderChangeDetailResponse;
 import cn.cordys.crm.ad.order.dto.response.AdOrderChangeListResponse;
 import cn.cordys.crm.ad.order.mapper.ExtAdOrderChangeMapper;
@@ -34,14 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 广告改单服务（M3 T-20/T-21，V3.1 §6/§7.2/§8）。
@@ -81,6 +76,10 @@ public class AdOrderChangeService {
     private AdAmountCalculator amountCalculator;
     @Resource
     private cn.cordys.common.service.BaseService baseService;
+    @Resource
+    private AdOrderService adOrderService;
+    @Resource
+    private cn.cordys.crm.ad.order.mapper.ExtAdOrderDownstreamMediaMapper orderDownstreamMediaMapper;
 
     /** L-14 审批开关（默认开启）。 */
     @Value("${ad.order.approval.enabled:true}")
@@ -99,6 +98,11 @@ public class AdOrderChangeService {
             "deliveryStartDate", "deliveryEndDate", "receiptPrepayDeadline", "paymentPrepayDeadline",
             "orderName", "deliveryVolume", "remark", "extJson", "currency",
             "signingEntity", "industryCode", "upstreamAgentId", "agentOrderNo", "customerId"
+    ));
+
+    /** 下游客户付款返点明细：以整表覆盖方式随改单提交的特殊 changeField（不对应 ad_order 标量字段）。 */
+    private static final Set<String> SPECIAL_FIELDS = new HashSet<>(Arrays.asList(
+            "downstreamMediaIds", "downstreamMediaPayables"
     ));
 
     // ===================== 新建改单申请（草稿） =====================
@@ -259,6 +263,10 @@ public class AdOrderChangeService {
         // 1) 应用变更后快照（仅白名单字段）
         Map<String, Object> after = parseJson(change.getSnapshotAfter());
         applyAfter(order, after);
+        // 1.5) 下游客户付款返点明细（整表覆盖，作为改单特殊字段随审批落地）
+        if (after.containsKey("downstreamMediaPayables")) {
+            applyDownstreamMediaChange(order, after, userId, orgId);
+        }
         // 2) 金额重算（L-02/L-11/L-28）
         amountCalculator.computeAmounts(order);
         // 3) 父单从改单审核中(60)恢复为改单前状态
@@ -352,7 +360,7 @@ public class AdOrderChangeService {
             if ("orderType".equals(f) || "order_type".equals(f)) {
                 throw new GenericException("改单禁止变更订单类型(order_type)，如需变更请走作废重建流程(L-24)");
             }
-            if (!MUTABLE_FIELDS.contains(f)) {
+            if (!MUTABLE_FIELDS.contains(f) && !SPECIAL_FIELDS.contains(f)) {
                 throw new GenericException("不支持变更字段: " + f);
             }
         }
@@ -389,8 +397,42 @@ public class AdOrderChangeService {
             case "upstreamAgentId": return order.getUpstreamAgentId();
             case "agentOrderNo": return order.getAgentOrderNo();
             case "customerId": return order.getCustomerId();
+            case "downstreamMediaIds": return buildDownstreamIdsSnapshot(order.getId());
+            case "downstreamMediaPayables": return buildDownstreamPayablesSnapshot(order.getId());
             default: return null;
         }
+    }
+
+    /** 下游客户明细（改前快照）：当前已关联的下游客户 id 列表。 */
+    private List<String> buildDownstreamIdsSnapshot(String orderId) {
+        List<AdOrderDownstreamMedia> list = orderDownstreamMediaMapper.selectByOrderId(orderId);
+        List<String> ids = new ArrayList<>();
+        for (AdOrderDownstreamMedia m : list) {
+            ids.add(String.valueOf(m.getDownstreamMediaId()));
+        }
+        return ids;
+    }
+
+    /** 下游客户明细（改前快照）：当前每条付款返点明细（Map 形式，便于 JSON 存档与对比）。 */
+    private List<Map<String, Object>> buildDownstreamPayablesSnapshot(String orderId) {
+        List<AdOrderDownstreamMedia> list = orderDownstreamMediaMapper.selectByOrderId(orderId);
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (AdOrderDownstreamMedia m : list) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("downstreamMediaId", String.valueOf(m.getDownstreamMediaId()));
+            row.put("payableAmount", m.getPayableAmount());
+            row.put("noRebateAmount", m.getNoRebateAmount());
+            row.put("rebateMode", m.getRebateMode());
+            row.put("rebateValue", m.getRebateValue());
+            row.put("paymentMethod", m.getPaymentMethod());
+            row.put("paymentPrepayMode", m.getPaymentPrepayMode());
+            row.put("paymentPrepayRatio", m.getPaymentPrepayRatio());
+            row.put("paymentPrepayDeadline", m.getPaymentPrepayDeadline());
+            row.put("paymentPostpayTrigger", m.getPaymentPostpayTrigger());
+            row.put("paymentPostpayDays", m.getPaymentPostpayDays());
+            rows.add(row);
+        }
+        return rows;
     }
 
     /**
@@ -502,8 +544,64 @@ public class AdOrderChangeService {
         return v == null ? null : v.toString();
     }
 
+    private Long toLong(Object v) {
+        if (v == null) {
+            return null;
+        }
+        if (v instanceof Number) {
+            return ((Number) v).longValue();
+        }
+        if (v instanceof String) {
+            String s = ((String) v).trim();
+            return s.isEmpty() ? null : Long.parseLong(s);
+        }
+        return null;
+    }
+
     private BigDecimal nvl(BigDecimal v) {
         return v == null ? BigDecimal.ZERO : v;
+    }
+
+    /**
+     * 下游客户付款返点明细（改单特殊字段）：将快照 Map 转为 DTO 并整表覆盖到订单子表。
+     */
+    @SuppressWarnings("unchecked")
+    private void applyDownstreamMediaChange(AdOrder order, Map<String, Object> after, String userId, String orgId) {
+        List<String> ids = new ArrayList<>();
+        Object rawIds = after.get("downstreamMediaIds");
+        if (rawIds instanceof List) {
+            for (Object o : (List<?>) rawIds) {
+                ids.add(o == null ? null : String.valueOf(o));
+            }
+        }
+        List<AdOrderSaveRequest.DownstreamMediaPayableDTO> dtos = new ArrayList<>();
+        Object raw = after.get("downstreamMediaPayables");
+        if (raw instanceof List) {
+            for (Object o : (List<?>) raw) {
+                if (o instanceof Map) {
+                    dtos.add(toPayableDTO((Map<String, Object>) o));
+                }
+            }
+        }
+        if (!dtos.isEmpty()) {
+            adOrderService.syncOrderDownstreamMedia(order, ids, dtos, userId, orgId);
+        }
+    }
+
+    private AdOrderSaveRequest.DownstreamMediaPayableDTO toPayableDTO(Map<String, Object> m) {
+        AdOrderSaveRequest.DownstreamMediaPayableDTO dto = new AdOrderSaveRequest.DownstreamMediaPayableDTO();
+        dto.setDownstreamMediaId(toStr(m.get("downstreamMediaId")));
+        dto.setPayableAmount(toBigDecimal(m.get("payableAmount")));
+        dto.setNoRebateAmount(toBigDecimal(m.get("noRebateAmount")));
+        dto.setRebateMode(toInt(m.get("rebateMode")));
+        dto.setRebateValue(toBigDecimal(m.get("rebateValue")));
+        dto.setPaymentMethod(toInt(m.get("paymentMethod")));
+        dto.setPaymentPrepayMode(toInt(m.get("paymentPrepayMode")));
+        dto.setPaymentPrepayRatio(toBigDecimal(m.get("paymentPrepayRatio")));
+        dto.setPaymentPrepayDeadline(toLong(m.get("paymentPrepayDeadline")));
+        dto.setPaymentPostpayTrigger(toInt(m.get("paymentPostpayTrigger")));
+        dto.setPaymentPostpayDays(toInt(m.get("paymentPostpayDays")));
+        return dto;
     }
 
     // ===================== JSON =====================

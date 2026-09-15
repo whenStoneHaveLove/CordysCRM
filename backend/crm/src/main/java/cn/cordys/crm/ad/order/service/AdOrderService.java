@@ -604,7 +604,7 @@ public class AdOrderService {
      * 注意：由于唯一键 (order_id, downstream_media_id) 不区分 deleted，
      * 插入前先检查已存在记录（含已删除），若存在则复用（设 deleted=0）。
      */
-    private void syncOrderDownstreamMedia(AdOrder order, List<String> downstreamMediaIds,
+    public void syncOrderDownstreamMedia(AdOrder order, List<String> downstreamMediaIds,
                                            List<AdOrderSaveRequest.DownstreamMediaPayableDTO> payables,
                                            String userId, String orgId) {
         String orderId = order.getId();

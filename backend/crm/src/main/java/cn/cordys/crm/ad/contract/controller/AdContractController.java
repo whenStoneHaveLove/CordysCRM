@@ -79,18 +79,11 @@ public class AdContractController {
 
     // ===================== 归档审批 =====================
 
-    @PutMapping("/{id}/double-seal")
-    @CsPermission(PermissionConstants.AD_CONTRACT_ARCHIVE_APPROVE)
-    @Operation(summary = "上传双盖附件（仅保存，不改状态）")
-    public AdContract uploadDoubleSeal(@PathVariable("id") String id, @RequestBody Map<String, String> body) {
-        return adContractService.uploadDoubleSeal(id, body.get("fileUrl"), userId(), orgId());
-    }
-
     @PutMapping("/{id}/submit-archive")
     @CsPermission(PermissionConstants.AD_CONTRACT_UPDATE)
     @Operation(summary = "提交归档审批（用印状态→归档审批中）")
-    public AdContract submitArchive(@PathVariable("id") String id, @RequestBody Map<String, String> body) {
-        return adContractService.submitArchive(id, body.get("fileUrl"), userId(), orgId());
+    public AdContract submitArchive(@PathVariable("id") String id) {
+        return adContractService.submitArchive(id, userId(), orgId());
     }
 
     @PutMapping("/{id}/approve-archive")

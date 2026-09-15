@@ -217,7 +217,7 @@
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
   import useUserMap from '../useUserMap';
-  import { fmtDate, fmtDateTime, toTimeStamp } from '../utils';
+  import { AD_SELECT_PAGE_PARAMS, fmtDate, fmtDateTime, toTimeStamp } from '../utils';
   import type { DataTableColumn } from 'naive-ui';
 
   const { t } = useI18n();
@@ -303,7 +303,7 @@
     try {
       // 可建收款单的订单：待执行(45)/执行中(50)/结算中(80)
       const allowed = [AdOrderStatusEnum.PENDING_EXECUTE, AdOrderStatusEnum.EXECUTING, AdOrderStatusEnum.SETTLEMENT];
-      const res = await getAdOrderPage({ current: 1, pageSize: 200, statusList: allowed });
+      const res = await getAdOrderPage({ ...AD_SELECT_PAGE_PARAMS, statusList: allowed });
       const orderList = (res.list || []).filter((it: any) => allowed.includes(it.status));
       orderOptions.value = orderList.map((it: any) => ({
         label: [it.orderNo, it.orderName].filter(Boolean).join(' ') || it.id,

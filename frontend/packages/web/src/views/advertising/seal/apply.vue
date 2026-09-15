@@ -55,6 +55,8 @@
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  import { AD_SELECT_PAGE_PARAMS } from '../utils';
+
   type SelectItem = { label: string; value: string };
 
   const sealTypeOptions = AdSealTypeOptions;
@@ -89,8 +91,8 @@
   async function loadPendingContracts() {
     try {
       const [pending, rejected] = await Promise.all([
-        getAdContractPage({ current: 1, pageSize: 200, status: 10, sealStatus: 0 }),
-        getAdContractPage({ current: 1, pageSize: 200, status: 10, sealStatus: 30 }),
+        getAdContractPage({ ...AD_SELECT_PAGE_PARAMS, status: 10, sealStatus: 0 }),
+        getAdContractPage({ ...AD_SELECT_PAGE_PARAMS, status: 10, sealStatus: 30 }),
       ]);
       const list = [...(pending.list || []), ...(rejected.list || [])];
       contractOptions.value = list.map((it) => ({

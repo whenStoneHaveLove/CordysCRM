@@ -338,7 +338,30 @@ export interface AdContractSaveParams {
   validTo?: number | null;
   amount?: number;
   rebateTerms?: string;
-  fileUrl?: string;
+  sealFileUrls?: AdContractAttachmentItem[];
+}
+
+export interface AdContractAttachmentItem {
+  /** 临时文件ID（/attachment/upload/temp 返回） */
+  tempFileId: string;
+  /** 文件名 */
+  fileName: string;
+}
+
+export interface AdContractAttachment {
+  id: string;
+  contractId: string;
+  /** 附件类型:10用印附件/20双盖附件 */
+  type: number;
+  /** 附件文件ID（sys_attachment.id） */
+  fileUrl: string;
+  fileName: string;
+  organizationId: string;
+  createTime: number;
+  createUser: string;
+  updateTime?: number;
+  updateUser?: string;
+  deleted?: number;
 }
 
 export interface AdContractInfo {
@@ -417,6 +440,8 @@ export interface AdContractDetailResponse {
   directionLabel?: string;
   typeLabel?: string;
   sealRecords: AdSealRecordInfo[];
+  /** 合同附件列表(用印附件type=10/双盖附件type=20) */
+  attachments?: AdContractAttachment[];
 }
 
 export type AdContractPageResult = CommonList<AdContractListItem>;

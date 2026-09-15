@@ -162,6 +162,7 @@
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
 
+  import { AD_SELECT_PAGE_PARAMS } from '../utils';
   import type { DataTableColumn } from 'naive-ui';
 
   const { t } = useI18n();
@@ -255,8 +256,8 @@
   async function loadOptions() {
     try {
       const [beRes, dictRes] = await Promise.all([
-        getAdBusinessEntityPage({ current: 1, pageSize: 200 }),
-        getAdDictPage({ current: 1, pageSize: 200, dictCode: 'media_type' }),
+        getAdBusinessEntityPage({ ...AD_SELECT_PAGE_PARAMS }),
+        getAdDictPage({ ...AD_SELECT_PAGE_PARAMS, dictCode: 'media_type' }),
       ]);
       businessEntityOptions.value = (beRes.list || []).map((it: any) => ({
         label: it.name || it.id,

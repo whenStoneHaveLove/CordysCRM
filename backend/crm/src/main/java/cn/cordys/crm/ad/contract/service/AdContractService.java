@@ -25,8 +25,7 @@ import cn.cordys.crm.ad.order.mapper.ExtAdOrderContractMapper;
 import cn.cordys.crm.ad.upstreamagent.domain.AdUpstreamAgent;
 import cn.cordys.crm.ad.downstreammedia.domain.AdDownstreamMedia;
 import cn.cordys.crm.ad.seal.mapper.ExtAdSealRecordMapper;
-import cn.cordys.crm.system.dto.request.UploadTransferRequest;
-import cn.cordys.crm.system.service.AttachmentService;
+import cn.cordys.crm.ad.contract.service.AdContractAttachmentService;
 import cn.cordys.mybatis.BaseMapper;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
@@ -79,7 +78,7 @@ public class AdContractService {
     @Resource
     private ExtAdOrderContractMapper orderContractMapper;
     @Resource
-    private AttachmentService attachmentService;
+    private AdContractAttachmentService contractAttachmentService;
 
     // ===================== 新建 / 编辑 =====================
 
@@ -105,8 +104,9 @@ public class AdContractService {
         c.setCreateTime(now);
         c.setUpdateTime(now);
         contractMapper.insert(c);
-        // 用印附件：把前端上传的临时文件转存为正式附件
-        transferAttachment(c.getId(), orgId, userId, request.getFileUrl());
+        // 用印附件：把前端上传的临时文件转存为正式附件（支持多文件）
+        contractAttachmentService.reconcileByType(c.getId(), AdContractAttachmentService.TYPE_SEAL,
+                request.getSealFileUrls(), userId, orgId);
         // 如果关联了订单，自动写入 ad_order_contract 中间表（一对多）
         syncOrderContract(c.getId(), request.getOrderIds(), userId, orgId);
         return c;
@@ -143,6 +143,9 @@ public class AdContractService {
         contractMapper.update(existing);
         // 同步 ad_order_contract 中间表（一对多，全量替换）
         syncOrderContract(request.getId(), request.getOrderIds(), userId, orgId);
+        // 用印附件：按传入集合重建（支持多文件，保留/删除/新增）
+        contractAttachmentService.reconcileByType(request.getId(), AdContractAttachmentService.TYPE_SEAL,
+                request.getSealFileUrls(), userId, orgId);
         return existing;
     }
 
@@ -161,32 +164,16 @@ public class AdContractService {
     // ===================== 归档审批 =====================
 
     /**
-     * 上传双盖附件（仅保存，不改状态）。
-     */
-    public AdContract uploadDoubleSeal(String id, String fileUrl, String userId, String orgId) {
-        AdContract c = requireContract(id);
-        transferAttachment(id, orgId, userId, fileUrl);
-        c.setDoubleSealFileUrl(fileUrl);
-        c.setUpdateUser(userId);
-        c.setUpdateTime(System.currentTimeMillis());
-        contractMapper.update(c);
-        return c;
-    }
-
-    /**
      * 提交归档审批：用印状态 → 归档审批中(40)。
+     * 双盖附件由前端经合同附件接口写入（ad_contract_attachment, type=20）。
      * 前提：sealStatus == 20(已用印) 或 50(归档审批驳回)。
      */
     @OperationLog(module = "AD_CONTRACT", action = "SUBMIT_ARCHIVE", targetId = "#id")
-    public AdContract submitArchive(String id, String fileUrl, String userId, String orgId) {
+    public AdContract submitArchive(String id, String userId, String orgId) {
         AdContract c = requireContract(id);
         if (c.getSealStatus() != SealStatus.SEALED.getCode()
                 && c.getSealStatus() != SealStatus.ARCHIVE_REJECTED.getCode()) {
             throw new GenericException("仅已用印或归档审批驳回的合同可提交归档审批");
-        }
-        if (fileUrl != null && !fileUrl.isBlank()) {
-            transferAttachment(id, orgId, userId, fileUrl);
-            c.setDoubleSealFileUrl(fileUrl);
         }
         c.setSealStatus(SealStatus.ARCHIVE_APPROVING.getCode());
         c.setUpdateUser(userId);
@@ -251,6 +238,7 @@ public class AdContractService {
         resp.setTypeLabel(ContractType.labelOf(c.getContractType()));
         resp.setSealStatusLabel(SealStatus.labelOf(c.getSealStatus()));
         resp.setStatusLabel(contractStatusLabel(c.getStatus()));
+        resp.setAttachments(contractAttachmentService.listByContractId(id));
         List<AdSealRecord> seals = sealRecordMapper.selectByContractId(id);
         resp.setSealRecords(seals);
         return resp;
@@ -282,17 +270,6 @@ public class AdContractService {
             throw new GenericException("合同不存在");
         }
         return c;
-    }
-
-    /** 把前端上传的临时附件转存为正式附件（写入 attachment 表并从 tmp 目录搬移到 transfer 目录）。
-     *  tempFileUrl 为单个临时文件 ID，为空则跳过。 */
-    private void transferAttachment(String contractId, String orgId, String userId, String tempFileUrl) {
-        if (tempFileUrl == null || tempFileUrl.isBlank()) {
-            return;
-        }
-        UploadTransferRequest transferRequest =
-            new UploadTransferRequest(orgId, contractId, userId, List.of(tempFileUrl));
-        attachmentService.processTemp(transferRequest);
     }
 
     private void validate(AdContractSaveRequest request) {

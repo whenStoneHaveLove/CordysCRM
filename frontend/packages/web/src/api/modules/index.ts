@@ -1,6 +1,7 @@
 import createAxios from '@lib/shared/api/http';
 import useAdBusinessEntityApi from '@lib/shared/api/modules/adBusinessEntity';
 import useAdContractApi from '@lib/shared/api/modules/adContract';
+import useAdContractAttachmentApi from '@lib/shared/api/modules/adContractAttachment';
 import useAdCustomerApi from '@lib/shared/api/modules/adCustomer';
 import useAdDashboardApi from '@lib/shared/api/modules/adDashboard';
 import useAdDictApi from '@lib/shared/api/modules/adDict';
@@ -83,6 +84,7 @@ const adCustomerApi = useAdCustomerApi(CDR);
 const adUpstreamAgentApi = useAdUpstreamAgentApi(CDR);
 const adDownstreamMediaApi = useAdDownstreamMediaApi(CDR);
 const adOrderAttachmentApi = useAdOrderAttachmentApi(CDR);
+const adContractAttachmentApi = useAdContractAttachmentApi(CDR);
 
 export const {
   addCustomForm,
@@ -941,7 +943,6 @@ export const {
   deleteAdContract,
   getAdContractDetail,
   getAdContractPage,
-  uploadDoubleSeal,
   submitArchive,
   approveArchive,
   rejectArchive,
@@ -995,3 +996,6 @@ export const { createAdCustomer, updateAdCustomer, getAdCustomerDetail, getAdCus
   adCustomerApi;
 
 export const { uploadAdOrderAttachment, getAdOrderAttachments, deleteAdOrderAttachment } = adOrderAttachmentApi;
+
+export const { uploadAdContractAttachment, getAdContractAttachments, deleteAdContractAttachment } =
+  adContractAttachmentApi;

@@ -37,7 +37,7 @@
             o.receipt_done AS receiptDone,
             o.payment_done AS paymentDone,
             CASE WHEN COUNT(oc.id) = 0 THEN 1 ELSE 0 END AS missingContract,
-            CASE WHEN o.receivable_amount > 0 THEN ROUND(o.rebate_amount / o.receivable_amount * 100, 2) ELSE NULL END AS receivableRebateRatio,
+            CASE WHEN o.total_amount > 0 THEN ROUND(o.rebate_amount / o.total_amount * 100, 2) ELSE NULL END AS receivableRebateRatio,
             CASE WHEN o.media_payable_amount > 0 THEN ROUND(o.media_rebate_amount / o.media_payable_amount * 100, 2) ELSE NULL END AS payableRebateRatio
         FROM ad_order o
         LEFT JOIN ad_business_entity be ON be.id = o.business_entity_id AND be.deleted = 0

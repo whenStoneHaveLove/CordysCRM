@@ -1,6 +1,7 @@
 package cn.cordys.crm.ad.contract.dto.response;
 
 import cn.cordys.crm.ad.contract.domain.AdContract;
+import cn.cordys.crm.ad.contract.domain.AdContractAttachment;
 import cn.cordys.crm.ad.contract.domain.AdSealRecord;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -39,6 +40,9 @@ public class AdContractDetailResponse {
 
     @Schema(description = "用印记录历史（按申请时间倒序）")
     private List<AdSealRecord> sealRecords;
+
+    @Schema(description = "合同附件列表(用印附件type=10/双盖附件type=20)")
+    private List<AdContractAttachment> attachments;
 
     @Data
     @Schema(description = "合同关联的订单视图")

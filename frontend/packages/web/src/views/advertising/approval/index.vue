@@ -80,6 +80,16 @@
               </n-table>
             </template>
 
+            <!-- 改单：下游客户付款返点明细变更（结构化对比） -->
+            <template v-if="detailHasDownstreamChange">
+              <n-divider title-placement="left">下游客户付款返点明细变更</n-divider>
+              <DownstreamMediaCompareTable
+                :before="detailDownstreamBefore"
+                :after="detailDownstreamAfter"
+                :media-name-map="detailDownstreamNameMap"
+              />
+            </template>
+
             <!-- 付款单：各下游客户付款返点明细 -->
             <template v-if="detailType === 'payout' && detailMediaList.length">
               <n-divider title-placement="left">各下游客户付款返点明细</n-divider>
@@ -193,6 +203,8 @@
     AdPayoutMediaDetailItem,
   } from '@lib/shared/models/advertising';
 
+  import DownstreamMediaCompareTable from '../components/DownstreamMediaCompareTable.vue';
+
   import {
     approveAdOrder,
     approveAdOrderChange,
@@ -202,6 +214,7 @@
     approveArchive,
     getAdApprovalPendingPage,
     getAdContractDetail,
+    getAdDownstreamMediaPage,
     getAdOrderChangeDetail,
     getAdOrderDetail,
     getAdPayoutDetail,
@@ -528,20 +541,54 @@
     return String(v);
   }
 
+  /** 下游客户明细相关的特殊变更字段，走独立结构化表格渲染 */
+  const DOWNSTREAM_SPECIAL_FIELDS = ['downstreamMediaIds', 'downstreamMediaPayables'];
+
   // 解析改单快照/字段清单，生成「字段→改前→改后」对比行
+  // 下游客户明细（downstreamMediaIds/downstreamMediaPayables）为数组/对象结构，
+  // 不在此处展平，改由 DownstreamMediaCompareTable 单独渲染
   function buildChangeCompare(res: any): CompareRow[] {
     const change = res?.change || {};
     const before = parseSnapshot(change.snapshotBefore);
     const after = parseSnapshot(change.snapshotAfter);
     const fields = parseChangeFields(change.changeFields);
-    return fields.map((field) => {
-      const meta = AD_ORDER_CHANGE_FIELD_META.find((m) => m.field === field);
-      return {
-        label: meta?.label || field,
-        before: fmtFieldVal(before[field], meta),
-        after: fmtFieldVal(after[field], meta),
-      };
-    });
+    return fields
+      .filter((field) => !DOWNSTREAM_SPECIAL_FIELDS.includes(field))
+      .map((field) => {
+        const meta = AD_ORDER_CHANGE_FIELD_META.find((m) => m.field === field);
+        return {
+          label: meta?.label || field,
+          before: fmtFieldVal(before[field], meta),
+          after: fmtFieldVal(after[field], meta),
+        };
+      });
+  }
+
+  // 改单详情里的下游客户明细变更（结构化对比），以及 id→名称 映射
+  const detailDownstreamBefore = ref<any>(null);
+  const detailDownstreamAfter = ref<any>(null);
+  const detailDownstreamNameMap = ref<Record<string, string>>({});
+  const detailHasDownstreamChange = computed(
+    () => detailDownstreamBefore.value !== null || detailDownstreamAfter.value !== null
+  );
+
+  function resetDownstreamChange() {
+    detailDownstreamBefore.value = null;
+    detailDownstreamAfter.value = null;
+  }
+
+  async function loadDownstreamMediaNameMap() {
+    try {
+      const res: any = await getAdDownstreamMediaPage({ current: 1, pageSize: 500 });
+      const map: Record<string, string> = {};
+      (res?.list || []).forEach((it: any) => {
+        map[String(it.id)] = it.resourceName || it.name || String(it.id);
+      });
+      detailDownstreamNameMap.value = map;
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
+    }
   }
 
   async function loadDetail(
@@ -596,6 +643,15 @@
     if (type === 'change') {
       const res: any = await getAdOrderChangeDetail(id);
       const c = res?.change || {};
+      // 下游客户明细变更单独走结构化表格，这里把快照取出并补全客户名称映射
+      const fields = parseChangeFields(c.changeFields);
+      if (fields.some((f) => DOWNSTREAM_SPECIAL_FIELDS.includes(f))) {
+        const beforeSnap = parseSnapshot(c.snapshotBefore);
+        const afterSnap = parseSnapshot(c.snapshotAfter);
+        detailDownstreamBefore.value = beforeSnap.downstreamMediaPayables ?? null;
+        detailDownstreamAfter.value = afterSnap.downstreamMediaPayables ?? null;
+        await loadDownstreamMediaNameMap();
+      }
       return {
         base: [
           {
@@ -727,6 +783,7 @@
     detailBaseFields.value = [];
     detailCompareRows.value = [];
     detailMediaList.value = [];
+    resetDownstreamChange();
     detailType.value = type;
     // 切换类型时重置付款单类型，避免上次非订单类型状态残留
     detailPayoutBillType.value = AdPayoutBillTypeEnum.ORDER;
