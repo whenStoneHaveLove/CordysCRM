@@ -44,7 +44,7 @@ public class LoginController {
      */
     @GetMapping(value = "/is-login")
     @Operation(summary = "是否登录")
-    public SessionUser isLogin() {
+    public SessionUser isLogin(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) {
         SessionUser user = SessionUtils.getUser();
         if (user != null) {
             // 检查当前组织的手机认证配置
@@ -53,6 +53,14 @@ public class LoginController {
             UserDTO userDTO = userLoginService.authenticateUser(user.getId());
             SessionUser sessionUser = SessionUser.fromUser(userDTO, SessionUtils.getSessionId());
             SessionUtils.putUser(sessionUser);
+
+            // 文件访问 Cookie(F_A_TOKEN) 是会话级 Cookie，浏览器重启或清理缓存后会丢失，
+            // 而登录态保存在 localStorage(通过 X-AUTH-TOKEN 头传递)，此时页面功能正常，
+            // 但 /attachment/**、/pic/** 会被 FileAccessAuthFilter 拦截返回 401，导致预览/下载失败。
+            // 登录态有效时顺带补种该 Cookie，用户刷新页面即可恢复，无需退出重新登录。
+            if (!FileAccessTokenUtils.validateToken(httpServletRequest)) {
+                FileAccessTokenUtils.setAccessCookie(httpServletResponse, sessionUser.getSessionId(), httpServletRequest.isSecure());
+            }
             return sessionUser;
         }
         return null;
