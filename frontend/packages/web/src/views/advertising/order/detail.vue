@@ -373,7 +373,8 @@
               {{ emlPreviewData.attachments?.map((a) => a.name).join('、') }}
             </n-descriptions-item>
           </n-descriptions>
-          <iframe v-if="emlPreviewData.html" class="eml-preview-frame" sandbox :srcdoc="emlPreviewData.html" />
+          <!-- sandbox 必须写空字符串：裸属性会被 vue-tsc 推断为 boolean，与 iframe 的 string 类型冲突 -->
+          <iframe v-if="emlPreviewData.html" class="eml-preview-frame" sandbox="" :srcdoc="emlPreviewData.html" />
           <pre v-else class="eml-preview-text">{{ emlPreviewData.text || '无可显示的正文内容' }}</pre>
         </template>
       </n-spin>
