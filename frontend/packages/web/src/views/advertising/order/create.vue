@@ -358,9 +358,15 @@
                 />
               </n-form-item-gi>
             </n-grid>
-            <!-- 附件上传区 -->
+            <!-- 附件上传区：普通附件 / 邮件记录(eml) 两类切换 -->
             <n-grid :cols="1" :x-gap="16">
-              <n-form-item-gi :span="1" label="盖章排期（必传）">
+              <n-form-item-gi :span="1">
+                <n-tabs v-model:value="attachTab" type="line" size="small">
+                  <n-tab-pane name="normal" tab="普通附件" />
+                  <n-tab-pane name="eml" tab="邮件记录(eml)" />
+                </n-tabs>
+              </n-form-item-gi>
+              <n-form-item-gi v-if="attachTab === 'normal'" :span="1" :label="scheduleLabel">
                 <div class="flex flex-col gap-2">
                   <n-upload
                     v-model:file-list="fileListType10"
@@ -383,7 +389,7 @@
                   </div>
                 </div>
               </n-form-item-gi>
-              <n-form-item-gi :span="1" label="邮件截图（必传）">
+              <n-form-item-gi v-if="attachTab === 'normal'" :span="1" :label="emailScreenshotLabel">
                 <div class="flex flex-col gap-2">
                   <n-upload
                     v-model:file-list="fileListType20"
@@ -406,7 +412,7 @@
                   </div>
                 </div>
               </n-form-item-gi>
-              <n-form-item-gi :span="1" label="补充协议（选填）">
+              <n-form-item-gi v-if="attachTab === 'normal'" :span="1" label="补充协议（选填）">
                 <div class="flex flex-col gap-2">
                   <n-upload
                     v-model:file-list="fileListType40"
@@ -426,6 +432,32 @@
                         <n-button text size="tiny" type="error" @click="handleAttachRemove(40, file)">删除</n-button>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </n-form-item-gi>
+              <!-- 邮件记录：上传完整 eml 后可免传盖章排期与邮件截图 -->
+              <n-form-item-gi v-else :span="1" label="邮件记录(eml)（选填）">
+                <div class="flex flex-col gap-2">
+                  <n-upload
+                    v-model:file-list="fileListType60"
+                    :custom-request="(opts: any) => handleFileSelect(60, opts)"
+                    :show-file-list="false"
+                    :on-remove="(opts: any) => handleFileRemove(60, opts)"
+                    accept=".eml"
+                  >
+                    <n-button size="small">选择文件</n-button>
+                  </n-upload>
+                  <div v-if="fileListType60.length" class="attach-file-list">
+                    <div v-for="file in fileListType60" :key="file.id" class="attach-file-item">
+                      <span class="attach-file-name" :title="file.name">{{ file.name }}</span>
+                      <div class="attach-file-actions">
+                        <n-button size="tiny" type="primary" ghost @click="handleAttachDownload(file)">下载</n-button>
+                        <n-button text size="tiny" type="error" @click="handleAttachRemove(60, file)">删除</n-button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-[12px] text-[var(--text-n4)]">
+                    上传完整 eml 邮件记录后，可不再上传盖章排期与邮件截图
                   </div>
                 </div>
               </n-form-item-gi>
@@ -452,6 +484,8 @@
     NRadio,
     NRadioGroup,
     NSelect,
+    NTabPane,
+    NTabs,
     NText,
     NUpload,
     useMessage,
@@ -530,16 +564,28 @@
   // 暂存待上传的新附件（创建/编辑订单后再上传）
   interface PendingFile {
     _key: string;
-    type: number; // 10盖章排期 / 20邮件截图 / 40补充协议
+    type: number; // 10盖章排期 / 20邮件截图 / 40补充协议 / 60邮件记录(eml)
     file: File;
   }
   const pendingFiles = ref<PendingFile[]>([]);
   let pendingFileSeq = 0;
 
+  // 附件上传模式：normal 普通附件（排期/邮件截图/补充协议）/ eml 邮件记录
+  const attachTab = ref<'normal' | 'eml'>('normal');
+  // 是否已上传完整 eml 邮件记录（已存 + 新暂存）：有则盖章排期/邮件截图变为选填
+  const hasEmailRecord = computed(
+    () => savedAttachments.value.some((a) => a.type === 60) || pendingFiles.value.some((f) => f.type === 60)
+  );
+  const scheduleLabel = computed(() => (hasEmailRecord.value ? '盖章排期（选填，已上传 eml）' : '盖章排期（必传）'));
+  const emailScreenshotLabel = computed(() =>
+    hasEmailRecord.value ? '邮件截图（选填，已上传 eml）' : '邮件截图（必传）'
+  );
+
   // 响应式 fileList（按 type 分组），给 n-upload 用 v-model:file-list
   const fileListType10 = ref<any[]>([]);
   const fileListType20 = ref<any[]>([]);
   const fileListType40 = ref<any[]>([]);
+  const fileListType60 = ref<any[]>([]);
 
   function buildFileListForType(type: number) {
     const saved = savedAttachments.value
@@ -563,6 +609,7 @@
   function getAttachFileList(type: number) {
     if (type === 10) return fileListType10;
     if (type === 20) return fileListType20;
+    if (type === 60) return fileListType60;
     return fileListType40;
   }
 
@@ -1113,6 +1160,7 @@
       fileListType10.value = buildFileListForType(10);
       fileListType20.value = buildFileListForType(20);
       fileListType40.value = buildFileListForType(40);
+      fileListType60.value = buildFileListForType(60);
     } catch (e) {
       message.error((e as Error).message || '加载失败');
     } finally {
@@ -1169,18 +1217,18 @@
 
   async function handleSave(action: 'draft' | 'submit') {
     if (!validate(action)) return;
-    // 提交时校验必传附件（已有 + 新暂存）
-    if (action === 'submit') {
+    // 提交时校验必传附件（已有 + 新暂存）：已上传完整 eml 邮件记录(60) 时豁免排期 + 邮件截图
+    if (action === 'submit' && !hasEmailRecord.value) {
       const hasSchedule =
         savedAttachments.value.some((a) => a.type === 10) || pendingFiles.value.some((f) => f.type === 10);
       const hasEmail =
         savedAttachments.value.some((a) => a.type === 20) || pendingFiles.value.some((f) => f.type === 20);
       if (!hasSchedule) {
-        message.warning('请上传【盖章排期】附件');
+        message.warning('请上传【盖章排期】附件，或上传完整【邮件记录(eml)】');
         return;
       }
       if (!hasEmail) {
-        message.warning('请上传【邮件截图】附件');
+        message.warning('请上传【邮件截图】附件，或上传完整【邮件记录(eml)】');
         return;
       }
     }
@@ -1247,10 +1295,10 @@
   .readonly-field {
     display: inline-block;
     padding: 4px 12px;
-    background: var(--text-n10);
+    font-weight: 500;
     border-radius: 4px;
     color: var(--text-n2);
-    font-weight: 500;
+    background: var(--text-n10);
   }
   .attach-tip {
     margin: 0 0 16px 120px;
@@ -1262,21 +1310,21 @@
   }
   .attach-file-item {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    align-items: center;
     padding: 4px 8px;
     border-radius: 4px;
     background: var(--text-n10);
+    gap: 8px;
   }
   .attach-file-name {
-    flex: 1;
-    min-width: 0;
     overflow: hidden;
+    min-width: 0;
+    font-size: 13px;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 13px;
     color: var(--text-n2);
+    flex: 1;
   }
   .attach-file-actions {
     display: flex;
@@ -1285,33 +1333,33 @@
     flex-shrink: 0;
   }
   .payable-card {
+    margin: 0 0 12px 12px;
+    padding: 14px 16px 4px;
     border: 1px solid var(--border-color);
     border-left: 3px solid var(--primary-color, #18a058);
     border-radius: 6px;
-    padding: 14px 16px 4px;
-    margin: 0 0 12px 12px;
     background: var(--card-color);
   }
   .payable-card-title {
     display: flex;
     align-items: center;
+    margin-bottom: 10px;
     font-size: 13px;
     font-weight: 600;
-    margin-bottom: 10px;
     color: var(--text-n1);
   }
   .payable-card-index {
     display: inline-flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    margin-right: 8px;
     width: 20px;
     height: 20px;
-    border-radius: 50%;
-    background: var(--primary-color, #18a058);
-    color: #fff;
     font-size: 12px;
     font-weight: 600;
-    margin-right: 8px;
+    border-radius: 50%;
+    color: #ffffff;
+    background: var(--primary-color, #18a058);
     flex-shrink: 0;
   }
   .payable-card-name {

@@ -24,7 +24,7 @@ public class AdOrderAttachmentController {
 
     @PostMapping
     @CsPermission(PermissionConstants.AD_ORDER_CREATE)
-    @Operation(summary = "上传附件（type:10盖章排期/20邮件截图/30合同/40过程/50改单）")
+    @Operation(summary = "上传附件（type:10盖章排期/20邮件截图/30合同/40过程/50改单/60邮件记录eml）")
     public AdOrderAttachment upload(@PathVariable String orderId,
                                      @RequestParam int type,
                                      @RequestParam MultipartFile file) {

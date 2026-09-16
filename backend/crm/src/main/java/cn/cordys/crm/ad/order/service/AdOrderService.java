@@ -9,6 +9,7 @@ import cn.cordys.context.OrganizationContext;
 import cn.cordys.crm.ad.businessentity.domain.AdBusinessEntity;
 import cn.cordys.crm.ad.common.AdEntityPermissionProvider;
 import cn.cordys.crm.ad.common.annotation.OperationLog;
+import cn.cordys.crm.ad.common.constants.AdAttachmentType;
 import cn.cordys.crm.ad.common.constants.OrderStateMachine;
 import cn.cordys.crm.ad.common.constants.OrderStatus;
 import cn.cordys.crm.ad.common.constants.OrderType;
@@ -72,7 +73,8 @@ import java.util.stream.Collectors;
  * <ul>
  *   <li>L-14 审批开关：{@code ad.order.approval.enabled}（默认 true）；关闭时提交 0→20 直达。</li>
  *   <li>L-20 订单号：{业务主体代码}-{YYYYMMDD}-{3 位当日流水}。</li>
- *   <li>§6.2 提交守卫：需 盖章排期(附件10) + 邮件截图(附件20) + 框架合同关联 齐备。</li>
+ *   <li>§6.2 提交守卫：需 盖章排期(附件10) + 邮件截图(附件20) + 框架合同关联 齐备；
+ *       已上传 邮件记录eml(附件60) 时视为邮件凭证完整，豁免前两者。</li>
  *   <li>L-05 财务前置矩阵：依据 收款方式 + 付款方式 推导 30/40/50 与所需财务步骤。</li>
  *   <li>L-21 驳回/作废 保留附件（不删除）。</li>
  *   <li>L-26 执行完成 需 ≥1 份关联合同。</li>
@@ -598,9 +600,13 @@ public class AdOrderService {
         AdOrder order = requireOrder(id);
         int to = approvalEnabled ? OrderStateMachine.PENDING_BOSS_APPROVAL : OrderStateMachine.PENDING_EXECUTE;
         assertTransition(order.getStatus(), to);
-        // §6.2 提交守卫
-        requireAttachment(order.getId(), 10, "提交前需上传【盖章排期】附件(类型10)");
-        requireAttachment(order.getId(), 20, "提交前需上传【邮件截图】附件(类型20)");
+        // §6.2 提交守卫：已上传完整 eml 邮件记录(60) 时，排期 + 邮件截图 可豁免
+        if (!hasAttachment(order.getId(), AdAttachmentType.EMAIL_RECORD.getCode())) {
+            requireAttachment(order.getId(), AdAttachmentType.SCHEDULE.getCode(),
+                    "提交前需上传【盖章排期】附件，或上传完整【邮件记录(eml)】附件");
+            requireAttachment(order.getId(), AdAttachmentType.EMAIL_SCREENSHOT.getCode(),
+                    "提交前需上传【邮件截图】附件，或上传完整【邮件记录(eml)】附件");
+        }
         // 框架订单(10) 必传合同；单笔订单(20) 允许后补合同（执行完成前需上传附件）
         if (order.getOrderType() != null && order.getOrderType() == OrderType.FRAMEWORK.getCode()) {
             requireContract(order.getId(), "提交前需关联【框架合同】(ad_order_contract)");
@@ -814,6 +820,10 @@ public class AdOrderService {
             return true;
         }
         return PermissionUtils.hasPermission(requiredPermission);
+    }
+
+    private boolean hasAttachment(String orderId, int type) {
+        return !attachmentMapper.selectByOrderIdAndType(orderId, type).isEmpty();
     }
 
     private void requireAttachment(String orderId, int type, String message) {

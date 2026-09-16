@@ -521,8 +521,7 @@
       width: 120,
       align: 'right',
       showInTable: true,
-      render: (row) =>
-        row.receivableRebateRatio != null ? h('span', `${row.receivableRebateRatio}%`) : '',
+      render: (row) => (row.receivableRebateRatio != null ? h('span', `${row.receivableRebateRatio}%`) : ''),
     },
     {
       key: 'payableRebateRatio',
@@ -530,8 +529,7 @@
       width: 120,
       align: 'right',
       showInTable: true,
-      render: (row) =>
-        row.payableRebateRatio != null ? h('span', `${row.payableRebateRatio}%`) : '',
+      render: (row) => (row.payableRebateRatio != null ? h('span', `${row.payableRebateRatio}%`) : ''),
     },
     {
       key: 'mediaRebateAmount',
@@ -632,8 +630,8 @@
     {
       key: 'action',
       title: t('advertising.order.action'),
-      // 详情 / 复制 /（草稿时）编辑 三个按钮需同行展示，宽度不足会换行
-      width: 260,
+      // 详情 / 复制 /（草稿时）编辑 三个按钮需同行展示：3 个小按钮约 150 + 间距 16 + 单元格内边距 24
+      width: 190,
       fixed: 'right' as const,
       showInTable: true,
       columnSelectorDisabled: true,
@@ -742,7 +740,7 @@
             ...c,
             fixed: lockedFixed,
             // 操作列宽度由代码固定（保证按钮不换行），忽略历史持久化的旧宽度
-            width: key === 'action' ? c.width : (lockedSaved?.width ?? c.width),
+            width: key === 'action' ? c.width : lockedSaved?.width ?? c.width,
           });
         } else {
           const next = draggableQueue.shift();
@@ -892,15 +890,15 @@
   }
   .copy-tip {
     margin-bottom: 8px;
-    color: var(--text-color-3);
     font-size: 12px;
+    color: var(--text-color-3);
   }
   .copy-source {
     margin-bottom: 12px;
     padding: 8px 12px;
-    background-color: var(--body-color);
-    border-radius: 4px;
     font-size: 13px;
+    border-radius: 4px;
+    background-color: var(--body-color);
   }
   .copy-source__label {
     color: var(--text-color-3);
@@ -913,16 +911,16 @@
   }
   .copy-toolbar__count {
     margin-left: auto;
-    color: var(--text-color-3);
     font-size: 12px;
+    color: var(--text-color-3);
   }
   .copy-group {
     margin-bottom: 12px;
   }
   .copy-group__title {
     margin-bottom: 6px;
-    font-weight: 600;
     font-size: 13px;
+    font-weight: 600;
   }
   .copy-group :deep(.n-space) {
     gap: 8px 16px;

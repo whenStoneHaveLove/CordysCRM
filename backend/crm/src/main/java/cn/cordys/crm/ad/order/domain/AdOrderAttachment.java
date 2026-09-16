@@ -16,7 +16,7 @@ public class AdOrderAttachment extends BaseModel {
     @Schema(description = "订单id")
     private String orderId;
 
-    @Schema(description = "类型:10排期/20邮件截图/30合同/40过程附件/50改单附件")
+    @Schema(description = "类型:10排期/20邮件截图/30合同/40过程附件/50改单附件/60邮件记录eml")
     private Integer type;
 
     @Schema(description = "文件地址")

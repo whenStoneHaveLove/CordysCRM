@@ -220,11 +220,14 @@
           >
             <n-button size="small" :loading="uploading">补充协议（选填）</n-button>
           </n-upload>
+          <n-upload :custom-request="(opts: any) => handleUpload(60, opts)" :show-file-list="false" accept=".eml">
+            <n-button size="small" :loading="uploading">邮件记录(eml)（选填）</n-button>
+          </n-upload>
         </n-space>
 
         <n-empty
           v-if="!detail.attachments || detail.attachments.length === 0"
-          :description="'请上传盖章排期和邮件截图'"
+          :description="'请上传盖章排期和邮件截图，或上传完整邮件记录(eml)'"
         />
         <n-space v-else vertical>
           <div v-for="att in detail.attachments" :key="att.id" class="flex items-center gap-2">
@@ -803,12 +806,14 @@
         return '补充协议';
       case 50:
         return '改单附件';
+      case 60:
+        return '邮件记录(eml)';
       default:
         return '其他';
     }
   }
 
-  /** 上传附件（type: 10盖章排期 / 20邮件截图 / 40补充协议） */
+  /** 上传附件（type: 10盖章排期 / 20邮件截图 / 40补充协议 / 60邮件记录(eml)） */
   async function handleUpload(type: number, opts: { file: any; onFinish: () => void; onError: () => void }) {
     uploading.value = true;
     try {
@@ -944,12 +949,12 @@
 
 <style scoped>
   .advertising-page {
+    overflow-y: auto;
     padding: 16px;
     height: calc(100vh - 64px);
-    overflow-y: auto;
   }
   .before-value {
-    color: #999;
+    color: #999999;
     word-break: break-all;
   }
   .after-value {
@@ -965,51 +970,51 @@
     color: var(--text-n2);
   }
   .action-modal-label .required-mark {
-    color: var(--error-red);
     margin-left: 2px;
+    color: var(--error-red);
   }
   .log-header {
-    font-weight: 600;
     margin-right: 12px;
+    font-weight: 600;
   }
   .log-operator {
-    color: var(--text-n3);
-    font-size: 12px;
     margin-left: 4px;
+    font-size: 12px;
+    color: var(--text-n3);
   }
   .log-content {
-    color: var(--text-n2);
-    font-size: 12px;
     margin-top: 4px;
+    font-size: 12px;
+    color: var(--text-n2);
   }
   .payable-card {
+    margin: 0 0 12px 12px;
+    padding: 14px 16px 4px;
     border: 1px solid var(--border-color);
     border-left: 3px solid var(--primary-color, #18a058);
     border-radius: 6px;
-    padding: 14px 16px 4px;
-    margin: 0 0 12px 12px;
     background: var(--card-color);
   }
   .payable-card-title {
     display: flex;
     align-items: center;
+    margin-bottom: 10px;
     font-size: 13px;
     font-weight: 600;
-    margin-bottom: 10px;
     color: var(--text-n1);
   }
   .payable-card-index {
     display: inline-flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    margin-right: 8px;
     width: 20px;
     height: 20px;
-    border-radius: 50%;
-    background: var(--primary-color, #18a058);
-    color: #fff;
     font-size: 12px;
     font-weight: 600;
-    margin-right: 8px;
+    border-radius: 50%;
+    color: #ffffff;
+    background: var(--primary-color, #18a058);
     flex-shrink: 0;
   }
   .payable-card-name {
