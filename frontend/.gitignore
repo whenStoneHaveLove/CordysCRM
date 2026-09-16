@@ -35,3 +35,7 @@ yarn.lock
 **/auto-import.d.ts
 **/components.d.ts
 **/.eslintrc-auto-import.json
+
+# 临时校验输出（lint / tsc 结果重定向文件，勿提交）
+eslint_*.txt
+tsc_*.txt
