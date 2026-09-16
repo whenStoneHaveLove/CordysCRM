@@ -73,7 +73,6 @@ export default {
   'advertising.order.copyField.group.amount': '金额与返点',
   'advertising.order.copyField.group.delivery': '投放信息',
   'advertising.order.copyField.group.receipt': '收款',
-  'advertising.order.copyField.group.payment': '付款',
   'advertising.order.copyField.group.other': '其他',
 
   // 订单详情

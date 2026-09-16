@@ -346,18 +346,6 @@
       ],
     },
     {
-      group: t('advertising.order.copyField.group.payment'),
-      items: [
-        { key: 'paymentMethod', label: t('advertising.order.form.paymentMethod') },
-        { key: 'paymentPrepayMode', label: t('advertising.order.form.paymentPrepayMode') },
-        { key: 'paymentPrepayRatio', label: t('advertising.order.form.paymentPrepayRatio') },
-        { key: 'paymentPrepayAmount', label: t('advertising.order.form.paymentPrepayAmount') },
-        { key: 'paymentPrepayDeadline', label: t('advertising.order.form.paymentPrepayDeadline') },
-        { key: 'paymentPostpayTrigger', label: t('advertising.order.form.paymentPostpayTrigger') },
-        { key: 'paymentPostpayDays', label: t('advertising.order.form.paymentPostpayDays') },
-      ],
-    },
-    {
       group: t('advertising.order.copyField.group.other'),
       items: [{ key: 'remark', label: t('advertising.order.form.remark') }],
     },

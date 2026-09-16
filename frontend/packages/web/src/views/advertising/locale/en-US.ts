@@ -58,8 +58,7 @@ export default {
   'advertising.order.action': 'Action',
   'advertising.order.copy': 'Copy',
   'advertising.order.copyTitle': 'Copy Order',
-  'advertising.order.copyTip':
-    'Check the fields to copy. Unchecked fields will be left empty in the new draft order.',
+  'advertising.order.copyTip': 'Check the fields to copy. Unchecked fields will be left empty in the new draft order.',
   'advertising.order.copySource': 'Source Order',
   'advertising.order.copySelectAll': 'Select All',
   'advertising.order.copyClear': 'Clear',
@@ -73,7 +72,6 @@ export default {
   'advertising.order.copyField.group.amount': 'Amount & Rebate',
   'advertising.order.copyField.group.delivery': 'Delivery',
   'advertising.order.copyField.group.receipt': 'Receipt',
-  'advertising.order.copyField.group.payment': 'Payment',
   'advertising.order.copyField.group.other': 'Others',
 
   'advertising.order.detail.tab.base': 'Order Info',

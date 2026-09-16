@@ -166,8 +166,12 @@ public class AdOrderService {
     /**
      * 复制字段 key（与前端勾选项一一对应）。
      *
-     * <p>默认勾选 {@link #DEFAULT_FIELDS}：业务主体、订单类型、客户、上游代理、
+     * <p>默认勾选 {@link #DEFAULT_COPY_FIELDS}：业务主体、订单类型、客户、上游代理、
      * 下游客户、返点方式、收款方式、账期天数。</p>
+     *
+     * <p>不含付款相关字段（付款方式/预付模式/预付比例/预付金额/预付截止日/后付触发/后付天数）：
+     * 订单付款方式由下游客户明细推导，勾选「下游客户」时随明细一并复制，
+     * 无需也不应在订单主表单独勾选，否则会出现主表与明细不一致。</p>
      */
     public static final class CopyField {
         /** 业务主体 */
@@ -214,20 +218,6 @@ public class AdOrderService {
         public static final String RECEIPT_PREPAY_AMOUNT = "receiptPrepayAmount";
         /** 预收截止日 */
         public static final String RECEIPT_PREPAY_DEADLINE = "receiptPrepayDeadline";
-        /** 付款方式 */
-        public static final String PAYMENT_METHOD = "paymentMethod";
-        /** 预付模式 */
-        public static final String PAYMENT_PREPAY_MODE = "paymentPrepayMode";
-        /** 预付比例 */
-        public static final String PAYMENT_PREPAY_RATIO = "paymentPrepayRatio";
-        /** 预付金额 */
-        public static final String PAYMENT_PREPAY_AMOUNT = "paymentPrepayAmount";
-        /** 预付截止日 */
-        public static final String PAYMENT_PREPAY_DEADLINE = "paymentPrepayDeadline";
-        /** 后付触发条件 */
-        public static final String PAYMENT_POSTPAY_TRIGGER = "paymentPostpayTrigger";
-        /** 后付天数 */
-        public static final String PAYMENT_POSTPAY_DAYS = "paymentPostpayDays";
         /** 关联合同 */
         public static final String CONTRACT_ID = "contractId";
         /** 扩展字段 */
@@ -357,27 +347,9 @@ public class AdOrderService {
         if (fields.contains(CopyField.RECEIPT_ACCOUNT_PERIOD_DAYS)) {
             order.setReceiptAccountPeriodDays(source.getReceiptAccountPeriodDays());
         }
-        if (fields.contains(CopyField.PAYMENT_METHOD)) {
-            order.setPaymentMethod(source.getPaymentMethod());
-        }
-        if (fields.contains(CopyField.PAYMENT_PREPAY_MODE)) {
-            order.setPaymentPrepayMode(source.getPaymentPrepayMode());
-        }
-        if (fields.contains(CopyField.PAYMENT_PREPAY_RATIO)) {
-            order.setPaymentPrepayRatio(source.getPaymentPrepayRatio());
-        }
-        if (fields.contains(CopyField.PAYMENT_PREPAY_AMOUNT)) {
-            order.setPaymentPrepayAmount(source.getPaymentPrepayAmount());
-        }
-        if (fields.contains(CopyField.PAYMENT_PREPAY_DEADLINE)) {
-            order.setPaymentPrepayDeadline(source.getPaymentPrepayDeadline());
-        }
-        if (fields.contains(CopyField.PAYMENT_POSTPAY_TRIGGER)) {
-            order.setPaymentPostpayTrigger(source.getPaymentPostpayTrigger());
-        }
-        if (fields.contains(CopyField.PAYMENT_POSTPAY_DAYS)) {
-            order.setPaymentPostpayDays(source.getPaymentPostpayDays());
-        }
+        // 付款相关字段（付款方式/预付模式/预付比例/预付金额/预付截止日/后付触发/后付天数）
+        // 不在订单主表单独复制：这些信息由下游客户明细承载，勾选「下游客户」时随明细一并复制，
+        // 再由 syncOrderDownstreamMedia 依据明细推导回填订单付款方式，避免出现主表与明细不一致。
         if (fields.contains(CopyField.EXT_JSON)) {
             order.setExtJson(source.getExtJson());
         }
