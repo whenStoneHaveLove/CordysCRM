@@ -270,7 +270,11 @@
 
                   <!-- 每个客户的付款方式 -->
                   <n-form-item-gi :span="2" :label="t('advertising.order.form.paymentMethod')">
-                    <n-radio-group v-model:value="item.paymentMethod" name="payablePaymentMethod">
+                    <n-radio-group
+                      v-model:value="item.paymentMethod"
+                      name="payablePaymentMethod"
+                      @update:value="(v: number) => onPaymentMethodChange(item, v)"
+                    >
                       <n-radio :value="10">预付</n-radio>
                       <n-radio :value="20">后付</n-radio>
                     </n-radio-group>
@@ -322,6 +326,7 @@
                         v-model:value="item.paymentPostpayTrigger"
                         :options="postpayTriggerOptions"
                         placeholder="后付触发"
+                        @update:value="(v: number) => onPostpayTriggerChange(item, v)"
                       />
                     </n-form-item-gi>
                     <n-form-item-gi
@@ -868,6 +873,30 @@
       rebateAmount: rebate.toFixed(2),
       actualPayable: actual.toFixed(2),
     };
+  }
+
+  /**
+   * 付款方式联动：切到后付(20)清空预付字段；切到预付(10)清空后付字段。
+   * 表单用 v-if 隐藏另一组字段，但值仍留在对象里会随下游明细提交落库，必须清空。
+   */
+  function onPaymentMethodChange(item: DownstreamPayable, value: number | null) {
+    if (value === 20) {
+      item.paymentPrepayMode = null;
+      item.paymentPrepayRatio = null;
+      item.paymentPrepayDeadline = null;
+      item.paymentPrepayAmount = null;
+    } else if (value === 10) {
+      item.paymentPostpayTrigger = null;
+      item.paymentPostpayDays = null;
+    }
+  }
+
+  /** 后付触发联动：天数输入框只在「执行完成X天」(20) 渲染，
+   *  切走时清空残留值，否则 v-if 隐身后值仍会随明细提交落库 */
+  function onPostpayTriggerChange(item: DownstreamPayable, value: number | null) {
+    if (value !== 20) {
+      item.paymentPostpayDays = null;
+    }
   }
 
   // 比例模式下，实时计算预收金额（应收 × 比例%）

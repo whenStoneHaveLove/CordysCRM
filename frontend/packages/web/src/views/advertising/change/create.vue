@@ -102,10 +102,16 @@
                           v-model:value="item.paymentMethod"
                           :options="AdPaymentMethodOptions"
                           style="width: 100%"
+                          @update:value="(v: number) => onPaymentMethodChange(item, v)"
                         />
                       </td>
                       <td>
-                        <n-select v-model:value="item.paymentPrepayMode" :options="AdModeOptions" style="width: 100%" />
+                        <n-select
+                          v-model:value="item.paymentPrepayMode"
+                          :options="AdModeOptions"
+                          :disabled="!isPrepayEditable(item)"
+                          style="width: 100%"
+                        />
                       </td>
                       <td>
                         <n-input-number
@@ -113,6 +119,7 @@
                           :min="0"
                           :precision="2"
                           :show-button="false"
+                          :disabled="!isPrepayEditable(item)"
                           style="width: 100%"
                         />
                       </td>
@@ -121,6 +128,7 @@
                           v-model:value="item.paymentPrepayDeadline"
                           type="date"
                           clearable
+                          :disabled="!isPrepayEditable(item)"
                           style="width: 100%"
                         />
                       </td>
@@ -128,7 +136,9 @@
                         <n-select
                           v-model:value="item.paymentPostpayTrigger"
                           :options="AdPostpayTriggerOptions"
+                          :disabled="!isPostpayEditable(item)"
                           style="width: 100%"
+                          @update:value="(v: number) => onPostpayTriggerChange(item, v)"
                         />
                       </td>
                       <td>
@@ -137,6 +147,7 @@
                           :min="0"
                           :precision="0"
                           :show-button="false"
+                          :disabled="!isPostpayDaysEditable(item)"
                           style="width: 100%"
                         />
                       </td>
@@ -331,11 +342,33 @@
     return found ? String(found.label) : String(value);
   }
 
+  /**
+   * 付款字段互斥收口：预付(10) 与后付(20) 两组字段不同时存在。
+   * 明细按整表覆盖提交，残留值会原样落库；原订单历史数据也可能带出
+   * 「后付 + 预付比例/截止日」这类脏组合，统一在此清理。
+   */
+  function normalizePaymentFields(item: any) {
+    if (item.paymentMethod === 20) {
+      item.paymentPrepayMode = null;
+      item.paymentPrepayRatio = null;
+      item.paymentPrepayDeadline = null;
+    } else if (item.paymentMethod === 10) {
+      item.paymentPostpayTrigger = null;
+      item.paymentPostpayDays = null;
+    }
+    // 后付天数只在「执行完成X天」有意义
+    if (item.paymentPostpayTrigger !== 20) {
+      item.paymentPostpayDays = null;
+    }
+  }
+
   async function onOrderChange(val: string | null) {
     originalOrder.value = null;
     changeDownstream.value = false;
     downstreamMediaIds.value = [];
     downstreamMediaPayables.value = [];
+    // 必须先清空原值缓存：详情接口失败时不会覆盖它，否则勾选明细会沿用上一个订单的数据
+    originalDownstream.value = { ids: [], payables: [] };
     if (!val) return;
     try {
       const detail = await getAdOrderDetail(val);
@@ -357,11 +390,9 @@
         paymentPostpayTrigger: p.paymentPostpayTrigger,
         paymentPostpayDays: p.paymentPostpayDays,
       }));
+      // 原值仅缓存，供「变更下游客户明细」勾选时回填、以及"原值"列对比展示，
+      // 不自动勾选、不自动填充编辑区（是否变更下游明细由用户显式决定）
       originalDownstream.value = { ids, payables };
-      // 选订单即把下游客户原值带入明细编辑区（整体重填：带原值提交=整表覆盖无变化）
-      downstreamMediaIds.value = [...ids];
-      downstreamMediaPayables.value = payables.map((p) => ({ ...p }));
-      changeDownstream.value = true;
     } catch (e) {
       // 拿不到原值不阻塞，仅影响"原值"列展示
     }
@@ -421,7 +452,13 @@
   watch(changeDownstream, (v) => {
     if (v) {
       downstreamMediaIds.value = [...originalDownstream.value.ids];
-      downstreamMediaPayables.value = originalDownstream.value.payables.map((p) => ({ ...p }));
+      // 回填原订单值后做一次付款字段互斥清理：库里历史数据可能带出
+      // 「后付 + 预付比例/截止日」等脏组合，直接铺到界面会与禁用态自相矛盾
+      downstreamMediaPayables.value = originalDownstream.value.payables.map((p) => {
+        const item = { ...p };
+        normalizePaymentFields(item);
+        return item;
+      });
     } else {
       downstreamMediaIds.value = [];
       downstreamMediaPayables.value = [];
@@ -459,26 +496,55 @@
     val.forEach((id) => {
       if (!items.find((it) => it.downstreamMediaId === id)) {
         const orig = originalDownstream.value.payables.find((p) => String(p.downstreamMediaId) === String(id));
-        items.push(
-          orig
-            ? { ...orig }
-            : {
-                downstreamMediaId: id,
-                payableAmount: null,
-                noRebateAmount: null,
-                rebateMode: 10,
-                rebateValue: null,
-                actualPayableAmount: 0,
-                paymentMethod: null,
-                paymentPrepayMode: null,
-                paymentPrepayRatio: null,
-                paymentPrepayDeadline: null,
-                paymentPostpayTrigger: null,
-                paymentPostpayDays: null,
-              }
-        );
+        const base = orig
+          ? { ...orig }
+          : {
+              downstreamMediaId: id,
+              payableAmount: null,
+              noRebateAmount: null,
+              rebateMode: 10,
+              rebateValue: null,
+              actualPayableAmount: 0,
+              paymentMethod: null,
+              paymentPrepayMode: null,
+              paymentPrepayRatio: null,
+              paymentPrepayDeadline: null,
+              paymentPostpayTrigger: null,
+              paymentPostpayDays: null,
+            };
+        // 原订单回填时同样收口付款字段，避免带出后付/预付并存的脏组合
+        normalizePaymentFields(base);
+        items.push(base);
       }
     });
+  }
+
+  /** 付款方式联动：切到后付(20)清空预付三字段；切到预付(10)清空后付两字段。 */
+  function onPaymentMethodChange(item: any, value: number | null) {
+    item.paymentMethod = value;
+    normalizePaymentFields(item);
+  }
+
+  /** 预付字段：仅预付(10)可写 */
+  function isPrepayEditable(item: any): boolean {
+    return item.paymentMethod === 10;
+  }
+
+  /** 后付字段：仅后付(20)可写 */
+  function isPostpayEditable(item: any): boolean {
+    return item.paymentMethod === 20;
+  }
+
+  /** 后付天数：仅「执行完成X天」(20) 可写；「收到上游全款」(10) 无天数概念 */
+  function isPostpayDaysEditable(item: any): boolean {
+    return item.paymentMethod === 20 && item.paymentPostpayTrigger === 20;
+  }
+
+  /** 后付触发联动：切到非「执行完成X天」时清空后付天数，避免残留值落库 */
+  function onPostpayTriggerChange(item: any, value: number | null) {
+    if (value !== 20) {
+      item.paymentPostpayDays = null;
+    }
   }
 
   function buildPayload(): AdOrderChangeSaveParams | null {
@@ -590,14 +656,14 @@
     padding: 16px;
   }
   .before-value {
-    color: #999;
+    color: #999999;
     word-break: break-all;
   }
   .dm-table {
     min-width: 1400px;
   }
   .payable-total {
-    font-weight: 600;
     margin-top: 8px;
+    font-weight: 600;
   }
 </style>

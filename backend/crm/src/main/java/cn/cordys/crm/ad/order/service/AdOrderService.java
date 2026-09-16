@@ -913,7 +913,8 @@ public class AdOrderService {
                 reused.setDeleted(0);
                 reused.setOrganizationId(orgId);
                 fillPayableFields(reused, payableMap.get(mediaId));
-                orderDownstreamMediaMapper.update(reused);
+                // 明细为整表覆盖语义：必须用全字段更新（含 null），否则「清空」会被跳过、旧值残留
+                orderDownstreamMediaMapper.updateFull(reused);
             } else {
                 AdOrderDownstreamMedia odm = new AdOrderDownstreamMedia();
                 odm.setId(IDGenerator.nextStr());
@@ -1010,15 +1011,6 @@ public class AdOrderService {
     }
 
     /**
-     * 仅根据订单主表已有金额字段，计算并回填「应付返点」「订单收入」两个派生列。
-     * 不重算 mediaPayableAmount/actualMediaPayableAmount（保留主表原值，避免无下游明细时把主表金额错误地置 0）。
-     * 用于历史数据批量补数场景：主表原有两个应付字段已正确，仅需补出新增的派生字段。
-     * 公式：
-     *   应付返点 = mediaPayableAmount - actualMediaPayableAmount
-     *   订单收入 = receivableAmount    - actualMediaPayableAmount
-     * 任意一侧为 null 时按 0 计，结果仍为 null 时不写（保留 null 便于排查）。
-     */
-    /**
      * 补出三列（不动主表其他金额字段，与需求口径一致）：
      *   实际应付 = 各下游明细实际应付之和（实际应付以明细 actual_payable 列为优先；该列为 null 的旧数据
      *             用「应付金额 - 返点金额」即时兜底，与 fillPayableFields 写库逻辑一致，与前端明细行/底部累加展示一致）
@@ -1054,6 +1046,17 @@ public class AdOrderService {
         if (order.getReceivableAmount() != null) {
             order.setOrderIncomeAmount(order.getReceivableAmount().subtract(actualPayableSum));
         }
+    }
+
+    /**
+     * 以库中已有下游明细重算「实际应付 / 应付返点 / 订单收入」三列（仅赋值，不落库，由调用方 update）。
+     *
+     * <p>供<b>不携带前端明细 DTO</b> 的场景复用：改单执行时若只变更了订单金额或返点比例（未勾选下游
+     * 客户明细），收入侧派生列同样必须随新的应收刷新，否则「订单收入」会停留在旧值、与实际应收 − 实际应付
+     * 不自洽。口径与历史补数 {@link #recomputeIncomeFieldsForAll()} 完全一致。</p>
+     */
+    public void recomputeIncomeFromDetails(AdOrder order) {
+        applyDerivedOnlyFromOrder(order, orderDownstreamMediaMapper.selectByOrderId(order.getId()));
     }
 
     /**
@@ -1113,12 +1116,19 @@ public class AdOrderService {
         BigDecimal actual = (payable == null ? BigDecimal.ZERO : payable).subtract(rebateAmount);
         odm.setActualPayable(actual);
         // 付款方式（下放到每个客户），预付金额基数=该客户应付金额
-        odm.setPaymentMethod(dto.getPaymentMethod());
-        odm.setPaymentPrepayMode(dto.getPaymentPrepayMode());
-        odm.setPaymentPrepayRatio(dto.getPaymentPrepayRatio());
-        odm.setPaymentPrepayDeadline(dto.getPaymentPrepayDeadline());
-        odm.setPaymentPostpayTrigger(dto.getPaymentPostpayTrigger());
-        odm.setPaymentPostpayDays(dto.getPaymentPostpayDays());
+        // 互斥收口：后付(20) 不保留预付三字段；预付(10) 不保留后付两字段；
+        // 后付触发非「执行完成X天」(20) 不保留后付天数。前端已按此禁用对应控件，此处兜底防脏组合落库。
+        Integer paymentMethod = dto.getPaymentMethod();
+        Integer postpayTrigger = dto.getPaymentPostpayTrigger();
+        boolean postpay = paymentMethod != null && paymentMethod == 20;
+        boolean prepay = paymentMethod != null && paymentMethod == 10;
+        odm.setPaymentMethod(paymentMethod);
+        odm.setPaymentPrepayMode(postpay ? null : dto.getPaymentPrepayMode());
+        odm.setPaymentPrepayRatio(postpay ? null : dto.getPaymentPrepayRatio());
+        odm.setPaymentPrepayDeadline(postpay ? null : dto.getPaymentPrepayDeadline());
+        odm.setPaymentPostpayTrigger(prepay ? null : postpayTrigger);
+        odm.setPaymentPostpayDays(
+                prepay || (postpayTrigger != null && postpayTrigger != 20) ? null : dto.getPaymentPostpayDays());
         BigDecimal prepayAmount = null;
         if (dto.getPaymentMethod() != null && dto.getPaymentMethod() == 10
                 && dto.getPaymentPrepayMode() != null && payable != null) {

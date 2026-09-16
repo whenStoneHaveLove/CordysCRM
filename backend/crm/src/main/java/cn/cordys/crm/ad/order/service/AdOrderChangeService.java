@@ -50,8 +50,8 @@ import java.util.*;
  *       驳回/执行后父单恢复为改单前状态。</li>
  *   <li>L-24 改单禁止变更 {@code order_type}（框架↔单笔不可改），提交时校验。</li>
  *   <li>L-14 审批开关：{@code ad.order.approval.enabled}（默认 true）；关闭时提交直达审批通过(跳过管理组审批)。</li>
- *   <li>L-04 资金侧：执行时按新应收对比已收/已开票，置红冲标记(needs_red_invoice)，
- *       并记录应退款/待补收/待补开至订单操作日志（支付记录由 M4 负责）。</li>
+ *   <li>L-04 资金侧（按新应收对比已收/已开票，置红冲标记、记录应退款/待补收）本期不实现：
+ *       执行仅落地金额与派生列，不做资金侧处理。</li>
  *   <li>L-21 驳回保留数据：驳回仅回退状态，不删除任何附件/快照。</li>
  *   <li>L-22 改单锁定期间允许上传过程附件(type=40)，由附件服务控制，本服务不阻断。</li>
  * </ul>
@@ -248,7 +248,8 @@ public class AdOrderChangeService {
     }
 
     /**
-     * 执行改单：审批通过(20) → 已执行(40)。应用快照 + 金额重算 + L-04 资金侧；父单从改单审核中(60)恢复改单前状态。
+     * 执行改单：审批通过(20) → 已执行(40)。应用快照 + 金额重算（应收侧 + 应付/收入派生列）；
+     * 父单从改单审核中(60)恢复改单前状态。
      */
     @OperationLog(module = "AD_ORDER_CHANGE", action = "EXECUTE", targetId = "#id")
     public AdOrderChange execute(String id, String userId, String orgId) {
@@ -263,20 +264,27 @@ public class AdOrderChangeService {
         // 1) 应用变更后快照（仅白名单字段）
         Map<String, Object> after = parseJson(change.getSnapshotAfter());
         applyAfter(order, after);
-        // 1.5) 下游客户付款返点明细（整表覆盖，作为改单特殊字段随审批落地）
+        // 2) 下游客户付款返点明细（整表覆盖，作为改单特殊字段随审批落地）。
+        //    内部按明细重算应付总额/实际应付/应付返点/付款方式，须先于应收侧：L-28 预付基数 = 应付总额
         if (after.containsKey("downstreamMediaPayables")) {
             applyDownstreamMediaChange(order, after, userId, orgId);
         }
-        // 2) 金额重算（L-02/L-11/L-28）
+        // 3) 应收侧金额重算（L-02/L-11/L-28）
         amountCalculator.computeAmounts(order);
-        // 3) 父单从改单审核中(60)恢复为改单前状态
+        // 4) 收入侧派生列（实际应付/应付返点/订单收入）以库中明细收口重算：
+        //    - 未变更下游明细时这是唯一重算入口：只改订单金额/返点比例后，订单收入必须随新应收刷新，
+        //      否则会停留在旧值、与实际应收 − 实际应付不自洽；
+        //    - 已变更明细时与 syncOrderDownstreamMedia 内部结果幂等，但必须用第 3 步更新后的
+        //      receivableAmount 重算，故统一在此覆盖一次。
+        adOrderService.recomputeIncomeFromDetails(order);
+        // 5) 父单从改单审核中(60)恢复为改单前状态
         Integer before = change.getOrderStatusBefore();
         int restoreTo = before != null ? before : fromOrder;
         order.setStatus(restoreTo);
         order.setUpdateUser(userId);
         order.setUpdateTime(System.currentTimeMillis());
         adOrderMapper.update(order);
-        // 4) 改单 → 已执行
+        // 6) 改单 → 已执行
         change.setStatus(AdOrderChangeStatus.EXECUTED.getCode());
         change.setUpdateUser(userId);
         change.setUpdateTime(System.currentTimeMillis());

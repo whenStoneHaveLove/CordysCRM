@@ -4,75 +4,57 @@
 - 飞致云开源 AI CRM（1Panel-dev/CordysCRM，FIT2CLOUD OSS ≈ GPLv3，不可替换 Logo/版权）；分支 `dev3.0`（二次开发）
 - 后端：Spring Boot 3 + Java 21 + Jetty、MyBatis 自定义 BaseMapper + PageHelper、Shiro 2(Jakarta)、Redis + Redisson + Spring Session、Flyway、SpringDoc、Quartz、FastExcel
 - 前端：Vue 3.5 + TS、Naive UI(web)/Vant(mobile)、Vite、pnpm monorepo、Pinia、Axios(CordysAxios)、Tailwind 3.4 + Less、ECharts、vue-i18n
-- 路径：后端 `backend/crm/src/main/java/cn/cordys/`（config/common/crm/ad）、framework `backend/framework/`；前端 `frontend/packages/web/src/views/advertising/`；共享 `frontend/packages/lib-shared/`
+- 路径：后端 `backend/crm/src/main/java/cn/cordys/`；前端 `frontend/packages/web/src/views/advertising/`；共享 `frontend/packages/lib-shared/`
 
-## Git 提交约定（精简）
-- **必须 `--no-verify`**（husky 跑 vue-tsc/lint-staged 易卡或报 vite/client 类型错）
-- 脏工作区精准提交：`git status --porcelain` → 剔除遗留临时文件（`build_compile.bat`/`*_out.txt`）→ 只 add 相关文件 → `git diff --cached --stat` 复核
-- cmd 回显中文是 GBK 乱码，内容本身 UTF-8 正确
+## 命令 / 约定
+- 编译：`cd backend` → `& "D:\apache-maven-3.9.4\bin\mvn.cmd" -pl crm -am compile -DskipTests`（系统默认 mvn 3.3.3 太老，flatten 插件要求 ≥3.6.3）
+- 单测：`& "D:\apache-maven-3.9.4\bin\mvn.cmd" -pl crm test -Dtest=XxxTest -DfailIfNoTests=false`
+- 前端类型检查：`pnpm --filter @cordys/web run build`（= vue-tsc --noEmit + vite build）；只查类型用 `packages/web` 下 `pnpm exec vue-tsc --noEmit`
+- 输出重定向到 `$env:TEMP`（勿写仓库目录，git 会看到）；cmd 中文回显 GBK 乱码但文件内容 UTF-8 正确
+- Git：必须 `--no-verify`；只 add 本次相关文件 + `git diff --cached --stat` 复核暂存区
 
 ## 核心业务
-- 订单：草稿0 → 已提交10 → 审批通过20 → 执行中30/40 → 执行完成50 → 归档60；驳回15、作废70、强制归档80
+- 订单主状态：草稿0 → 已提交10 → 审批通过20 → 待执行45 → 执行中50 → 结算中80 → 已归档90；改单审核中60、作废100（改单可从 45/50/80 发起，结束后恢复原状态）
 - 合同用印：未申请0 → 审批中10 → 已用印20 → 归档审批中40 → 已归档60；驳回30、归档驳回50
 - 合同类型 10框架/20单笔/30服务/40其他；方向 10上游/20下游
 
-## 开发原则 & 存储
-- 改实体前**先看 DDL**（ad_* 不一定有完整 BaseModel 字段）；勿因 INSERT 报错去掉 `extends BaseModel`
-- Flyway 版本号全局唯一（不区分 ddl/dml 目录）；`validate-on-migrate=false`（改已执行迁移不重跑）
-- 附件目录 `/opt/cordys/data/files`：`tmp/` 临时、`pic/{orgId}/` 正式；`TaskCleanupJob` 每天 3 点清理
-
 ## BaseModel / BaseMapper 易错
-- `id/createUser/updateUser` VARCHAR(32)；`createTime/updateTime` BIGINT（非 DATETIME）
-- `insert` 是**全字段 INSERT**；非 MyBatis-Plus：Lambda 用 `selectListByLambda`、全量 `selectAll`、按主键 `updateById`
-- **巨坑**：`select(E criteria)` 把 int 默认值 0 当条件（`status/deleted/...`）→ 严禁 `new E()+setDeleted(0)`；改用 XML 自定义 / `selectAll`+stream / Lambda
+- `id/createUser/updateUser` VARCHAR(32)；`createTime/updateTime` BIGINT
+- `insert` 全字段 INSERT；Lambda 用 `selectListByLambda`、按主键 `updateById`
+- **巨坑**：`select(E criteria)` 把 int 默认 0 当条件 → 严禁 `new E()+setDeleted(0)`；改用 XML 自定义 / `selectAll`+stream
+- **巨坑2**：`update()` 与 `updateById()` **都是选择性更新**（`AbstractSqlProviderSupport.updateSQL` 对每个非主键列都包 `<if test="col != null">`），null 永不落库 →「清空某列」会静默失效保留旧值；需要清空必须自定义全字段 SQL（参考 `ExtAdOrderDownstreamMediaMapper.updateFull`）。`insert` 是全字段，新建行不受影响
+- 改实体前先看 DDL：`ad_order_log` 无 deleted/create_user/update_user/update_time；`ad_order_contract`/`ad_order_downstream_media` 无 create_user/update_user/update_time
+- 逻辑删除 + 唯一键不含 deleted：「逻辑删 → 再插」会 Duplicate → 查全部(含已删) → 已存在则复用并置 deleted=0
+- Flyway 3.0.0 已用到 41，新增须 >41；版本号全局唯一；`validate-on-migrate=false`
 
-## 表结构速查（ad_* 缺字段）
-- `ad_order_log`：无 deleted/create_user/update_user/update_time
-- `ad_order_contract`、`ad_order_downstream_media`：无 create_user/update_user/update_time（有 deleted、create_time）
-- 新建子表模板：`V3.0.0_13__ad_receipt_payment.sql`
+## 订单金额 / 收入计算链路（关键）
+- **两个计算源**：`AdAmountCalculator.computeAmounts` 算**应收侧**（rebateAmount、receivableAmount、receiptPrepayAmount、paymentPrepayAmount）；`AdOrderService.applyIncomeFromPayables` 算**应付侧+收入**（mediaPayableAmount、actualMediaPayableAmount、mediaRebateAmount、orderIncomeAmount=实际应收−实际应付、paymentMethod 由明细推导）
+- 收入三列唯一口径：实际应付 = Σ明细 actual_payable（null 兜底「应付−返点」）；应付返点 = mediaPayableAmount − 实际应付；订单收入 = receivableAmount − 实际应付
+- 列表/详情**直接读库列**（`order_income_amount` 等），列不对就展示陈旧值；补数走 `POST /api/ad/order/recompute-income` → `recomputeIncomeFieldsForAll`
+- `AdOrderService.recomputeIncomeFromDetails(order)`：以库中明细重算收入三列（仅赋值不落库），改单执行收口调用
+- **改单 execute 顺序（2026-09-16 修复）**：applyAfter → syncOrderDownstreamMedia(明细) → computeAmounts(应收) → recomputeIncomeFromDetails(收入三列)。顺序敏感：明细须先于应收（预付基数=应付），收入须后于应收（基数=应收）
+- **L-04 资金侧（红冲标记/应退款/待补收）本期明确不做**，javadoc 已注明；原 3 个 L-04 单测已删除
+- `accountPeriodStartDate/accountPeriodEndDate` 全项目无赋值点（注释写"自动"，实际没人算）
 
-## 逻辑删除 + 唯一键通用坑
-- 唯一键不含 `deleted` 时「逻辑删 → 再插」会 Duplicate；正确：查全部（含已删）→ 目标外置 deleted=1 → 已存在复用 → 仅新增才 insert
-- 已修：订单端 `AdOrderService.syncOrderContract`、`AdContractService`、`ad_order_downstream_media`；`ad_payout_invoice` 走 update+物理删（安全）
-
-## 广告模块约定
+## 广告模块
 - 合同-订单关联走 `ad_order_contract`；订单页合同下拉只列 `sealStatus=60`
 - 订单编辑回填 `loadForEdit`：用 `isRestoringFromDetail` 标志避免 watch 清空 `contractId`
-- **操作日志 i18n**：后端英文 module/action 须同步三处 `config/adLog.ts`、`zh-CN.ts`、`en-US.ts`
+- 操作日志 i18n：后端英文 module/action 须同步 `config/adLog.ts`、`zh-CN.ts`、`en-US.ts`
+- 附件：`processTemp` 会删除「同 resourceId 下不在 tempFileIds 里」的附件 → 逐个追加必须用 `appendTemp`；类型 10排期/20邮件截图/40过程/60邮件记录(eml)；有 type=60 时提交豁免 10+20（后端 `submit` 与前端 `create.vue` 守卫必须同步）
+- eml 预览：服务端 `AdOrderAttachmentService.previewEml`（jakarta.mail 解析，内嵌图转 data URL）→ 前端 `<iframe sandbox="" :srcdoc>`；前端无附件类型枚举，沿用 60 字面量
+- 预览鉴权：`/attachment/**` 走 `FileAccessAuthFilter`，只认 Cookie `F_A_TOKEN`（AES(sessionId, secret)）+ Redis session 有效
+- 导出：`EasyExcel.write(response.getOutputStream())` 直写、方法 return void；中文 mapper key 必须 = 前端 columns 的 title
+- 复制订单：不含付款字段（付款方式/预付/后付由下游客户明细承载，`syncOrderDownstreamMedia` 依明细推导主表 `paymentMethod`）
 
-## 附件上传 / 预览 / 下载
-- 创建表单内暂存 pendingFiles，创建订单后按 orderId 批量上传；提交时前后端校验排期(10)+邮件截图(20)（有 eml 则豁免，见下）
-- 预览 `inline` / 下载 `attachment`；**能否内联只取决于 Content-Type**（pdf、image/* 才行），判断在 `AttachmentService.resolveContentType`
-- 两类存储：合同附件 `processTemp` 转正式目录并写 `sys_attachment`；订单附件只 `uploadTemp`，长期留在 `tmp/` 且无附件记录（有被清理风险）
-- 前端预览 URL：`/attachment/preview/{id}?userId=xxx`（userId 后端不用）
-- **预览 401 排查链**：`/attachment/**` 与 `/pic/**` 走 `authf`(`FileAccessAuthFilter`)，只认 **Cookie `F_A_TOKEN`**（登录时 `FileAccessTokenUtils.setAccessCookie` 写入，AES(sessionId, `cordys.secret.key`)），且 `SessionUtils.sessionExists(sessionId)` 必须为真（查 **Redis** session）。→ 401 = 未重新登录 / Redis session 没了 / secret 变了 / 无痕窗口直接粘 URL。与业务代码无关
-
-## Naive UI 避坑
-- `scroll-x`（写死列宽）须 ≥ 各列宽之和 + 50~100；动态求和用 `total + 100`
-- "右侧空白列"先怀疑**操作列过宽**；三按钮同行需 `NSpace` 显式 `wrap:false`
+## 前端避坑
+- **iframe 的 `sandbox` 必须写 `sandbox=""`**：裸属性被 vue-tsc 判为 boolean → TS2322 构建失败
+- 构建前 `$env:NODE_OPTIONS=""`：被 IDEA 注入 `node-language-shim`（拦截 fs 删除）会卡死 vite `emptyOutDir`
+- eslint 全绿 ≠ 能过 vue-tsc，提交前务必跑类型检查
+- eslint 修复：`pnpm exec eslint --fix --config packages/web/eslint.config.cjs <file>`（勿用 npx）
 - `n-modal preset="card"` 需手动 `<template #footer>`；未开 autoImport，组件须显式 import
-- `n-upload` 无 `slots.file`，自定义列表用 `:show-file-list="false"` 自渲染；`custom-request` 改 `opts.file.id` 无效，须按 `f.file === rawFile` 回写真实项
-
-## ESLint
-- 以 `packages/web/eslint.config.cjs` 为准（simple-import-sort 分组：node → @/assets → @lib/shared → 组件 → @/ → @/models、@/enums → type）
-- 修复：`pnpm exec eslint --fix --config packages/web/eslint.config.cjs <file>`（勿用 npx）
-
-## 广告订单 Excel 导出（已实现）
-- 前端 `exportAdOrder`（`CDR.post` + blob + `isReturnNativeResponse`）→ 后端 `AdOrderController.export` 用 `EasyExcel.write(response.getOutputStream())` 直写，方法 return void 避免被 `ResultResponseBodyAdvice` 包装
-- 坑：后端中文 mapper key 必须 = 前端 columns 的 `title`；**勿用原生 fetch**（鉴权靠 `X-AUTH-TOKEN`+`CSRF-TOKEN` 头）；EasyExcel 包名 `cn.idev.excel`；勿用 `exportByCustomWriteHandler(..., null)`（NPE）
-
-## 广告订单「复制」（2026-09-16，已提交 8550444fb）
-- 列表「操作」列：详情/复制/编辑（`AD_ORDER:COPY`）；弹窗勾选字段 → 生成草稿，名称加 `-复制`
-- 后端 `AdOrderCopyRequest` + `AdOrderController.copy` + `AdOrderService.copy`（字段常量 nested class `CopyField`）+ 迁移 V3.0.0_40/41
-- 坑：业务主体 NULL 时流水号恒 001（新增 `countTodayOrdersWithoutEntity`）；未勾下游客户须把媒体金额置 0；`refreshColumns` 持久化宽度会覆盖 action 列新值，需特判
-
-## 广告订单附件：eml 邮件记录（2026-09-16 已实现）
-- 新增类型 **60=邮件记录(eml)**，枚举 `ad/common/constants/AdAttachmentType`
-- 提交守卫（**后端 `AdOrderService.submit` 与前端 `create.vue handleSave('submit')` 必须同步**）：有 type=60 → 豁免 10/20；无 → 10+20 必传
-- `AdOrderAttachmentService.upload` 对 60 强制 `.eml` 后缀
-- UI：create.vue 附件区 `n-tabs`（普通附件 / 邮件记录(eml)），eml 仅下载+删除；detail.vue 草稿态加 eml 上传按钮 + `attTypeLabel` 60
+- `n-upload` 无 `slots.file`，用 `:show-file-list="false"` 自渲染；`custom-request` 须按 `f.file === rawFile` 回写
+- 既有 lint error（勿顺手改以免污染 diff）：`lib-shared/models/advertising.ts` 空接口 `AdBusinessEntityDetail`
 
 ## 当前状态（2026-09-16）
-- 最近提交：`8550444fb` 复制订单、`827e67763/926fc2fd6` 发票附件、`03ca30213` 合同作废审批
-- Flyway 3.0.0 已用到 41，新增须 >41
-- 工作区未提交：eml 改造（后端 4 个 ad 文件 + 前端 create/detail）+ 复制功能 sql（已 staged）
+- 最近提交：`039709c9b` 修 eml sandbox、`597b01b6a` eml 预览、`d8eb52090` 复制弹窗移除付款分组、`8550444fb` 复制订单、`827e67763/926fc2fd6` 发票附件
+- 未提交：改单执行收入侧重算（`AdOrderService.recomputeIncomeFromDetails` 新增 + `AdOrderChangeService.execute` 顺序修正 + `AdOrderChangeServiceTest` 重写），测试 8/8 绿；另有 `.codebuddy/memory/*.md`
