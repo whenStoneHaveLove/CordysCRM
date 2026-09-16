@@ -890,6 +890,7 @@ export const {
 
 export const {
   createAdOrder,
+  copyAdOrder,
   updateAdOrder,
   getAdOrderDetail,
   getAdOrderPage,

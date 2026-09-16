@@ -10,4 +10,5 @@ export const AdOrderConfirmExecuteUrl = '/api/ad/order';
 export const AdOrderVoidUrl = '/api/ad/order';
 export const AdOrderForceArchiveUrl = '/api/ad/order';
 export const AdOrderExportUrl = '/api/ad/order/export';
+export const AdOrderCopyUrl = '/api/ad/order/copy';
 export const AdOrderRecomputeIncomeUrl = '/api/ad/order/recompute-income';

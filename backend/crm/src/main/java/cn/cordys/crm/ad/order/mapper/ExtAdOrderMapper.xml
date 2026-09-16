@@ -119,6 +119,17 @@
           AND create_time &lt;= #{end}
     </select>
 
+    <!-- 当天未填写业务主体的订单数（复制订单场景，business_entity_id 为 NULL，= NULL 恒不成立需用 IS NULL） -->
+    <select id="countTodayOrdersWithoutEntity" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM ad_order
+        WHERE organization_id = #{orgId}
+          AND business_entity_id IS NULL
+          AND deleted = 0
+          AND create_time &gt;= #{start}
+          AND create_time &lt;= #{end}
+    </select>
+
     <!-- 逾期的执行中订单（L-08 自动流转 50→80） -->
     <select id="selectOverdue" resultType="cn.cordys.crm.ad.order.domain.AdOrder">
         SELECT

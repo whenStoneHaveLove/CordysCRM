@@ -11,6 +11,7 @@ import cn.cordys.crm.ad.common.constants.OrderType;
 import cn.cordys.crm.ad.common.constants.PaymentMethod;
 import cn.cordys.crm.ad.common.constants.ReceiptMethod;
 import cn.cordys.crm.ad.order.dto.request.AdOrderApproveRequest;
+import cn.cordys.crm.ad.order.dto.request.AdOrderCopyRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderForceArchiveRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderPageRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderSaveRequest;
@@ -80,6 +81,13 @@ public class AdOrderController {
     @Operation(summary = "编辑草稿订单")
     public AdOrder update(@RequestBody AdOrderSaveRequest request) {
         return adOrderService.update(request, userId(), orgId());
+    }
+
+    @PostMapping("/copy")
+    @CsPermission(PermissionConstants.AD_ORDER_COPY)
+    @Operation(summary = "复制订单（按勾选字段生成草稿订单）")
+    public AdOrder copy(@RequestBody AdOrderCopyRequest request) {
+        return adOrderService.copy(request, userId(), orgId());
     }
 
     @GetMapping("/{id}")

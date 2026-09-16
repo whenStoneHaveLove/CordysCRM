@@ -273,6 +273,7 @@ public class PermissionConstants {
     /*------ start: AD_ORDER（§3.3 / §6 / §9.1） ------*/
     public static final String AD_ORDER_READ = "AD_ORDER:READ";
     public static final String AD_ORDER_CREATE = "AD_ORDER:CREATE";
+    public static final String AD_ORDER_COPY = "AD_ORDER:COPY";
     public static final String AD_ORDER_SUBMIT = "AD_ORDER:SUBMIT";
     public static final String AD_ORDER_APPROVE = "AD_ORDER:APPROVE";
     public static final String AD_ORDER_REJECT = "AD_ORDER:REJECT";

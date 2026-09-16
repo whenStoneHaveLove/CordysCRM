@@ -73,6 +73,16 @@ export interface AdOrderSaveParams {
   downstreamMediaPayables?: DownstreamMediaPayable[];
 }
 
+/** 复制订单参数：源订单 id + 勾选要复制的字段 key 列表 */
+export interface AdOrderCopyParams {
+  /** 源订单 id */
+  id: string;
+  /** 勾选的字段 key（见后端 AdOrderService.CopyField），未勾选的字段不复制 */
+  fields: string[];
+  /** 可选：自定义新订单名称，缺省为「源订单名称-复制」 */
+  orderName?: string;
+}
+
 export interface AdOrderApproveParams {
   action?: string;
   remark?: string;

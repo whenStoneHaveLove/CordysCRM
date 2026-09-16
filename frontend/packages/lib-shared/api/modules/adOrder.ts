@@ -2,6 +2,7 @@ import type { CordysAxios } from '@lib/shared/api/http/Axios';
 import {
   AdOrderApproveUrl,
   AdOrderConfirmExecuteUrl,
+  AdOrderCopyUrl,
   AdOrderCreateUrl,
   AdOrderDetailUrl,
   AdOrderExportUrl,
@@ -15,6 +16,7 @@ import {
 } from '@lib/shared/api/requrls/adOrder';
 import type {
   AdOrderApproveParams,
+  AdOrderCopyParams,
   AdOrderDetail,
   AdOrderForceArchiveParams,
   AdOrderInfo,
@@ -87,6 +89,11 @@ export default function useAdOrderApi(CDR: CordysAxios) {
     );
   }
 
+  // 复制订单（按勾选字段生成一张草稿订单，名称为「源订单名称-复制」）
+  function copyAdOrder(data: AdOrderCopyParams) {
+    return CDR.post<AdOrderInfo>({ url: AdOrderCopyUrl, data });
+  }
+
   // 历史数据批量补数（仅管理员）：重算所有订单的应付/实际应付/应付返点/订单收入/付款方式
   function recomputeIncome() {
     return CDR.post<number>({
@@ -96,6 +103,7 @@ export default function useAdOrderApi(CDR: CordysAxios) {
 
   return {
     createAdOrder,
+    copyAdOrder,
     updateAdOrder,
     getAdOrderDetail,
     getAdOrderPage,

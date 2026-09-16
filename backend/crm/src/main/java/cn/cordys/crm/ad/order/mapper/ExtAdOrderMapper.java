@@ -38,6 +38,17 @@ public interface ExtAdOrderMapper extends BaseMapper<AdOrder> {
                            @Param("orgId") String orgId);
 
     /**
+     * 统计当天未填写业务主体的订单数。
+     *
+     * <p>复制订单时业务主体可能未被勾选，{@code business_entity_id} 为 NULL；
+     * 此时 {@link #countTodayOrders} 的 {@code business_entity_id = ?} 恒不成立（SQL 中 = NULL 为 UNKNOWN），
+     * 会导致流水号永远从 001 开始，故单独提供 IS NULL 的统计。</p>
+     */
+    long countTodayOrdersWithoutEntity(@Param("start") Long start,
+                                       @Param("end") Long end,
+                                       @Param("orgId") String orgId);
+
+    /**
      * 查询已逾期的执行中订单（L-08 自动流转 50→80）。
      * 条件：status=50(EXECUTING) 且 delivery_end_date < now。
      */

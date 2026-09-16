@@ -476,6 +476,7 @@
         "permissions": [
           { "id": "AD_ORDER:READ" },
           { "id": "AD_ORDER:CREATE" },
+          { "id": "AD_ORDER:COPY" },
           { "id": "AD_ORDER:SUBMIT" },
           { "id": "AD_ORDER:APPROVE" },
           { "id": "AD_ORDER:REJECT" },

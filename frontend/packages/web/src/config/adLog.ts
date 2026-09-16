@@ -19,6 +19,7 @@ export const adLogModuleOption = [
 
 export const adLogActionOption = [
   { value: 'CREATE', label: 'advertising.log.action.CREATE' },
+  { value: 'COPY', label: 'advertising.log.action.COPY' },
   { value: 'UPDATE', label: 'advertising.log.action.UPDATE' },
   { value: 'DELETE', label: 'advertising.log.action.DELETE' },
   { value: 'SUBMIT', label: 'advertising.log.action.SUBMIT' },

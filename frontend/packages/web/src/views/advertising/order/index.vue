@@ -93,13 +93,68 @@
         remote
       />
     </n-card>
+
+    <!-- 复制订单：勾选需要复制的字段，生成一张草稿订单 -->
+    <n-modal
+      v-model:show="copyVisible"
+      preset="card"
+      :title="t('advertising.order.copyTitle')"
+      :mask-closable="false"
+      style="width: 720px"
+    >
+      <div class="copy-tip">{{ t('advertising.order.copyTip') }}</div>
+      <div class="copy-source">
+        <span class="copy-source__label">{{ t('advertising.order.copySource') }}：</span>
+        <span>{{ copySource?.orderNo }} {{ copySource?.orderName }}</span>
+      </div>
+      <div class="copy-toolbar">
+        <n-button size="small" @click="selectAllCopyFields">
+          {{ t('advertising.order.copySelectAll') }}
+        </n-button>
+        <n-button size="small" @click="clearCopyFields">
+          {{ t('advertising.order.copyClear') }}
+        </n-button>
+        <span class="copy-toolbar__count">
+          {{ t('advertising.order.copySelectedCount', { num: copyFields.length }) }}
+        </span>
+      </div>
+      <n-checkbox-group v-model:value="copyFields">
+        <div v-for="group in copyFieldGroups" :key="group.group" class="copy-group">
+          <div class="copy-group__title">{{ group.group }}</div>
+          <n-space>
+            <n-checkbox v-for="item in group.items" :key="item.key" :value="item.key" :label="item.label" />
+          </n-space>
+        </div>
+      </n-checkbox-group>
+      <template #footer>
+        <n-space justify="end">
+          <n-button @click="copyVisible = false">{{ t('advertising.order.copyCancel') }}</n-button>
+          <n-button type="primary" :loading="copying" @click="handleCopyConfirm">
+            {{ t('advertising.order.copyConfirm') }}
+          </n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
 <script setup lang="ts">
   import { computed, h, onMounted, reactive, ref, resolveDirective, withDirectives } from 'vue';
   import { useRouter } from 'vue-router';
-  import { NButton, NCard, NDataTable, NDatePicker, NInput, NSelect, NSpace, NTag, useMessage } from 'naive-ui';
+  import {
+    NButton,
+    NCard,
+    NCheckbox,
+    NCheckboxGroup,
+    NDataTable,
+    NDatePicker,
+    NInput,
+    NModal,
+    NSelect,
+    NSpace,
+    NTag,
+    useMessage,
+  } from 'naive-ui';
 
   import {
     AdOrderStatusOptions,
@@ -113,11 +168,11 @@
   } from '@lib/shared/enums/advertisingEnum';
   import { TableKeyEnum } from '@lib/shared/enums/tableEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
-  import type { AdOrderListItem, AdOrderPageParams } from '@lib/shared/models/advertising';
+  import type { AdOrderCopyParams, AdOrderListItem, AdOrderPageParams } from '@lib/shared/models/advertising';
 
   import ColumnSetting from '@/components/pure/crm-table/components/columnSetting.vue';
 
-  import { exportAdOrder, getAdOrderPage, recomputeIncome } from '@/api/modules';
+  import { copyAdOrder, exportAdOrder, getAdOrderPage, recomputeIncome } from '@/api/modules';
   import useTableStore from '@/hooks/useTableStore';
   import useUserStore from '@/store/modules/user';
 
@@ -240,6 +295,124 @@
   }
   function openEdit(row: AdOrderListItem) {
     router.push({ name: AdvertisingRouteEnum.ADVERTISING_ORDER_EDIT, params: { id: row.id } });
+  }
+
+  /* ------------------------------ 复制订单 ------------------------------ */
+  type CopyFieldItem = { key: string; label: string };
+  type CopyFieldGroup = { group: string; items: CopyFieldItem[] };
+
+  // 复制弹窗字段清单：key 必须与后端 AdOrderService.CopyField 的常量一一对应
+  const copyFieldGroups = computed<CopyFieldGroup[]>(() => [
+    {
+      group: t('advertising.order.copyField.group.base'),
+      items: [
+        { key: 'businessEntityId', label: t('advertising.order.form.businessEntityId') },
+        { key: 'orderType', label: t('advertising.order.form.orderType') },
+        { key: 'customerId', label: t('advertising.order.form.customerId') },
+        { key: 'upstreamAgentId', label: t('advertising.order.form.upstreamAgentId') },
+        { key: 'downstreamMedia', label: t('advertising.order.copyField.downstreamMedia') },
+        { key: 'industryCode', label: t('advertising.order.form.industryCode') },
+        { key: 'signingEntity', label: t('advertising.order.form.signingEntity') },
+        { key: 'agentOrderNo', label: t('advertising.order.form.agentOrderNo') },
+        { key: 'contractId', label: t('advertising.order.form.contractId') },
+      ],
+    },
+    {
+      group: t('advertising.order.copyField.group.amount'),
+      items: [
+        { key: 'totalAmount', label: t('advertising.order.form.totalAmount') },
+        { key: 'rebateMode', label: t('advertising.order.form.rebateMode') },
+        { key: 'rebateValue', label: t('advertising.order.form.rebateValue') },
+        { key: 'noRebateAmount', label: t('advertising.order.form.noRebateAmount') },
+      ],
+    },
+    {
+      group: t('advertising.order.copyField.group.delivery'),
+      items: [
+        { key: 'deliveryStartDate', label: t('advertising.order.form.deliveryStart') },
+        { key: 'deliveryEndDate', label: t('advertising.order.form.deliveryEnd') },
+        { key: 'deliveryVolume', label: t('advertising.order.form.deliveryVolume') },
+      ],
+    },
+    {
+      group: t('advertising.order.copyField.group.receipt'),
+      items: [
+        { key: 'receiptMethod', label: t('advertising.order.form.receiptMethod') },
+        { key: 'receiptAccountPeriodDays', label: t('advertising.order.form.receiptAccountPeriodDays') },
+        { key: 'receiptPrepayMode', label: t('advertising.order.form.receiptPrepayMode') },
+        { key: 'receiptPrepayRatio', label: t('advertising.order.form.receiptPrepayRatio') },
+        { key: 'receiptPrepayAmount', label: t('advertising.order.form.receiptPrepayAmount') },
+        { key: 'receiptPrepayDeadline', label: t('advertising.order.form.receiptPrepayDeadline') },
+      ],
+    },
+    {
+      group: t('advertising.order.copyField.group.payment'),
+      items: [
+        { key: 'paymentMethod', label: t('advertising.order.form.paymentMethod') },
+        { key: 'paymentPrepayMode', label: t('advertising.order.form.paymentPrepayMode') },
+        { key: 'paymentPrepayRatio', label: t('advertising.order.form.paymentPrepayRatio') },
+        { key: 'paymentPrepayAmount', label: t('advertising.order.form.paymentPrepayAmount') },
+        { key: 'paymentPrepayDeadline', label: t('advertising.order.form.paymentPrepayDeadline') },
+        { key: 'paymentPostpayTrigger', label: t('advertising.order.form.paymentPostpayTrigger') },
+        { key: 'paymentPostpayDays', label: t('advertising.order.form.paymentPostpayDays') },
+      ],
+    },
+    {
+      group: t('advertising.order.copyField.group.other'),
+      items: [{ key: 'remark', label: t('advertising.order.form.remark') }],
+    },
+  ]);
+
+  // 默认勾选：业务主体、订单类型、客户ID、上游代理、下游客户、返点方式、收款方式、账期天数
+  const defaultCopyFields = computed(() => [
+    'businessEntityId',
+    'orderType',
+    'customerId',
+    'upstreamAgentId',
+    'downstreamMedia',
+    'rebateMode',
+    'receiptMethod',
+    'receiptAccountPeriodDays',
+  ]);
+
+  const copyVisible = ref(false);
+  const copying = ref(false);
+  const copySource = ref<AdOrderListItem | null>(null);
+  const copyFields = ref<string[]>([]);
+
+  function openCopy(row: AdOrderListItem) {
+    copySource.value = row;
+    copyFields.value = [...defaultCopyFields.value];
+    copyVisible.value = true;
+  }
+
+  function selectAllCopyFields() {
+    copyFields.value = copyFieldGroups.value.flatMap((g) => g.items.map((i) => i.key));
+  }
+
+  function clearCopyFields() {
+    copyFields.value = [];
+  }
+
+  async function handleCopyConfirm() {
+    if (!copySource.value) return;
+    if (!copyFields.value.length) {
+      message.warning(t('advertising.order.copyEmptyFields'));
+      return;
+    }
+    copying.value = true;
+    try {
+      const params: AdOrderCopyParams = { id: copySource.value.id, fields: [...copyFields.value] };
+      await copyAdOrder(params);
+      copyVisible.value = false;
+      message.success(t('advertising.order.copySuccess'));
+      pagination.page = 1;
+      await fetchData();
+    } catch (e) {
+      message.error((e as Error).message || '复制失败');
+    } finally {
+      copying.value = false;
+    }
   }
 
   // 全量列定义：showInTable=false 表示默认隐藏，columnSelectorDisabled=true 表示锁定不可隐藏
@@ -458,21 +631,31 @@
     },
     {
       key: 'action',
-      title: '详情',
-      width: 150,
+      title: t('advertising.order.action'),
+      // 详情 / 复制 /（草稿时）编辑 三个按钮需同行展示，宽度不足会换行
+      width: 260,
       fixed: 'right' as const,
       showInTable: true,
       columnSelectorDisabled: true,
       render: (row) =>
         h(
           NSpace,
-          {},
+          { wrap: false },
           {
             default: () => [
               h(
                 NButton,
                 { size: 'small', onClick: () => openDetail(row) },
                 { default: () => t('advertising.order.detail') }
+              ),
+              // 复制：任何状态的订单都可复制，按勾选字段生成草稿订单
+              withDirectives(
+                h(
+                  NButton,
+                  { size: 'small', onClick: () => openCopy(row) },
+                  { default: () => t('advertising.order.copy') }
+                ),
+                [[permissionDirective, ['AD_ORDER:COPY']]]
               ),
               row.status === 0
                 ? withDirectives(
@@ -558,7 +741,8 @@
           result.push({
             ...c,
             fixed: lockedFixed,
-            width: lockedSaved?.width ?? c.width,
+            // 操作列宽度由代码固定（保证按钮不换行），忽略历史持久化的旧宽度
+            width: key === 'action' ? c.width : (lockedSaved?.width ?? c.width),
           });
         } else {
           const next = draggableQueue.shift();
@@ -705,5 +889,42 @@
   }
   .mt-4 {
     margin-top: 16px;
+  }
+  .copy-tip {
+    margin-bottom: 8px;
+    color: var(--text-color-3);
+    font-size: 12px;
+  }
+  .copy-source {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background-color: var(--body-color);
+    border-radius: 4px;
+    font-size: 13px;
+  }
+  .copy-source__label {
+    color: var(--text-color-3);
+  }
+  .copy-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .copy-toolbar__count {
+    margin-left: auto;
+    color: var(--text-color-3);
+    font-size: 12px;
+  }
+  .copy-group {
+    margin-bottom: 12px;
+  }
+  .copy-group__title {
+    margin-bottom: 6px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .copy-group :deep(.n-space) {
+    gap: 8px 16px;
   }
 </style>

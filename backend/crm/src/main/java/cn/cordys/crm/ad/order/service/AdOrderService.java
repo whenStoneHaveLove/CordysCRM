@@ -23,6 +23,7 @@ import cn.cordys.crm.ad.order.domain.AdOrderContract;
 import cn.cordys.crm.ad.order.domain.AdOrderDownstreamMedia;
 import cn.cordys.crm.ad.order.domain.AdOrderLog;
 import cn.cordys.crm.ad.order.dto.request.AdOrderApproveRequest;
+import cn.cordys.crm.ad.order.dto.request.AdOrderCopyRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderForceArchiveRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderPageRequest;
 import cn.cordys.crm.ad.order.dto.request.AdOrderSaveRequest;
@@ -52,9 +53,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -154,6 +159,294 @@ public class AdOrderService {
         syncOrderDownstreamMedia(order, request.getDownstreamMediaIds(),
                 request.getDownstreamMediaPayables(), userId, orgId);
         return order;
+    }
+
+    /**
+     * 复制字段 key（与前端勾选项一一对应）。
+     *
+     * <p>默认勾选 {@link #DEFAULT_FIELDS}：业务主体、订单类型、客户、上游代理、
+     * 下游客户、返点方式、收款方式、账期天数。</p>
+     */
+    public static final class CopyField {
+        /** 业务主体 */
+        public static final String BUSINESS_ENTITY_ID = "businessEntityId";
+        /** 订单类型 */
+        public static final String ORDER_TYPE = "orderType";
+        /** 客户 */
+        public static final String CUSTOMER_ID = "customerId";
+        /** 上游代理 */
+        public static final String UPSTREAM_AGENT_ID = "upstreamAgentId";
+        /** 下游客户（含付款/返点明细） */
+        public static final String DOWNSTREAM_MEDIA = "downstreamMedia";
+        /** 返点方式 */
+        public static final String REBATE_MODE = "rebateMode";
+        /** 返点值 */
+        public static final String REBATE_VALUE = "rebateValue";
+        /** 收款方式 */
+        public static final String RECEIPT_METHOD = "receiptMethod";
+        /** 账期天数 */
+        public static final String RECEIPT_ACCOUNT_PERIOD_DAYS = "receiptAccountPeriodDays";
+        /** 行业类别 */
+        public static final String INDUSTRY_CODE = "industryCode";
+        /** 签约主体 */
+        public static final String SIGNING_ENTITY = "signingEntity";
+        /** 代理订单号 */
+        public static final String AGENT_ORDER_NO = "agentOrderNo";
+        /** 订单金额 */
+        public static final String TOTAL_AMOUNT = "totalAmount";
+        /** 不记返金额 */
+        public static final String NO_REBATE_AMOUNT = "noRebateAmount";
+        /** 投放起始日 */
+        public static final String DELIVERY_START_DATE = "deliveryStartDate";
+        /** 投放结束日 */
+        public static final String DELIVERY_END_DATE = "deliveryEndDate";
+        /** 投放量 */
+        public static final String DELIVERY_VOLUME = "deliveryVolume";
+        /** 备注 */
+        public static final String REMARK = "remark";
+        /** 预收模式 */
+        public static final String RECEIPT_PREPAY_MODE = "receiptPrepayMode";
+        /** 预收比例 */
+        public static final String RECEIPT_PREPAY_RATIO = "receiptPrepayRatio";
+        /** 预收金额 */
+        public static final String RECEIPT_PREPAY_AMOUNT = "receiptPrepayAmount";
+        /** 预收截止日 */
+        public static final String RECEIPT_PREPAY_DEADLINE = "receiptPrepayDeadline";
+        /** 付款方式 */
+        public static final String PAYMENT_METHOD = "paymentMethod";
+        /** 预付模式 */
+        public static final String PAYMENT_PREPAY_MODE = "paymentPrepayMode";
+        /** 预付比例 */
+        public static final String PAYMENT_PREPAY_RATIO = "paymentPrepayRatio";
+        /** 预付金额 */
+        public static final String PAYMENT_PREPAY_AMOUNT = "paymentPrepayAmount";
+        /** 预付截止日 */
+        public static final String PAYMENT_PREPAY_DEADLINE = "paymentPrepayDeadline";
+        /** 后付触发条件 */
+        public static final String PAYMENT_POSTPAY_TRIGGER = "paymentPostpayTrigger";
+        /** 后付天数 */
+        public static final String PAYMENT_POSTPAY_DAYS = "paymentPostpayDays";
+        /** 关联合同 */
+        public static final String CONTRACT_ID = "contractId";
+        /** 扩展字段 */
+        public static final String EXT_JSON = "extJson";
+
+        private CopyField() {
+        }
+    }
+
+    /** 复制弹窗默认勾选的字段。 */
+    public static final List<String> DEFAULT_COPY_FIELDS = List.of(
+            CopyField.BUSINESS_ENTITY_ID,
+            CopyField.ORDER_TYPE,
+            CopyField.CUSTOMER_ID,
+            CopyField.UPSTREAM_AGENT_ID,
+            CopyField.DOWNSTREAM_MEDIA,
+            CopyField.REBATE_MODE,
+            CopyField.RECEIPT_METHOD,
+            CopyField.RECEIPT_ACCOUNT_PERIOD_DAYS);
+
+    /**
+     * 复制订单：按勾选字段生成一张新的<b>草稿</b>订单。
+     *
+     * <p>规则：</p>
+     * <ul>
+     *   <li>订单名称为「源订单名称-复制」（可用 {@code request.orderName} 覆盖）；</li>
+     *   <li>仅复制勾选字段，其余业务列一律为空，金额派生列按 0 写入；</li>
+     *   <li>下游客户勾选时同时复制付款/返点明细，并由明细重算应付相关派生列；</li>
+     *   <li>关联合同勾选时复制源订单的合同；</li>
+     *   <li>新订单状态固定为草稿(0)，编号按业务主体 + 当天流水重新生成。</li>
+     * </ul>
+     *
+     * @param request 复制请求（源订单 id + 勾选字段）
+     * @param userId  操作人
+     * @param orgId   组织 id
+     * @return 新建的草稿订单
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @OperationLog(module = "AD_ORDER", action = "COPY", targetId = "")
+    public AdOrder copy(AdOrderCopyRequest request, String userId, String orgId) {
+        if (request == null || request.getId() == null || request.getId().isBlank()) {
+            throw new GenericException("请选择要复制的订单");
+        }
+        AdOrder source = requireOrder(request.getId());
+        Set<String> fields = request.getFields() == null
+                ? Collections.emptySet()
+                : request.getFields().stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(field -> !field.isEmpty())
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        long now = System.currentTimeMillis();
+        AdOrder order = new AdOrder();
+        order.setId(IDGenerator.nextStr());
+        order.setOrganizationId(orgId);
+        order.setCreatorId(userId);
+        order.setStatus(OrderStateMachine.DRAFT);
+        order.setCreateUser(userId);
+        order.setUpdateUser(userId);
+        order.setCreateTime(now);
+        order.setUpdateTime(now);
+        order.setDeleted(0);
+        order.setOrderName(resolveCopyOrderName(source, request.getOrderName()));
+
+        // ---- 按勾选复制业务列，未勾选一律保持 null ----
+        if (fields.contains(CopyField.BUSINESS_ENTITY_ID)) {
+            order.setBusinessEntityId(source.getBusinessEntityId());
+        }
+        if (fields.contains(CopyField.ORDER_TYPE)) {
+            order.setOrderType(source.getOrderType());
+        }
+        if (fields.contains(CopyField.CUSTOMER_ID)) {
+            order.setCustomerId(source.getCustomerId());
+        }
+        if (fields.contains(CopyField.UPSTREAM_AGENT_ID)) {
+            order.setUpstreamAgentId(source.getUpstreamAgentId());
+        }
+        if (fields.contains(CopyField.INDUSTRY_CODE)) {
+            order.setIndustryCode(source.getIndustryCode());
+        }
+        if (fields.contains(CopyField.SIGNING_ENTITY)) {
+            order.setSigningEntity(source.getSigningEntity());
+        }
+        if (fields.contains(CopyField.AGENT_ORDER_NO)) {
+            order.setAgentOrderNo(source.getAgentOrderNo());
+        }
+        if (fields.contains(CopyField.TOTAL_AMOUNT)) {
+            order.setTotalAmount(source.getTotalAmount());
+        }
+        if (fields.contains(CopyField.REBATE_MODE)) {
+            order.setRebateMode(source.getRebateMode());
+        }
+        if (fields.contains(CopyField.REBATE_VALUE)) {
+            order.setRebateValue(source.getRebateValue());
+        }
+        if (fields.contains(CopyField.NO_REBATE_AMOUNT)) {
+            order.setNoRebateAmount(source.getNoRebateAmount());
+        }
+        if (fields.contains(CopyField.DELIVERY_START_DATE)) {
+            order.setDeliveryStartDate(source.getDeliveryStartDate());
+        }
+        if (fields.contains(CopyField.DELIVERY_END_DATE)) {
+            order.setDeliveryEndDate(source.getDeliveryEndDate());
+        }
+        if (fields.contains(CopyField.DELIVERY_VOLUME)) {
+            order.setDeliveryVolume(source.getDeliveryVolume());
+        }
+        if (fields.contains(CopyField.REMARK)) {
+            order.setRemark(source.getRemark());
+        }
+        if (fields.contains(CopyField.RECEIPT_METHOD)) {
+            order.setReceiptMethod(source.getReceiptMethod());
+        }
+        if (fields.contains(CopyField.RECEIPT_PREPAY_MODE)) {
+            order.setReceiptPrepayMode(source.getReceiptPrepayMode());
+        }
+        if (fields.contains(CopyField.RECEIPT_PREPAY_RATIO)) {
+            order.setReceiptPrepayRatio(source.getReceiptPrepayRatio());
+        }
+        if (fields.contains(CopyField.RECEIPT_PREPAY_AMOUNT)) {
+            order.setReceiptPrepayAmount(source.getReceiptPrepayAmount());
+        }
+        if (fields.contains(CopyField.RECEIPT_PREPAY_DEADLINE)) {
+            order.setReceiptPrepayDeadline(source.getReceiptPrepayDeadline());
+        }
+        if (fields.contains(CopyField.RECEIPT_ACCOUNT_PERIOD_DAYS)) {
+            order.setReceiptAccountPeriodDays(source.getReceiptAccountPeriodDays());
+        }
+        if (fields.contains(CopyField.PAYMENT_METHOD)) {
+            order.setPaymentMethod(source.getPaymentMethod());
+        }
+        if (fields.contains(CopyField.PAYMENT_PREPAY_MODE)) {
+            order.setPaymentPrepayMode(source.getPaymentPrepayMode());
+        }
+        if (fields.contains(CopyField.PAYMENT_PREPAY_RATIO)) {
+            order.setPaymentPrepayRatio(source.getPaymentPrepayRatio());
+        }
+        if (fields.contains(CopyField.PAYMENT_PREPAY_AMOUNT)) {
+            order.setPaymentPrepayAmount(source.getPaymentPrepayAmount());
+        }
+        if (fields.contains(CopyField.PAYMENT_PREPAY_DEADLINE)) {
+            order.setPaymentPrepayDeadline(source.getPaymentPrepayDeadline());
+        }
+        if (fields.contains(CopyField.PAYMENT_POSTPAY_TRIGGER)) {
+            order.setPaymentPostpayTrigger(source.getPaymentPostpayTrigger());
+        }
+        if (fields.contains(CopyField.PAYMENT_POSTPAY_DAYS)) {
+            order.setPaymentPostpayDays(source.getPaymentPostpayDays());
+        }
+        if (fields.contains(CopyField.EXT_JSON)) {
+            order.setExtJson(source.getExtJson());
+        }
+
+        order.setOrderNo(generateOrderNo(order.getBusinessEntityId(), orgId, now));
+        amountCalculator.computeAmounts(order);
+        // 未勾选下游客户时不存在下游明细，应付口径派生列必须为 0（computeAmounts 会用总额兜底）
+        if (!fields.contains(CopyField.DOWNSTREAM_MEDIA)) {
+            order.setMediaPayableAmount(BigDecimal.ZERO);
+            order.setActualMediaPayableAmount(BigDecimal.ZERO);
+            order.setMediaRebateAmount(BigDecimal.ZERO);
+        }
+        if (order.getActualMediaPayableAmount() == null) {
+            order.setActualMediaPayableAmount(BigDecimal.ZERO);
+        }
+        if (order.getMediaRebateAmount() == null) {
+            order.setMediaRebateAmount(BigDecimal.ZERO);
+        }
+        if (order.getOrderIncomeAmount() == null) {
+            order.setOrderIncomeAmount(BigDecimal.ZERO);
+        }
+        adOrderMapper.insert(order);
+
+        // 关联合同：勾选「关联合同」才复制源订单的合同
+        String contractId = null;
+        if (fields.contains(CopyField.CONTRACT_ID)) {
+            List<AdOrderContract> sourceContracts = orderContractMapper.selectByOrderId(source.getId());
+            contractId = sourceContracts.isEmpty() ? null : sourceContracts.get(0).getContractId();
+        }
+        syncOrderContract(order.getId(), contractId, order.getOrderType(), userId, orgId);
+
+        // 下游客户：勾选「下游客户」才复制关联关系与付款/返点明细
+        if (fields.contains(CopyField.DOWNSTREAM_MEDIA)) {
+            List<AdOrderDownstreamMedia> sourceMedias =
+                    orderDownstreamMediaMapper.selectByOrderId(source.getId());
+            List<String> mediaIds = new ArrayList<>();
+            List<AdOrderSaveRequest.DownstreamMediaPayableDTO> payables = new ArrayList<>();
+            for (AdOrderDownstreamMedia odm : sourceMedias) {
+                if (odm.getDownstreamMediaId() == null || odm.getDownstreamMediaId().isBlank()) {
+                    continue;
+                }
+                mediaIds.add(odm.getDownstreamMediaId());
+                AdOrderSaveRequest.DownstreamMediaPayableDTO dto =
+                        new AdOrderSaveRequest.DownstreamMediaPayableDTO();
+                dto.setDownstreamMediaId(odm.getDownstreamMediaId());
+                dto.setPayableAmount(odm.getPayableAmount());
+                dto.setNoRebateAmount(odm.getNoRebateAmount());
+                dto.setRebateMode(odm.getRebateMode());
+                dto.setRebateValue(odm.getRebateValue());
+                dto.setPaymentMethod(odm.getPaymentMethod());
+                dto.setPaymentPrepayMode(odm.getPaymentPrepayMode());
+                dto.setPaymentPrepayRatio(odm.getPaymentPrepayRatio());
+                dto.setPaymentPrepayDeadline(odm.getPaymentPrepayDeadline());
+                dto.setPaymentPostpayTrigger(odm.getPaymentPostpayTrigger());
+                dto.setPaymentPostpayDays(odm.getPaymentPostpayDays());
+                payables.add(dto);
+            }
+            syncOrderDownstreamMedia(order, mediaIds, payables, userId, orgId);
+        }
+        return order;
+    }
+
+    /**
+     * 复制订单名称：默认「源订单名称-复制」，源名称为空时退化为「复制订单」。
+     */
+    private String resolveCopyOrderName(AdOrder source, String requestName) {
+        if (requestName != null && !requestName.isBlank()) {
+            return requestName.trim();
+        }
+        String baseName = source.getOrderName() == null ? "" : source.getOrderName().trim();
+        return baseName.isEmpty() ? "复制订单" : baseName + "-复制";
     }
 
     /**
@@ -907,7 +1200,12 @@ public class AdOrderService {
         cal.setTimeInMillis(now);
         String ymd = String.format("%04d%02d%02d",
                 cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
-        long seq = extAdOrderMapper.countTodayOrders(businessEntityId, startOfDay(now), endOfDay(now), orgId) + 1;
+        // 业务主体为空时（复制订单未勾选业务主体）必须走 IS NULL 统计，
+        // 否则 business_entity_id = NULL 恒不成立，流水号永远从 001 开始。
+        long todayCount = (businessEntityId == null || businessEntityId.isBlank())
+                ? extAdOrderMapper.countTodayOrdersWithoutEntity(startOfDay(now), endOfDay(now), orgId)
+                : extAdOrderMapper.countTodayOrders(businessEntityId, startOfDay(now), endOfDay(now), orgId);
+        long seq = todayCount + 1;
         return code + "-" + ymd + "-" + String.format("%03d", seq);
     }
 
