@@ -1001,7 +1001,8 @@ export const {
 export const { createAdCustomer, updateAdCustomer, getAdCustomerDetail, getAdCustomerPage, deleteAdCustomer } =
   adCustomerApi;
 
-export const { uploadAdOrderAttachment, getAdOrderAttachments, deleteAdOrderAttachment } = adOrderAttachmentApi;
+export const { uploadAdOrderAttachment, getAdOrderAttachments, deleteAdOrderAttachment, previewAdOrderEmlAttachment } =
+  adOrderAttachmentApi;
 
 export const { uploadAdContractAttachment, getAdContractAttachments, deleteAdContractAttachment } =
   adContractAttachmentApi;

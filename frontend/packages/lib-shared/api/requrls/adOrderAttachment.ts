@@ -2,3 +2,4 @@
 export const AdOrderAttachmentListUrl = '/api/ad/order';    // GET  {orderId}/attachment
 export const AdOrderAttachmentUploadUrl = '/api/ad/order';  // POST {orderId}/attachment
 export const AdOrderAttachmentDeleteUrl = '/api/ad/order';  // DELETE {orderId}/attachment/{id}
+export const AdOrderAttachmentEmlPreviewUrl = '/api/ad/order';  // GET {orderId}/attachment/{id}/eml-preview

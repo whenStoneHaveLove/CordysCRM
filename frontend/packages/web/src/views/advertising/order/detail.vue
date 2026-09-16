@@ -235,7 +235,7 @@
               {{ att.fileName || att.fileUrl }}
             </span>
             <n-tag size="small">{{ attTypeLabel(att.type) }}</n-tag>
-            <n-button size="tiny" type="primary" ghost @click.prevent="handlePreviewAtt(att.fileUrl!)"> 预览 </n-button>
+            <n-button size="tiny" type="primary" ghost @click.prevent="handlePreviewAtt(att)"> 预览 </n-button>
             <n-button size="tiny" type="primary" ghost @click.prevent="handleDownloadAtt(att)"> 下载 </n-button>
             <n-button
               v-if="detail.order.status === 0"
@@ -354,6 +354,30 @@
         </n-space>
       </template>
     </n-modal>
+
+    <!-- 邮件记录(eml)预览：正文为不可信内容，用 sandbox iframe 渲染以阻止脚本执行 -->
+    <n-modal v-model:show="emlPreviewVisible" preset="card" style="width: 900px" title="邮件记录预览">
+      <n-spin :show="emlPreviewLoading">
+        <template v-if="emlPreviewData">
+          <n-descriptions label-placement="left" :column="1" bordered size="small">
+            <n-descriptions-item label="主题">{{ emlPreviewData.subject || '-' }}</n-descriptions-item>
+            <n-descriptions-item label="发件人">{{ emlPreviewData.from || '-' }}</n-descriptions-item>
+            <n-descriptions-item label="收件人">{{ emlPreviewData.to?.join('; ') || '-' }}</n-descriptions-item>
+            <n-descriptions-item v-if="emlPreviewData.cc?.length" label="抄送">
+              {{ emlPreviewData.cc?.join('; ') }}
+            </n-descriptions-item>
+            <n-descriptions-item label="发送时间">
+              {{ emlPreviewData.sentTime ? fmtDateTime(emlPreviewData.sentTime) : '-' }}
+            </n-descriptions-item>
+            <n-descriptions-item v-if="emlPreviewData.attachments?.length" label="邮件内附件">
+              {{ emlPreviewData.attachments?.map((a) => a.name).join('、') }}
+            </n-descriptions-item>
+          </n-descriptions>
+          <iframe v-if="emlPreviewData.html" class="eml-preview-frame" sandbox :srcdoc="emlPreviewData.html" />
+          <pre v-else class="eml-preview-text">{{ emlPreviewData.text || '无可显示的正文内容' }}</pre>
+        </template>
+      </n-spin>
+    </n-modal>
   </div>
 </template>
 
@@ -395,7 +419,7 @@
     getAdReceiptMethodLabel,
   } from '@lib/shared/enums/advertisingEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
-  import type { AdOrderChange, AdOrderDetail } from '@lib/shared/models/advertising';
+  import type { AdEmlPreview, AdOrderAttachment, AdOrderChange, AdOrderDetail } from '@lib/shared/models/advertising';
 
   import DownstreamMediaCompareTable from '../components/DownstreamMediaCompareTable.vue';
 
@@ -410,6 +434,7 @@
     getAdDownstreamMediaPage,
     getAdOrderDetail,
     getAdUpstreamAgentPage,
+    previewAdOrderEmlAttachment,
     submitAdOrder,
     uploadAdOrderAttachment,
     voidAdOrder,
@@ -842,9 +867,29 @@
     }
   }
 
+  /** 邮件记录(eml)预览：浏览器无法直接渲染 eml，由服务端解析后弹窗展示 */
+  const emlPreviewVisible = ref(false);
+  const emlPreviewLoading = ref(false);
+  const emlPreviewData = ref<AdEmlPreview | null>(null);
+
   /** 附件预览 */
-  function handlePreviewAtt(fileUrl: string) {
-    const previewUrl = `/attachment/preview/${fileUrl}?userId=${userStore.userInfo?.id || ''}`;
+  async function handlePreviewAtt(att: AdOrderAttachment) {
+    // 邮件记录(eml)：服务端解析后弹窗展示
+    if (att.type === 60) {
+      emlPreviewData.value = null;
+      emlPreviewVisible.value = true;
+      emlPreviewLoading.value = true;
+      try {
+        emlPreviewData.value = await previewAdOrderEmlAttachment(detail.value!.order.id, att.id);
+      } catch (e) {
+        message.error((e as Error).message || '邮件解析失败');
+        emlPreviewVisible.value = false;
+      } finally {
+        emlPreviewLoading.value = false;
+      }
+      return;
+    }
+    const previewUrl = `/attachment/preview/${att.fileUrl}?userId=${userStore.userInfo?.id || ''}`;
     window.open(previewUrl, '_blank');
   }
 
@@ -959,6 +1004,20 @@
   }
   .after-value {
     color: #18a058;
+    word-break: break-all;
+  }
+  .eml-preview-frame {
+    width: 100%;
+    height: 460px;
+    margin-top: 12px;
+    border: 1px solid var(--text-n5);
+    border-radius: 4px;
+  }
+  .eml-preview-text {
+    max-height: 460px;
+    margin-top: 12px;
+    overflow: auto;
+    white-space: pre-wrap;
     word-break: break-all;
   }
 </style>

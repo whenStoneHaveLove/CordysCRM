@@ -4,6 +4,7 @@ import cn.cordys.common.constants.PermissionConstants;
 import cn.cordys.common.permission.CsPermission;
 import cn.cordys.context.OrganizationContext;
 import cn.cordys.crm.ad.order.domain.AdOrderAttachment;
+import cn.cordys.crm.ad.order.dto.response.AdEmlPreviewResponse;
 import cn.cordys.crm.ad.order.service.AdOrderAttachmentService;
 import cn.cordys.security.SessionUtils;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,6 +37,13 @@ public class AdOrderAttachmentController {
     @Operation(summary = "获取订单附件列表")
     public List<AdOrderAttachment> list(@PathVariable String orderId) {
         return adOrderAttachmentService.listByOrderId(orderId);
+    }
+
+    @GetMapping("/{id}/eml-preview")
+    @CsPermission(PermissionConstants.AD_ORDER_READ)
+    @Operation(summary = "预览邮件记录(eml)附件内容")
+    public AdEmlPreviewResponse previewEml(@PathVariable String orderId, @PathVariable String id) {
+        return adOrderAttachmentService.previewEml(id);
     }
 
     @DeleteMapping("/{id}")

@@ -136,6 +136,28 @@ export interface AdOrderAttachment {
   fileName?: string;
 }
 
+/** 邮件记录(eml)内附件项 */
+export interface AdEmlPreviewAttachment {
+  name?: string;
+  size?: number | null;
+}
+
+/** 邮件记录(eml)预览内容：浏览器无法直接渲染 eml，由服务端解析后返回 */
+export interface AdEmlPreview {
+  id: string;
+  fileName?: string;
+  subject?: string;
+  from?: string;
+  to?: string[];
+  cc?: string[];
+  sentTime?: number | null;
+  /** 正文HTML，内嵌图片已转 data URL；前端必须用 iframe sandbox 渲染以防 XSS */
+  html?: string;
+  /** 无HTML正文时的纯文本正文 */
+  text?: string;
+  attachments?: AdEmlPreviewAttachment[];
+}
+
 export interface AdOrderChange {
   id: string;
   orderId?: string;

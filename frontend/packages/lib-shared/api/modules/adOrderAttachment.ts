@@ -1,9 +1,11 @@
 import type { CordysAxios } from '@lib/shared/api/http/Axios';
 import {
-    AdOrderAttachmentUploadUrl,
     AdOrderAttachmentDeleteUrl,
+    AdOrderAttachmentEmlPreviewUrl,
     AdOrderAttachmentListUrl,
+    AdOrderAttachmentUploadUrl,
 } from '@lib/shared/api/requrls/adOrderAttachment';
+import type { AdEmlPreview } from '@lib/shared/models/advertising';
 
 export default function useAdOrderAttachmentApi(CDR: CordysAxios) {
     // 上传附件：走系统 uploadFile（内部用 axiosInstance.request 直连，不走 request() 的 cloneDeep 破坏链）
@@ -26,5 +28,12 @@ export default function useAdOrderAttachmentApi(CDR: CordysAxios) {
         return CDR.delete({ url: `${AdOrderAttachmentDeleteUrl}/${orderId}/attachment/${attachmentId}` });
     }
 
-    return { uploadAdOrderAttachment, getAdOrderAttachments, deleteAdOrderAttachment };
+    // 预览邮件记录(eml)：浏览器无法直接渲染 eml，由服务端解析后返回结构化内容
+    function previewAdOrderEmlAttachment(orderId: string, attachmentId: string) {
+        return CDR.get<AdEmlPreview>({
+            url: `${AdOrderAttachmentEmlPreviewUrl}/${orderId}/attachment/${attachmentId}/eml-preview`,
+        });
+    }
+
+    return { uploadAdOrderAttachment, getAdOrderAttachments, deleteAdOrderAttachment, previewAdOrderEmlAttachment };
 }
