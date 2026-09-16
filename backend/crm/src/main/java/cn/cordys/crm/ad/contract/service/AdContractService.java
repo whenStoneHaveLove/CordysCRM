@@ -38,8 +38,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 广告合同服务（M5 T-40/T-41，V3.1 §5.2.3/§7.3/§8.2）。
@@ -415,23 +420,45 @@ public class AdContractService {
     }
 
     /**
-     * 同步 ad_order_contract 中间表：将合同与订单关联写入（一对多）。
-     * 全量替换：先逻辑删除该合同已有的关联，再插入本次传入的订单列表。
+     * 同步 ad_order_contract 中间表：将合同与订单关联写入（一对多），按本次传入的订单列表做全量替换。
+     *
+     * <p>唯一键 uk_ad_oc(order_id, contract_id) <b>不含 deleted</b>，所以不能"先逻辑删除再插入"，
+     * 否则同一对关联第二次保存时会触发 Duplicate entry；必须复用已存在记录（含已逻辑删除的），
+     * 只切换 deleted 标记（与 {@code AdOrderService#syncOrderContract} 保持一致）。</p>
+     *
      * orderIds 为 null/空则仅清除旧关联（不报错）。
      */
     private void syncOrderContract(String contractId, List<String> orderIds, String userId, String orgId) {
-        // 先逻辑删除该合同已有的全部关联
-        List<AdOrderContract> existing = orderContractMapper.selectByContractId(contractId);
-        for (AdOrderContract oc : existing) {
-            oc.setDeleted(1);
-            orderContractMapper.update(oc);
+        // 取该合同下的全部关联，含已逻辑删除的行（复用旧记录时用得到）
+        List<AdOrderContract> all = orderContractMapper.selectAllByContractId(contractId);
+        // 本次要保留的订单集合（去空、去重、保持前端顺序）
+        Set<String> targetOrderIds = (orderIds == null ? Collections.<String>emptyList() : orderIds).stream()
+                .filter(id -> id != null && !id.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        // 先把不在本次列表里的关联逻辑删除
+        for (AdOrderContract oc : all) {
+            if (!targetOrderIds.contains(oc.getOrderId()) && (oc.getDeleted() == null || oc.getDeleted() != 1)) {
+                oc.setDeleted(1);
+                orderContractMapper.update(oc);
+            }
         }
-        if (orderIds == null || orderIds.isEmpty()) {
+        if (targetOrderIds.isEmpty()) {
             return;
         }
+
+        Map<String, AdOrderContract> existingMap = all.stream()
+                .collect(Collectors.toMap(AdOrderContract::getOrderId, Function.identity(), (a, b) -> a));
         long now = System.currentTimeMillis();
-        for (String orderId : orderIds) {
-            if (orderId == null || orderId.isBlank()) {
+        for (String orderId : targetOrderIds) {
+            AdOrderContract exist = existingMap.get(orderId);
+            if (exist != null) {
+                // 复用旧记录：只把 deleted 复位，避免唯一键冲突
+                if (exist.getDeleted() == null || exist.getDeleted() != 0) {
+                    exist.setDeleted(0);
+                    exist.setOrganizationId(orgId);
+                    orderContractMapper.update(exist);
+                }
                 continue;
             }
             AdOrderContract oc = new AdOrderContract();

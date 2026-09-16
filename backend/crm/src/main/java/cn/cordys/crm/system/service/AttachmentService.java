@@ -104,9 +104,8 @@ public class AttachmentService {
                 }
                 File file = folderFiles.getFirst();
                 fileStream = new FileInputStream(file);
-                String contentType = isSvg(file.getName()) ? "image/svg+xml"
-                        : isImage(file.getName()) ? Files.probeContentType(file.toPath())
-                        : "application/octet-stream";
+                String contentType = resolveContentType(file.getName(),
+                        isImage(file.getName()) ? Files.probeContentType(file.toPath()) : "application/octet-stream");
                 responseBuilder.header(HttpHeaders.CONTENT_DISPOSITION, dispositionPrefix + "; filename*=UTF-8''" + encodeName(file.getName()))
                         .contentLength(file.length())
                         .contentType(MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"));
@@ -117,8 +116,7 @@ public class AttachmentService {
                 if (fileStream == null) {
                     throw new GenericException("The file does not exist or has been deleted");
                 }
-                String contentType = isSvg(attachment.getName()) ? "image/svg+xml"
-                        : "application/octet-stream";
+                String contentType = resolveContentType(attachment.getName(), "application/octet-stream");
                 responseBuilder.header(HttpHeaders.CONTENT_DISPOSITION, dispositionPrefix + "; filename*=UTF-8''" + encodeName(attachment.getName()))
                         .contentLength(attachment.getSize())
                         .contentType(MediaType.parseMediaType(contentType));
@@ -138,6 +136,48 @@ public class AttachmentService {
                 || lower.endsWith(".gif") || lower.endsWith(".webp") || lower.endsWith(".bmp");
     }
 
+    /**
+     * 判断是否pdf文件（浏览器内置PDF阅读器可 inline 预览）
+     *
+     * @param name 文件名
+     *
+     * @return 是否pdf
+     */
+    private boolean isPdf(String name) {
+        return name != null && name.toLowerCase().endsWith(".pdf");
+    }
+
+    /**
+     * 解析预览/下载的 Content-Type。
+     * pdf 返回 application/pdf，图片返回对应 image/*，其余回退二进制流（触发下载）。
+     * 注意: 图片必须返回 image/*，否则浏览器拿到 application/octet-stream 会直接下载而不是内联预览。
+     */
+    private String resolveContentType(String fileName, String fallback) {
+        if (isSvg(fileName)) {
+            return "image/svg+xml";
+        }
+        if (isPdf(fileName)) {
+            return "application/pdf";
+        }
+        if (isImage(fileName)) {
+            String lower = fileName.toLowerCase();
+            if (lower.endsWith(".png")) {
+                return "image/png";
+            }
+            if (lower.endsWith(".gif")) {
+                return "image/gif";
+            }
+            if (lower.endsWith(".webp")) {
+                return "image/webp";
+            }
+            if (lower.endsWith(".bmp")) {
+                return "image/bmp";
+            }
+            return "image/jpeg";
+        }
+        return fallback;
+    }
+
 
     /**
      * 判断是否svg文件
@@ -147,7 +187,7 @@ public class AttachmentService {
      * @return 是否svg
      */
     private boolean isSvg(String fileName) {
-        return fileName.endsWith(".svg") || fileName.endsWith(".SVG");
+        return fileName != null && fileName.toLowerCase().endsWith(".svg");
     }
 
     /**

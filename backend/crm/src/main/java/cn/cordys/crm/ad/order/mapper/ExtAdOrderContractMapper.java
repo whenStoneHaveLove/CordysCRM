@@ -19,4 +19,11 @@ public interface ExtAdOrderContractMapper extends BaseMapper<AdOrderContract> {
 
     @Select("SELECT * FROM ad_order_contract WHERE contract_id = #{contractId} AND deleted = 0")
     List<AdOrderContract> selectByContractId(@Param("contractId") String contractId);
+
+    /**
+     * 按合同ID查询全部关联（含已逻辑删除）。
+     * 唯一键 uk_ad_oc(order_id, contract_id) 不区分 deleted，复用旧记录时必须能查到已删除行。
+     */
+    @Select("SELECT * FROM ad_order_contract WHERE contract_id = #{contractId}")
+    List<AdOrderContract> selectAllByContractId(@Param("contractId") String contractId);
 }

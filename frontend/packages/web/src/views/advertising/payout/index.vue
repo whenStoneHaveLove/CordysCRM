@@ -181,6 +181,40 @@
         <n-form-item label="备注" class="mt-12">
           <n-input v-model:value="form.remark" type="textarea" :rows="2" placeholder="备注" />
         </n-form-item>
+
+        <n-form-item label="发票号" class="mt-12">
+          <n-input v-model:value="form.invoiceNo" placeholder="请输入发票号码（选填）" clearable />
+        </n-form-item>
+
+        <n-form-item label="发票" class="mt-12">
+          <div class="w-full">
+            <!-- 已上传：展示文件名 + 预览/下载/删除 -->
+            <div v-if="invoiceFile" class="invoice-box">
+              <span class="invoice-name" :title="invoiceFile.name">{{ invoiceFile.name }}</span>
+              <n-space :size="4">
+                <n-button size="tiny" quaternary type="primary" @click="previewInvoice(invoiceFile)">预览</n-button>
+                <n-button size="tiny" quaternary @click="downloadInvoice(invoiceFile)">下载</n-button>
+                <n-button size="tiny" quaternary type="error" @click="removeInvoice">删除</n-button>
+              </n-space>
+            </div>
+            <!-- 未上传：选择文件 -->
+            <template v-else>
+              <input
+                ref="invoiceInputRef"
+                type="file"
+                accept="image/*,application/pdf"
+                style="display: none"
+                @change="onInvoiceChange"
+              />
+              <n-space align="center" :size="8">
+                <n-button size="small" :loading="invoiceUploading" @click="invoiceInputRef?.click()">
+                  {{ invoiceUploading ? '上传中…' : '选择发票文件' }}
+                </n-button>
+                <span class="text-12 text-gray-400">支持图片（png/jpg 等）与 PDF，单文件，不超过 20MB</span>
+              </n-space>
+            </template>
+          </div>
+        </n-form-item>
       </n-form>
       <template #footer>
         <n-space justify="end">
@@ -253,6 +287,23 @@
           <n-descriptions-item label="类型">{{ detail.typeLabel || '-' }}</n-descriptions-item>
           <n-descriptions-item label="状态">{{ detail.statusLabel || '-' }}</n-descriptions-item>
           <n-descriptions-item label="备注">{{ detail.remark || '-' }}</n-descriptions-item>
+        </n-descriptions>
+
+        <n-divider title-placement="left">发票</n-divider>
+        <n-descriptions label-placement="left" :column="2" bordered size="small">
+          <n-descriptions-item label="发票号">{{ detail.invoice?.invoiceNo || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="发票">
+            <div v-if="detail.invoice?.fileUrl" class="flex items-center gap-8">
+              <span class="max-w-[320px] truncate" :title="detail.invoice.fileName">{{
+                detail.invoice.fileName || detail.invoice.fileUrl
+              }}</span>
+              <n-space :size="4">
+                <n-button size="tiny" quaternary type="primary" @click="previewInvoice(detail.invoice)">预览</n-button>
+                <n-button size="tiny" quaternary @click="downloadInvoice(detail.invoice)">下载</n-button>
+              </n-space>
+            </div>
+            <template v-else>-</template>
+          </n-descriptions-item>
         </n-descriptions>
 
         <n-divider title-placement="left">审计信息</n-divider>
@@ -398,6 +449,7 @@
     payAdPayout,
     submitAdPayout,
     updateAdPayout,
+    uploadTempAttachment,
   } from '@/api/modules';
 
   import { AdvertisingRouteEnum } from '@/enums/routeEnum';
@@ -512,6 +564,7 @@
     type?: number;
     mediaIds?: string[];
     remark?: string;
+    invoiceNo?: string;
   }
   const form = reactive<PayoutForm>({
     billType: AdPayoutBillTypeEnum.ORDER,
@@ -521,7 +574,95 @@
     type: 10,
     mediaIds: [],
     remark: undefined,
+    invoiceNo: undefined,
   });
+
+  /* ========== 发票（单文件） ========== */
+  /** 发票本地文件（已上传/待上传） */
+  interface InvoiceFile {
+    /** 附件ID（上传成功后为附件id，等于 tempFileId） */
+    fileId: string;
+    /** 文件名 */
+    name: string;
+    /** 文件对象（用于本地预览新选择的文件） */
+    file?: File;
+    /** 是否本次新上传（新上传才需要后端从临时目录转存） */
+    isNew?: boolean;
+  }
+  const invoiceFile = ref<InvoiceFile | null>(null);
+  const invoiceInputRef = ref<HTMLInputElement | null>(null);
+  const invoiceUploading = ref(false);
+  /** 原发票是否被移除（编辑时删除） */
+  const invoiceCleared = ref(false);
+
+  function resetInvoice() {
+    invoiceFile.value = null;
+    invoiceCleared.value = false;
+    invoiceUploading.value = false;
+    if (invoiceInputRef.value) {
+      invoiceInputRef.value.value = '';
+    }
+  }
+
+  function removeInvoice() {
+    invoiceFile.value = null;
+    invoiceCleared.value = true;
+    if (invoiceInputRef.value) {
+      invoiceInputRef.value.value = '';
+    }
+  }
+
+  async function onInvoiceChange(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      message.warning('发票文件不能超过 20MB');
+      input.value = '';
+      return;
+    }
+    invoiceUploading.value = true;
+    try {
+      // 先上传临时文件，拿到 tempFileId（附件id 与之一致）
+      const res: any = await uploadTempAttachment(file);
+      const fileId = res?.data?.[0] || res?.data || '';
+      if (!fileId) {
+        throw new Error('上传返回异常');
+      }
+      invoiceFile.value = { fileId, name: file.name, file, isNew: true };
+      invoiceCleared.value = false;
+    } catch (err) {
+      message.error((err as Error).message || '发票上传失败');
+      input.value = '';
+    } finally {
+      invoiceUploading.value = false;
+    }
+  }
+
+  /** 下载发票 */
+  function downloadInvoice(inv?: { fileUrl?: string; fileName?: string } | InvoiceFile | null) {
+    if (!inv) return;
+    const url = (inv as any).fileUrl || (inv as any).fileId;
+    if (!url) return;
+    window.open(`/attachment/download/${url}`, '_blank');
+  }
+
+  /** 预览发票：图片直开新窗口；PDF 走附件预览接口（后端已支持 application/pdf inline）。 */
+  function previewInvoice(inv?: { fileUrl?: string; fileName?: string } | InvoiceFile | null) {
+    if (!inv) return;
+    const url = (inv as any).fileUrl || (inv as any).fileId;
+    if (!url) return;
+    const name = (inv as any).fileName || (inv as any).name || '';
+    // 本地新选文件优先用 blob 预览（无需等后端）
+    const localFile = (inv as InvoiceFile).file;
+    const target = localFile ? URL.createObjectURL(localFile) : `/attachment/preview/${url}`;
+    if (localFile && !name.toLowerCase().endsWith('.pdf') && !/\.(png|jpe?g|gif|webp|bmp)$/i.test(name)) {
+      // 非图片非pdf，退化为下载
+      downloadInvoice(inv);
+      return;
+    }
+    window.open(target, '_blank');
+  }
 
   const billTypeOptions = AdPayoutBillTypeOptions;
   /** 是否为订单类型付款单（form 视角，编辑/新建弹窗用） */
@@ -697,12 +838,14 @@
     form.type = 10;
     form.mediaIds = [];
     form.remark = undefined;
+    form.invoiceNo = undefined;
     mediaOptions.value = [];
     resetMediaDraft();
     manualMediaId.value = '';
     manualMediaName.value = '';
     manualAccountId.value = '';
     manualAccountOptions.value = [];
+    resetInvoice();
     editId.value = '';
   }
 
@@ -724,6 +867,17 @@
       form.paymentTime = toTimeStamp(res.paymentTime);
       form.type = res.type ?? 10;
       form.remark = res.remark;
+      form.invoiceNo = res.invoice?.invoiceNo || undefined;
+      // 回填已保存的发票（非本次新上传，保存时不再传临时文件ID）
+      if (res.invoice?.fileUrl) {
+        invoiceFile.value = {
+          fileId: res.invoice.fileUrl,
+          name: res.invoice.fileName || res.invoice.fileUrl,
+        };
+      } else {
+        invoiceFile.value = null;
+      }
+      invoiceCleared.value = false;
       // 非订单类型：回显手动选择的客户与账户
       if (!isOrderBill.value) {
         await loadAllMedia();
@@ -821,7 +975,15 @@
         mediaIds,
         remark: form.remark,
         mediaDetails,
+        invoiceNo: form.invoiceNo || undefined,
       };
+      // 发票：本次新上传传临时文件ID（后端转存为正式附件）；删除原发票传 __CLEAR__；未变更不传
+      if (invoiceCleared.value) {
+        payload.invoiceTempFileId = '__CLEAR__';
+      } else if (invoiceFile.value?.isNew && invoiceFile.value.fileId) {
+        payload.invoiceTempFileId = invoiceFile.value.fileId;
+        payload.invoiceFileName = invoiceFile.value.name;
+      }
       if (editId.value) {
         payload.id = editId.value;
         await updateAdPayout(payload);
@@ -829,6 +991,11 @@
         const res = await createAdPayout(payload);
         createdId.value = (res as any)?.id || '';
       }
+      // 发票已转存为正式附件，标记为非新上传，避免重复保存时再次转存临时文件
+      if (invoiceFile.value?.isNew) {
+        invoiceFile.value.isNew = false;
+      }
+      invoiceCleared.value = false;
       message.success('保存成功');
       showModal.value = false;
       fetchData();
@@ -996,7 +1163,13 @@
       render: (row) => h('span', row.billTypeLabel || getAdPayoutBillTypeLabel(row.billType)),
     },
     { key: 'orderName', title: '关联订单', minWidth: 160, ellipsis: { tooltip: true } },
-    { key: 'mediaNames', title: '下游客户', minWidth: 160, ellipsis: { tooltip: true }, render: (row) => h('span', row.mediaNames || '-') },
+    {
+      key: 'mediaNames',
+      title: '下游客户',
+      minWidth: 160,
+      ellipsis: { tooltip: true },
+      render: (row) => h('span', row.mediaNames || '-'),
+    },
     { key: 'amount', title: '付款金额', width: 120, render: (row) => h('span', `¥${row.amount ?? 0}`) },
     { key: 'paymentTime', title: '付款时间', width: 110, render: (row) => h('span', fmtDate(row.paymentTime)) },
     { key: 'type', title: '类型', width: 100, render: (row) => h('span', getAdPayoutTypeLabel(row.type)) },
@@ -1092,7 +1265,8 @@
     const q = router.currentRoute.value.query;
     if (q.status != null && q.status !== '') searchForm.status = Number(q.status);
     if (q.billType != null && q.billType !== '') searchForm.billType = Number(q.billType);
-    if (q.downstreamMediaId != null && q.downstreamMediaId !== '') searchForm.downstreamMediaId = String(q.downstreamMediaId);
+    if (q.downstreamMediaId != null && q.downstreamMediaId !== '')
+      searchForm.downstreamMediaId = String(q.downstreamMediaId);
     if (q.type != null && q.type !== '') searchForm.type = Number(q.type);
   }
 

@@ -61,8 +61,12 @@
 - 创建表单内暂存附件（pendingFiles ref），创建订单后用 orderId 批量上传
 - 提交时前后端都校验盖章排期(type=10)和邮件截图(type=20)必传
 - 预览：`Content-Disposition: inline`；下载：`attachment`
-- Shiro 白名单：`/attachment/download/**`
-- 前端预览路径：`/attachment/preview/{id}?userId=xxx`
+- Shiro 白名单：`/attachment/download/**`、`/attachment/preview/**`
+- 前端预览路径：`/attachment/preview/{id}?userId=xxx`（userId 后端未实际使用，仅保持一致）
+- **能否内联预览只取决于响应 Content-Type**：`application/pdf` / `image/*` → inline 打开，否则 `application/octet-stream` → 强制下载。判断逻辑统一在 `AttachmentService.resolveContentType`（已支持 pdf / svg / png|gif|webp|bmp|jpeg）；"附件预览变下载"先查这里。
+- **两类附件存储路径不同**：合同附件走 `processTemp` 转存正式目录并写 `sys_attachment`；订单附件（`AdOrderAttachmentService.upload`）**只 `uploadTemp`，文件永久留在 `tmp/`，无 attachment 记录** → 预览走临时目录分支，有被每日清理的风险。
+- **naive-ui `n-upload` 不能依赖内建 `file` 插槽**（本版本 es/upload 无 `slots.file`）；要自定义文件项就在 `:show-file-list="false"` 下自渲染列表。
+- **`custom-request` 里改 `opts.file.id` 改不到列表对象**：naive-ui `createSettledFileInfo` 会给 file 做浅拷贝，需按 `f.file === rawFile` 回写真实列表项的 id。
 
 ## ESLint simple-import-sort 排序规则
 - **以 `packages/web/eslint.config.cjs` 为准**
@@ -82,20 +86,28 @@
   - LambdaQueryWrapper 但只能走 `selectListByLambda`（标准 wrapper 内显式声明比较写法）。
   - 项目里 `crm/.../ad/order/mapper/ExtAdOrderMapper.xml` 已有 `selectAllNonDeleted` 可参考模板。
 
-## BaseModel 字段
+## BaseModel 字段（2026-09-16 修正：类型是 String/Long，不是 Long/LocalDateTime）
 ```java
-id (Long)
-createUser (Long)
-updateUser (Long)
-createTime (LocalDateTime)
-updateTime (LocalDateTime)
+id (String)          // 注意是 String（IDGenerator.nextStr()），DDL 必须 VARCHAR(32)
+createUser (String)  // DDL 必须 VARCHAR(32)，否则插入 'admin' 报 1366
+updateUser (String)
+createTime (Long)    // epoch 毫秒，DDL 必须 BIGINT（不是 DATETIME）
+updateTime (Long)
 ```
-注意：部分 `ad_*` 表无其中某些字段，需看 DDL。
+注意：部分 `ad_*` 表无其中某些字段，需看 DDL。新建 `ad_*` 子表的建表模板参考 `V3.0.0_13__ad_receipt_payment.sql`。
+另：`BaseMapper.insert` 是**非选择性** INSERT（插入实体全部字段），表结构必须覆盖实体所有字段。
+Flyway：`validate-on-migrate=false`（见 `backend/app/src/main/resources/commons.properties`），已执行的迁移文件可修改内容不会报 checksum 错，但改动不会重跑 —— 修结构要新加更高版本号迁移。
 
 ## 表结构速查（ad_* 不含完整 BaseModel 的表）
 - `ad_order_log`：无 deleted、create_user、update_user、update_time
 - `ad_order_contract`：无 create_user、update_user、update_time（有 deleted、create_time）
 - `ad_order_downstream_media`：无 create_user、update_user、update_time（有 deleted、create_time）——实体类不继承 BaseModel
+
+## 逻辑删除 + 唯一键的通用坑（必看）
+- 项目里不少表的唯一键**不含 `deleted`**：一旦用「先逻辑删除旧行 → 再 insert 新行」的写法，第二次保存同一组关联就会 `Duplicate entry`。
+- 正确写法：查**全部（含已逻辑删除）** → 不在目标集合的置 `deleted=1` → 目标集合里已存在的**复用旧行**（把 `deleted` 复位为 0 后 update）→ 只对真不存在的才 insert；入参集合先去空去重（`LinkedHashSet`）。
+- 已知坑位：`ad_order_contract.uk_ad_oc(order_id, contract_id)`（订单端 `AdOrderService.syncOrderContract` 已正确处理，合同端 `AdContractService.syncOrderContract` 2026-09-16 修复）、`ad_order_downstream_media.uk_ad_odm`（已处理）、`ad_payout_invoice.uk_payout_invoice_payout`（走 update + 物理删除，安全）。
+- 对称的查询方法：`ExtAdOrderContractMapper` 的 `selectAllByOrderId` / `selectAllByContractId`（均不过滤 deleted）。
 
 ## 广告模块关键实现约定
 - **合同-订单关联**：统一走 `ad_order_contract` 中间表，一个合同可关联多个订单，订单端当前 UI 仅支持单选

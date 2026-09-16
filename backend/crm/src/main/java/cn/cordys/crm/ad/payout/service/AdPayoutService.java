@@ -16,6 +16,7 @@ import cn.cordys.crm.ad.payout.constants.PayoutBillType;
 import cn.cordys.crm.ad.payout.constants.PayoutStatus;
 import cn.cordys.crm.ad.payout.constants.PayoutType;
 import cn.cordys.crm.ad.payout.domain.AdPayout;
+import cn.cordys.crm.ad.payout.domain.AdPayoutInvoice;
 import cn.cordys.crm.ad.payout.domain.AdPaymentMedia;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutMediaDetail;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutApproveRequest;
@@ -23,11 +24,15 @@ import cn.cordys.crm.ad.payout.dto.request.AdPayoutPayRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutPageRequest;
 import cn.cordys.crm.ad.payout.dto.request.AdPayoutSaveRequest;
 import cn.cordys.crm.ad.payout.dto.response.AdPayoutDetailResponse;
+import cn.cordys.crm.ad.payout.dto.response.AdPayoutInvoiceResponse;
 import cn.cordys.crm.ad.payout.dto.response.AdPayoutListResponse;
 import cn.cordys.crm.ad.payout.dto.response.AdPayoutMediaDetailItem;
 import cn.cordys.crm.ad.payout.mapper.AdPaymentMediaMapper;
+import cn.cordys.crm.ad.payout.mapper.ExtAdPayoutInvoiceMapper;
 import cn.cordys.crm.ad.payout.mapper.ExtAdPayoutMapper;
 import cn.cordys.crm.ad.payout.mapper.ExtAdPayoutMediaOptionMapper;
+import cn.cordys.crm.system.dto.request.UploadTransferRequest;
+import cn.cordys.crm.system.service.AttachmentService;
 import cn.cordys.mybatis.BaseMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.pagehelper.Page;
@@ -70,6 +75,10 @@ public class AdPayoutService {
     private cn.cordys.crm.ad.payout.mapper.ExtAdPaymentMediaMapper extAdPaymentMediaMapper;
     @Resource
     private cn.cordys.crm.ad.downstreammedia.mapper.ExtAdDownstreamMediaAccountMapper extAccountMapper;
+    @Resource
+    private ExtAdPayoutInvoiceMapper extAdPayoutInvoiceMapper;
+    @Resource
+    private AttachmentService attachmentService;
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -99,6 +108,7 @@ public class AdPayoutService {
         p.setUpdateTime(now);
         payoutMapper.insert(p);
         saveMediaDetails(p, request.getMediaDetails(), userId, orgId, now);
+        saveInvoice(p, request, userId, orgId, now);
         return p;
     }
 
@@ -129,6 +139,7 @@ public class AdPayoutService {
         // 先清后写明细
         extAdPaymentMediaMapper.deleteByPaymentId(p.getId());
         saveMediaDetails(p, request.getMediaDetails(), userId, orgId, p.getUpdateTime());
+        saveInvoice(p, request, userId, orgId, p.getUpdateTime());
         return p;
     }
 
@@ -251,7 +262,82 @@ public class AdPayoutService {
         }
         // 各下游客户付款返点明细
         resp.setMediaDetails(extAdPaymentMediaMapper.selectByPaymentId(p.getId()));
+        // 发票
+        resp.setInvoice(buildInvoiceResponse(extAdPayoutInvoiceMapper.selectByPayoutId(p.getId())));
         return resp;
+    }
+
+    /** 组装发票响应。 */
+    private AdPayoutInvoiceResponse buildInvoiceResponse(AdPayoutInvoice inv) {
+        if (inv == null) {
+            return null;
+        }
+        AdPayoutInvoiceResponse r = new AdPayoutInvoiceResponse();
+        r.setId(inv.getId());
+        r.setFileUrl(inv.getFileUrl());
+        r.setFileName(inv.getFileName());
+        r.setInvoiceNo(inv.getInvoiceNo());
+        r.setRemark(inv.getRemark());
+        return r;
+    }
+
+    /**
+     * 保存/更新发票（单文件）。
+     * 仅当请求带 invoiceTempFileId（新上传）时才处理；为空表示未改动，保留原发票。
+     * 传特殊值 "__CLEAR__" 表示清除发票。
+     */
+    private void saveInvoice(AdPayout p, AdPayoutSaveRequest request, String userId, String orgId, long now) {
+        String tempFileId = request.getInvoiceTempFileId();
+        AdPayoutInvoice exist = extAdPayoutInvoiceMapper.selectByPayoutId(p.getId());
+        if (tempFileId == null) {
+            // 未上传新文件：仅允许更新发票号码（保留原附件）
+            if (exist != null && request.getInvoiceNo() != null) {
+                exist.setInvoiceNo(request.getInvoiceNo());
+                exist.setUpdateUser(userId);
+                exist.setUpdateTime(now);
+                extAdPayoutInvoiceMapper.update(exist);
+            }
+            return;
+        }
+        // 清除
+        if ("__CLEAR__".equals(tempFileId)) {
+            if (exist != null) {
+                extAdPayoutInvoiceMapper.deleteByPrimaryKey(exist.getId());
+            }
+            return;
+        }
+        if (tempFileId.isBlank()) {
+            return;
+        }
+        // 临时文件转正式附件：转存后附件 id 与 tempFileId 一致，resourceId 用付款单id
+        UploadTransferRequest transfer = new UploadTransferRequest(
+                orgId, p.getId(), userId, java.util.List.of(tempFileId));
+        attachmentService.processTemp(transfer);
+        String fileName = request.getInvoiceFileName();
+        if (fileName == null || fileName.isBlank()) {
+            fileName = tempFileId;
+        }
+        if (exist == null) {
+            AdPayoutInvoice inv = new AdPayoutInvoice();
+            inv.setId(IDGenerator.nextStr());
+            inv.setPayoutId(p.getId());
+            inv.setFileUrl(tempFileId);
+            inv.setFileName(fileName);
+            inv.setInvoiceNo(request.getInvoiceNo());
+            inv.setOrganizationId(orgId);
+            inv.setCreateUser(userId);
+            inv.setUpdateUser(userId);
+            inv.setCreateTime(now);
+            inv.setUpdateTime(now);
+            extAdPayoutInvoiceMapper.insert(inv);
+        } else {
+            exist.setFileUrl(tempFileId);
+            exist.setFileName(fileName);
+            exist.setInvoiceNo(request.getInvoiceNo());
+            exist.setUpdateUser(userId);
+            exist.setUpdateTime(now);
+            extAdPayoutInvoiceMapper.update(exist);
+        }
     }
 
     /** 加载订单关联的合同（统一通过 ad_order_contract 中间表，支持一对多）。 */
@@ -354,6 +440,14 @@ public class AdPayoutService {
         p.setUpdateUser(userId);
         p.setUpdateTime(System.currentTimeMillis());
         payoutMapper.update(p);
+        // 清理发票记录与附件实体
+        AdPayoutInvoice inv = extAdPayoutInvoiceMapper.selectByPayoutId(id);
+        if (inv != null) {
+            extAdPayoutInvoiceMapper.deleteByPrimaryKey(inv.getId());
+            if (inv.getFileUrl() != null && !inv.getFileUrl().isBlank()) {
+                attachmentService.delete(inv.getFileUrl());
+            }
+        }
     }
 
     // ===================== 私有辅助 =====================

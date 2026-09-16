@@ -361,37 +361,73 @@
             <!-- 附件上传区 -->
             <n-grid :cols="1" :x-gap="16">
               <n-form-item-gi :span="1" label="盖章排期（必传）">
-                <n-upload
-                  v-model:file-list="fileListType10"
-                  :custom-request="(opts: any) => handleFileSelect(10, opts)"
-                  :show-file-list="true"
-                  :on-remove="(opts: any) => handleFileRemove(10, opts)"
-                  accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
-                >
-                  <n-button size="small">选择文件</n-button>
-                </n-upload>
+                <div class="flex flex-col gap-2">
+                  <n-upload
+                    v-model:file-list="fileListType10"
+                    :custom-request="(opts: any) => handleFileSelect(10, opts)"
+                    :show-file-list="false"
+                    :on-remove="(opts: any) => handleFileRemove(10, opts)"
+                    accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
+                  >
+                    <n-button size="small">选择文件</n-button>
+                  </n-upload>
+                  <div v-if="fileListType10.length" class="attach-file-list">
+                    <div v-for="file in fileListType10" :key="file.id" class="attach-file-item">
+                      <span class="attach-file-name" :title="file.name">{{ file.name }}</span>
+                      <div class="attach-file-actions">
+                        <n-button size="tiny" type="primary" ghost @click="handleAttachPreview(file)">预览</n-button>
+                        <n-button size="tiny" type="primary" ghost @click="handleAttachDownload(file)">下载</n-button>
+                        <n-button text size="tiny" type="error" @click="handleAttachRemove(10, file)">删除</n-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </n-form-item-gi>
               <n-form-item-gi :span="1" label="邮件截图（必传）">
-                <n-upload
-                  v-model:file-list="fileListType20"
-                  :custom-request="(opts: any) => handleFileSelect(20, opts)"
-                  :show-file-list="true"
-                  :on-remove="(opts: any) => handleFileRemove(20, opts)"
-                  accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
-                >
-                  <n-button size="small">选择文件</n-button>
-                </n-upload>
+                <div class="flex flex-col gap-2">
+                  <n-upload
+                    v-model:file-list="fileListType20"
+                    :custom-request="(opts: any) => handleFileSelect(20, opts)"
+                    :show-file-list="false"
+                    :on-remove="(opts: any) => handleFileRemove(20, opts)"
+                    accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
+                  >
+                    <n-button size="small">选择文件</n-button>
+                  </n-upload>
+                  <div v-if="fileListType20.length" class="attach-file-list">
+                    <div v-for="file in fileListType20" :key="file.id" class="attach-file-item">
+                      <span class="attach-file-name" :title="file.name">{{ file.name }}</span>
+                      <div class="attach-file-actions">
+                        <n-button size="tiny" type="primary" ghost @click="handleAttachPreview(file)">预览</n-button>
+                        <n-button size="tiny" type="primary" ghost @click="handleAttachDownload(file)">下载</n-button>
+                        <n-button text size="tiny" type="error" @click="handleAttachRemove(20, file)">删除</n-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </n-form-item-gi>
               <n-form-item-gi :span="1" label="补充协议（选填）">
-                <n-upload
-                  v-model:file-list="fileListType40"
-                  :custom-request="(opts: any) => handleFileSelect(40, opts)"
-                  :show-file-list="true"
-                  :on-remove="(opts: any) => handleFileRemove(40, opts)"
-                  accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
-                >
-                  <n-button size="small">选择文件</n-button>
-                </n-upload>
+                <div class="flex flex-col gap-2">
+                  <n-upload
+                    v-model:file-list="fileListType40"
+                    :custom-request="(opts: any) => handleFileSelect(40, opts)"
+                    :show-file-list="false"
+                    :on-remove="(opts: any) => handleFileRemove(40, opts)"
+                    accept=".pdf,.jpg,.png,.doc,.docx,.xls,.xlsx"
+                  >
+                    <n-button size="small">选择文件</n-button>
+                  </n-upload>
+                  <div v-if="fileListType40.length" class="attach-file-list">
+                    <div v-for="file in fileListType40" :key="file.id" class="attach-file-item">
+                      <span class="attach-file-name" :title="file.name">{{ file.name }}</span>
+                      <div class="attach-file-actions">
+                        <n-button size="tiny" type="primary" ghost @click="handleAttachPreview(file)">预览</n-button>
+                        <n-button size="tiny" type="primary" ghost @click="handleAttachDownload(file)">下载</n-button>
+                        <n-button text size="tiny" type="error" @click="handleAttachRemove(40, file)">删除</n-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </n-form-item-gi>
             </n-grid>
           </n-form>
@@ -523,13 +559,23 @@
     return [...saved, ...pending];
   }
 
+  /** 取某个附件类型对应的 n-upload 文件列表 ref */
+  function getAttachFileList(type: number) {
+    if (type === 10) return fileListType10;
+    if (type === 20) return fileListType20;
+    return fileListType40;
+  }
+
   function handleFileSelect(type: number, opts: { file: any; onFinish: () => void; onError: () => void }) {
     const rawFile = opts.file.file as File;
     const _key = `f_${++pendingFileSeq}_${Date.now()}`;
     // n-upload 在 custom-request + v-model:file-list 模式下已自动把选中文件加入 file-list，
-    // 手动再 push 会造成"点一个出两个"。这里只维护 pendingFiles，并把自动项的 id 设为 _key，
-    // 这样删除时能通过 removed.id === _key 精确匹配。
+    // 手动再 push 会造成"点一个出两个"，所以这里只维护 pendingFiles。
+    // 但 n-upload 对 custom-request 收到的 file 做了浅拷贝，直接改 opts.file.id 改不到列表里的对象，
+    // 需按原始 File 定位真实列表项并把 id 设为 _key，删除时才能精确匹配。
     opts.file.id = _key;
+    const target = getAttachFileList(type).value.find((f: any) => f.file === rawFile);
+    if (target) target.id = _key;
     pendingFiles.value.push({ _key, type, file: rawFile });
     opts.onFinish();
   }
@@ -555,6 +601,72 @@
       pendingFiles.value = pendingFiles.value.filter((f) => f._key !== removed.id);
     }
     return true;
+  }
+
+  /** 是否支持浏览器内联预览（PDF / 图片） */
+  function isPreviewableAttach(name?: string) {
+    return !!name && /\.(pdf|png|jpe?g|gif|webp|bmp|svg)$/i.test(name);
+  }
+
+  /** 取附件地址：新选文件用本地 blob，已上传附件用附件接口（preview 内联预览 / download 触发下载） */
+  function resolveAttachUrl(file: any, action: 'preview' | 'download') {
+    const pending = pendingFiles.value.find((f) => f._key === file?.id || f.file === file?.file);
+    if (pending) {
+      return { url: URL.createObjectURL(pending.file), fileName: pending.file.name, isBlob: true };
+    }
+    const saved = savedAttachments.value.find((a) => a.id === file?.id);
+    if (!saved?.fileUrl) return null;
+    const userId = userStore.userInfo?.id || '';
+    return {
+      url: `/attachment/${action}/${saved.fileUrl}?userId=${userId}`,
+      fileName: saved.fileName || file?.name || '附件',
+      isBlob: false,
+    };
+  }
+
+  function triggerBrowserDownload(url: string, fileName: string) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  /** 附件下载：新选文件走本地 blob，已上传附件走附件下载接口 */
+  function handleAttachDownload(file: any) {
+    const target = resolveAttachUrl(file, 'download');
+    if (!target) return;
+    triggerBrowserDownload(target.url, target.fileName);
+    if (target.isBlob) setTimeout(() => URL.revokeObjectURL(target.url), 60000);
+  }
+
+  /** 附件预览：PDF / 图片内联打开，其它格式自动转为下载 */
+  function handleAttachPreview(file: any) {
+    if (!isPreviewableAttach(file?.name)) {
+      handleAttachDownload(file);
+      return;
+    }
+    const target = resolveAttachUrl(file, 'preview');
+    if (!target) {
+      message.warning('附件尚未保存，请先保存后再预览');
+      return;
+    }
+    window.open(target.url, '_blank');
+    if (target.isBlob) setTimeout(() => URL.revokeObjectURL(target.url), 60000);
+  }
+
+  /** 自定义文件项的删除按钮：先走原有删除校验，再从列表移除 */
+  async function handleAttachRemove(type: number, file: any) {
+    const isRemovable = await handleFileRemove(type, { file });
+    if (!isRemovable) return;
+    // 兜底：n-upload 内部 id 与暂存 _key 不一致时，按原始 File 对象再清理一次
+    if (file?.file instanceof File) {
+      pendingFiles.value = pendingFiles.value.filter((f) => f.file !== file.file);
+    }
+    const listRef = getAttachFileList(type);
+    listRef.value = listRef.value.filter((f) => f.id !== file?.id);
   }
 
   interface AdOrderForm {
@@ -1142,6 +1254,35 @@
   }
   .attach-tip {
     margin: 0 0 16px 120px;
+  }
+  .attach-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .attach-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--text-n10);
+  }
+  .attach-file-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    color: var(--text-n2);
+  }
+  .attach-file-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
   }
   .payable-card {
     border: 1px solid var(--border-color);

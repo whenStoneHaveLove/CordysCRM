@@ -45,14 +45,17 @@
           <template v-if="detailBaseFields.length">
             <n-descriptions :column="1" label-placement="left" bordered>
               <n-descriptions-item v-for="(f, idx) in detailBaseFields" :key="idx" :label="f.label">
-                <n-space v-if="f.attachmentUrl" :size="8">
-                  <n-button size="tiny" type="primary" ghost @click="handlePreviewAttachment(f.attachmentUrl)">
-                    预览
-                  </n-button>
-                  <n-button size="tiny" type="primary" ghost @click="handleDownloadAttachment(f.attachmentUrl)">
-                    下载
-                  </n-button>
-                </n-space>
+                <div v-if="f.attachmentUrl" class="flex items-center gap-8">
+                  <span v-if="f.showValue" class="break-all">{{ f.value }}</span>
+                  <n-space :size="8">
+                    <n-button size="tiny" type="primary" ghost @click="handlePreviewAttachment(f.attachmentUrl)">
+                      预览
+                    </n-button>
+                    <n-button size="tiny" type="primary" ghost @click="handleDownloadAttachment(f.attachmentUrl)">
+                      下载
+                    </n-button>
+                  </n-space>
+                </div>
                 <n-button v-else-if="f.link" text type="primary" size="small" @click="openLink(f)">
                   {{ f.value }}
                 </n-button>
@@ -264,7 +267,14 @@
   const isDetailPayoutNonOrder = computed(() => detailPayoutBillType.value === AdPayoutBillTypeEnum.NON_ORDER);
   // 基础字段：value 为显示文本，link 为跳转路由名（点击新页面查看），attachmentUrl 为附件地址（渲染预览/下载）
   const detailBaseFields = ref<
-    Array<{ label: string; value: string; link?: string; linkId?: string; attachmentUrl?: string }>
+    Array<{
+      label: string;
+      value: string;
+      link?: string;
+      linkId?: string;
+      attachmentUrl?: string;
+      showValue?: boolean;
+    }>
   >([]);
   // 改单字段变更对比行
   const detailCompareRows = ref<Array<{ label: string; before: string; after: string }>>([]);
@@ -497,7 +507,15 @@
     }
   }
 
-  type BaseField = { label: string; value: string; link?: string; linkId?: string; attachmentUrl?: string };
+  type BaseField = {
+    label: string;
+    value: string;
+    link?: string;
+    linkId?: string;
+    attachmentUrl?: string;
+    /** 附件字段：是否额外展示 value 文本（如发票文件名），默认只展示预览/下载按钮 */
+    showValue?: boolean;
+  };
   type CompareRow = { label: string; before: string; after: string };
 
   // 打开关联详情（新页面）
@@ -794,7 +812,17 @@
       base.push(
         { label: t('advertising.approval.column.amount'), value: res?.amount != null ? fmtAmount(res.amount) : '-' },
         { label: '付款时间', value: fmtDateTime(res?.paymentTime) },
-        { label: '备注', value: res?.remark || '-' }
+        { label: '备注', value: res?.remark || '-' },
+        {
+          label: '发票号',
+          value: res?.invoice?.invoiceNo || '-',
+        },
+        {
+          label: '发票',
+          value: res?.invoice?.fileUrl ? res.invoice.fileName || res.invoice.fileUrl : '-',
+          attachmentUrl: res?.invoice?.fileUrl,
+          showValue: true,
+        }
       );
       return {
         base,

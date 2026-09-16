@@ -102,4 +102,8 @@ public class AdPayoutDetailResponse {
     /* ---- 各下游客户付款返点明细 ---- */
     @Schema(description = "本次付款明细(每客户一行)")
     private List<AdPayoutMediaDetailItem> mediaDetails;
+
+    /* ---- 发票 ---- */
+    @Schema(description = "发票信息(未上传时为 null)")
+    private AdPayoutInvoiceResponse invoice;
 }

@@ -42,4 +42,13 @@ public class AdPayoutSaveRequest {
 
     @Schema(description = "各下游客户付款返点明细(每客户一行)")
     private List<AdPayoutMediaDetail> mediaDetails;
+
+    @Schema(description = "发票临时文件ID（/attachment/upload/temp 返回，单文件）")
+    private String invoiceTempFileId;
+
+    @Schema(description = "发票文件名")
+    private String invoiceFileName;
+
+    @Schema(description = "发票号码")
+    private String invoiceNo;
 }

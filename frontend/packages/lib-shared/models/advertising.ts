@@ -1076,6 +1076,22 @@ export interface AdPayoutSaveParams {
   voucherUrl?: string;
   remark?: string;
   mediaDetails?: AdPayoutMediaDetailItem[];
+  /** 发票临时文件ID（单文件，上传后由后端转存为正式附件） */
+  invoiceTempFileId?: string;
+  /** 发票文件名 */
+  invoiceFileName?: string;
+  /** 发票号码 */
+  invoiceNo?: string;
+}
+
+/** 付款单发票信息（详情回显，预览/下载用 fileUrl）。 */
+export interface AdPayoutInvoice {
+  id?: string;
+  /** 附件ID，预览 /attachment/preview/{fileUrl}，下载 /attachment/download/{fileUrl} */
+  fileUrl?: string;
+  fileName?: string;
+  invoiceNo?: string;
+  remark?: string;
 }
 
 /** 各下游客户付款返点明细（新建/编辑付款单时附带）。 */
@@ -1201,6 +1217,8 @@ export interface AdPayoutDetail {
   orderName?: string;
   contracts?: AdContractBriefInfo[];
   mediaDetails?: AdPayoutMediaDetailItem[];
+  /** 发票信息（未上传为 null） */
+  invoice?: AdPayoutInvoice | null;
 }
 
 export type AdPayoutPageResult = CommonList<AdPayoutInfo>;
