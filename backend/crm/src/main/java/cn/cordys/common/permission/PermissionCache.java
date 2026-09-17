@@ -1,5 +1,6 @@
 package cn.cordys.common.permission;
 
+import cn.cordys.common.constants.AdminOnlyPermission;
 import cn.cordys.common.dto.RoleDataScopeDTO;
 import cn.cordys.common.dto.RolePermissionDTO;
 import cn.cordys.common.util.BeanUtils;
@@ -62,6 +63,8 @@ public class PermissionCache {
         List<RolePermissionDTO> rolePermissions = Objects.requireNonNull(CommonBeanFactory.getBean(PermissionCache.class)).getRolePermissions(userId, orgId);
         return rolePermissions.stream()
                 .flatMap(rolePermissionDTO -> rolePermissionDTO.getPermissions().stream())
+                // 「仅管理员」的权限不下发给普通用户：后端校验不通过，前端菜单/按钮也随之隐藏
+                .filter(permissionId -> !AdminOnlyPermission.isAdminOnly(permissionId))
                 .collect(Collectors.toSet());
     }
 

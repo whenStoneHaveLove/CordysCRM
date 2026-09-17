@@ -5,6 +5,9 @@ import cn.cordys.aspectj.constants.LogModule;
 import cn.cordys.aspectj.constants.LogType;
 import cn.cordys.aspectj.context.OperationLogContext;
 import cn.cordys.aspectj.dto.LogContextInfo;
+import cn.cordys.common.constants.AdminOnlyPermission;
+import cn.cordys.common.constants.InternalRole;
+import cn.cordys.common.constants.InternalUser;
 import cn.cordys.common.constants.RoleDataScope;
 import cn.cordys.common.dto.RoleDataScopeDTO;
 import cn.cordys.common.exception.GenericException;
@@ -30,6 +33,7 @@ import cn.cordys.crm.system.mapper.ExtRoleMapper;
 import cn.cordys.crm.system.mapper.ExtUserRoleMapper;
 import cn.cordys.mybatis.BaseMapper;
 import cn.cordys.mybatis.lambda.LambdaQueryWrapper;
+import cn.cordys.security.SessionUtils;
 import jakarta.annotation.Resource;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
@@ -83,6 +87,8 @@ public class RoleService {
         role.setOrganizationId(orgId);
         List<Role> roles = roleMapper.select(role);
         List<RoleListResponse> roleListResponseList = JSON.parseArray(JSON.toJSONString(roles), RoleListResponse.class);
+        // 已弃用的内置角色（销售经理/销售专员）不出现在任何列表/下拉/角色树中
+        roleListResponseList.removeIf(item -> InternalRole.isHidden(item.getId()));
         // 翻译内置角色名称
         roleListResponseList.stream()
                 .filter(RoleListResponse::getInternal)
@@ -235,6 +241,11 @@ public class RoleService {
             originDeptIds = getDeptIdsByRoleId(request.getId());
         }
 
+        // 非管理员看不到「仅超管」权限，先把角色原有的这些权限补回请求，避免保存时被误删
+        mergeAdminOnlyPermissions(request.getPermissions(), role.getId());
+        // 非管理员只看得到广告下单系统，其余模块的权限同样补回，避免保存时被误删
+        mergeHiddenPermissions(request.getPermissions(), role.getId());
+
         List<String> originPermissionIds = null;
         if (request.getPermissions() != null) {
             originPermissionIds = getPermissionIds(List.of(role.getId())).stream().toList();
@@ -380,6 +391,12 @@ public class RoleService {
     private List<PermissionDefinitionItem> getPermissionDefinitionItems(Set<String> permissionIds) {
         // 获取所有的权限
         List<PermissionDefinitionItem> permissionDefinitions = getPermissionDefinitions();
+        if (!isCurrentAdmin()) {
+            // 只保留白名单模块（当前只有「广告下单系统」，开关 AdminOnlyPermission#NON_ADMIN_VISIBLE_MODULES）
+            keepVisibleModulesForNonAdmin(permissionDefinitions);
+            // 看不到「仅超管」权限项（模块配置/消息设置/流程设置/企业设置/系统日志）
+            removeAdminOnlyPermissions(permissionDefinitions);
+        }
         // 设置勾选项
         for (PermissionDefinitionItem firstLevel : permissionDefinitions) {
             List<PermissionDefinitionItem> children = firstLevel.getChildren();
@@ -439,6 +456,144 @@ public class RoleService {
             throw new GenericException(e);
         }
         return permissionDefinitions;
+    }
+
+    /**
+     * 非管理员只保留白名单里的一级模块（当前只有「广告下单系统」）。
+     *
+     * <p>开关见 {@code AdminOnlyPermission#NON_ADMIN_VISIBLE_MODULES}，白名单为空则本方法不移除任何内容。</p>
+     *
+     * @param permissionDefinitions 权限定义，会被原地修改
+     */
+    private void keepVisibleModulesForNonAdmin(List<PermissionDefinitionItem> permissionDefinitions) {
+        permissionDefinitions.removeIf(firstLevel -> !AdminOnlyPermission.isVisibleModuleForNonAdmin(firstLevel.getId()));
+    }
+
+    /**
+     * 从权限配置里移除「仅超管」权限项。
+     *
+     * <p>二级项下的权限被全部移除后，二级项一并移除；一级项没有子项时也移除，
+     * 避免角色权限页出现空分组。</p>
+     *
+     * @param permissionDefinitions 权限配置
+     */
+    private void removeAdminOnlyPermissions(List<PermissionDefinitionItem> permissionDefinitions) {
+        permissionDefinitions.removeIf(firstLevel -> {
+            List<PermissionDefinitionItem> children = firstLevel.getChildren();
+            if (CollectionUtils.isEmpty(children)) {
+                return false;
+            }
+            children.removeIf(secondLevel -> {
+                List<Permission> permissions = secondLevel.getPermissions();
+                if (CollectionUtils.isEmpty(permissions)) {
+                    return false;
+                }
+                permissions.removeIf(permission -> AdminOnlyPermission.isAdminOnly(permission.getId()));
+                return CollectionUtils.isEmpty(permissions);
+            });
+            return CollectionUtils.isEmpty(children);
+        });
+    }
+
+    /**
+     * 当前操作人视角下「可见」的权限标识集合
+     *
+     * <p>非管理员只能看到 {@link #keepVisibleModulesForNonAdmin} + {@link #removeAdminOnlyPermissions}
+     * 过滤后剩下的权限，其余权限在角色权限页上不展示，保存时也不允许被改动。</p>
+     *
+     * @return 可见的权限标识
+     */
+    private Set<String> getVisiblePermissionIds() {
+        List<PermissionDefinitionItem> permissionDefinitions = getPermissionDefinitions();
+        if (!isCurrentAdmin()) {
+            keepVisibleModulesForNonAdmin(permissionDefinitions);
+            removeAdminOnlyPermissions(permissionDefinitions);
+        }
+        return permissionDefinitions.stream()
+                .filter(firstLevel -> firstLevel.getChildren() != null)
+                .flatMap(firstLevel -> firstLevel.getChildren().stream())
+                .filter(secondLevel -> secondLevel.getPermissions() != null)
+                .flatMap(secondLevel -> secondLevel.getPermissions().stream())
+                .map(Permission::getId)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * 当前操作人是否为系统管理员（内置 admin 用户）
+     */
+    private boolean isCurrentAdmin() {
+        return Strings.CI.equals(InternalUser.ADMIN.getValue(), SessionUtils.getUserId());
+    }
+
+    /**
+     * 把角色原有的「仅超管」权限补回请求中。
+     *
+     * <p>非管理员在角色权限页看不到这些权限项，提交的列表里自然也没有它们，
+     * 而 {@link #updatePermissionSetting} 是「先删后加」的整表覆盖语义，
+     * 不补回就会把「看不见」变成「被删掉」，也就不方便恢复了。</p>
+     *
+     * @param permissions 请求里的权限列表
+     * @param roleId      角色id
+     */
+    private void mergeAdminOnlyPermissions(List<PermissionUpdateRequest> permissions, String roleId) {
+        if (CollectionUtils.isEmpty(permissions) || isCurrentAdmin()) {
+            return;
+        }
+        Set<String> originAdminOnlyIds = getPermissionIdSetByRoleId(roleId).stream()
+                .filter(AdminOnlyPermission::isAdminOnly)
+                .collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(originAdminOnlyIds)) {
+            return;
+        }
+        Set<String> submittedIds = permissions.stream()
+                .map(PermissionUpdateRequest::getId)
+                .collect(Collectors.toSet());
+        originAdminOnlyIds.stream()
+                .filter(permissionId -> !submittedIds.contains(permissionId))
+                .forEach(permissionId -> {
+                    PermissionUpdateRequest keepRequest = new PermissionUpdateRequest();
+                    keepRequest.setId(permissionId);
+                    keepRequest.setEnable(true);
+                    permissions.add(keepRequest);
+                });
+    }
+
+    /**
+     * 把角色原有的「当前操作人看不见」的权限补回请求中。
+     *
+     * <p>非管理员在角色权限页只看得到广告下单系统的权限，提交的列表里没有其它模块的权限，
+     * 而 {@link #updatePermissionSetting} 是「先删后加」的整表覆盖语义，
+     * 不补回就会把「看不见」变成「被删掉」，既不符合预期也不方便恢复，
+     * 所以统一按「看不见的不动」处理，只让非管理员勾选/取消他能看见的权限。</p>
+     *
+     * <p>与 {@link #mergeAdminOnlyPermissions} 是两道独立的保护：前者管「仅超管」权限，
+     * 这里管剩下的不可见权限（白名单模块以外的），已被前者补回的权限会因 submittedIds 判重而跳过。</p>
+     *
+     * @param permissions 请求里的权限列表
+     * @param roleId      角色id
+     */
+    private void mergeHiddenPermissions(List<PermissionUpdateRequest> permissions, String roleId) {
+        if (CollectionUtils.isEmpty(permissions) || isCurrentAdmin()) {
+            return;
+        }
+        Set<String> visibleIds = getVisiblePermissionIds();
+        Set<String> hiddenIds = getPermissionIdSetByRoleId(roleId).stream()
+                .filter(permissionId -> !visibleIds.contains(permissionId))
+                .collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(hiddenIds)) {
+            return;
+        }
+        Set<String> submittedIds = permissions.stream()
+                .map(PermissionUpdateRequest::getId)
+                .collect(Collectors.toSet());
+        hiddenIds.stream()
+                .filter(permissionId -> !submittedIds.contains(permissionId))
+                .forEach(permissionId -> {
+                    PermissionUpdateRequest keepRequest = new PermissionUpdateRequest();
+                    keepRequest.setId(permissionId);
+                    keepRequest.setEnable(true);
+                    permissions.add(keepRequest);
+                });
     }
 
     /**

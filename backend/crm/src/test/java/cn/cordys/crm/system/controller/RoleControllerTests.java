@@ -91,10 +91,12 @@ class RoleControllerTests extends BaseTest {
         Map<String, RoleListResponse> roleMap = roleList.stream()
                 .collect(Collectors.toMap(RoleListResponse::getId, Function.identity()));
 
-        // 校验内置用户
+        // 校验可见的内置角色
         assertInternalRole(roleMap.get(InternalRole.ORG_ADMIN.getValue()));
-        assertInternalRole(roleMap.get(InternalRole.SALES_STAFF.getValue()));
-        assertInternalRole(roleMap.get(InternalRole.SALES_MANAGER.getValue()));
+
+        // 已软删除（列表隐藏）的内置角色不应出现在列表里
+        Assertions.assertNull(roleMap.get(InternalRole.SALES_MANAGER.getValue()));
+        Assertions.assertNull(roleMap.get(InternalRole.SALES_STAFF.getValue()));
 
         // 校验组织ID
         roleList.forEach(role -> Assertions.assertEquals(role.getOrganizationId(), DEFAULT_ORGANIZATION_ID));
