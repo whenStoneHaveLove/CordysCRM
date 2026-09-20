@@ -86,7 +86,7 @@ module.exports = defineConfig([
       'import/no-unresolved': [
         'error',
         {
-          ignore: ['^@lib/shared'],
+          ignore: ['^@lib/shared', '^@/views/advertising'],
         },
       ],
 

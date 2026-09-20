@@ -12,9 +12,7 @@ import type { UserInfo } from '@lib/shared/models/user';
 import { getApiKeyList, isLogin, login, signout } from '@/api/modules';
 import useUser from '@/hooks/useUser';
 import router from '@/router';
-import { hasAnyPermission } from '@/utils/permission';
-
-import { AppRouteEnum } from '@/enums/routeEnum';
+import { getHomeRouteName, hasAnyPermission } from '@/utils/permission';
 
 import useAppStore from '../app';
 
@@ -109,7 +107,7 @@ const useUserStore = defineStore('user', {
       const isLoginStatus = await this.isLogin();
       if (isLoginStatus) {
         if (isLoginPage()) {
-          router.replace({ name: AppRouteEnum.WORKBENCH });
+          router.replace({ name: getHomeRouteName() });
         }
       } else if (!isLoginPage()) {
         router.replace({ name: 'login' });

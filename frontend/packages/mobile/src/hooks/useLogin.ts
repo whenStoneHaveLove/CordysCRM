@@ -16,8 +16,7 @@ import type { Result } from '@lib/shared/types/axios';
 import { getThirdConfigByType, getThirdOauthCallback } from '@/api/modules';
 import { AUTH_DISABLED_ROUTE_NAME } from '@/router/constants';
 import useUserStore from '@/store/modules/user';
-
-import { AppRouteEnum } from '@/enums/routeEnum';
+import { getHomeRouteName } from '@/utils/permission';
 
 const platformConfig = {
   // 企业微信
@@ -83,7 +82,7 @@ export default function useLogin() {
         setLoginType(loginType);
         const { redirect, ...othersQuery } = router.currentRoute.value.query;
         await router.replace({
-          name: (redirect as string) || AppRouteEnum.WORKBENCH,
+          name: (redirect as string) || getHomeRouteName(),
           query: {
             ...othersQuery,
           },

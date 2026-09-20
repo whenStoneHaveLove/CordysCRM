@@ -12,7 +12,48 @@
   --van-radius-md: @border-radius-small;
   --van-radius-lg: @border-radius-medium;
   --van-tag-radius: @border-radius-mini;
+
+  // 按钮：统一圆角/高度/字号，视觉更精致
+  --van-button-radius: 8px;
+  --van-button-normal-font-size: 14px;
+  --van-button-normal-height: 40px;
+  --van-button-small-font-size: 13px;
+  --van-button-small-height: 34px;
+  --van-button-mini-height: 28px;
+  --van-button-default-height: 40px;
+  --van-button-default-color: var(--text-n1);
+  --van-button-default-border-color: var(--text-n7);
+  --van-button-primary-background: var(--primary-8);
+  --van-button-primary-border-color: var(--primary-8);
+  --van-button-danger-background: var(--error-red);
+  --van-button-danger-border-color: var(--error-red);
+
+  // 输入框/单元格：与卡片圆角呼应
+  --van-cell-vertical-padding: 12px;
+  --van-field-input-text-color: var(--text-n1);
 }
 .van-dialog__message {
   @apply text-left;
+}
+// 按钮质感：字重 + 轻投影（实心按钮才有，plain/ghost 不加），按下时轻微回弹
+.van-button {
+  font-weight: 500;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  &:active {
+    transform: scale(0.985);
+  }
+}
+.van-button--primary:not(.van-button--plain) {
+  box-shadow: 0 3px 10px rgb(0 166 171 / 24%);
+}
+.van-button--danger:not(.van-button--plain) {
+  box-shadow: 0 3px 10px rgb(226 46 35 / 22%);
+}
+.van-button--default:not(.van-button--plain) {
+  border-color: var(--text-n7);
+  background-color: var(--text-n10);
+}
+// 搜索框与卡片圆角统一
+.van-search__content {
+  border-radius: 8px;
 }

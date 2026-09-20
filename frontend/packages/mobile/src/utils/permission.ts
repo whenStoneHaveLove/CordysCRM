@@ -4,6 +4,11 @@ import appRoutes from '@/router/routes/index';
 import useAppStore from '@/store/modules/app';
 import useUserStore from '@/store/modules/user';
 
+import { AppRouteEnum } from '@/enums/routeEnum';
+
+/** 广告工作台权限：命中则移动端首页为广告工作台 */
+const AD_HOME_PERMISSION = 'AD_WORKBENCH:READ';
+
 export function hasPermission(permission: string) {
   const userStore = useUserStore();
   if (userStore.isAdmin) {
@@ -66,6 +71,14 @@ export function topLevelMenuHasPermission(route: RouteLocationNormalized | Route
 export function routerNameHasPermission(routerName: string, routerList: RouteRecordNormalized[]) {
   const currentRoute = routerList.find((item) => item.name === routerName);
   return currentRoute ? hasAnyPermission(currentRoute.meta?.permissions || []) : false;
+}
+
+/**
+ * 移动端首页路由名
+ * 广告工作台是本项目移动端首页；若当前用户没有广告模块权限，则回退到 CRM 工作台
+ */
+export function getHomeRouteName(): string {
+  return hasAnyPermission([AD_HOME_PERMISSION]) ? AppRouteEnum.AD_WORKBENCH : AppRouteEnum.WORKBENCH;
 }
 
 export function findRouteByName(name: string) {

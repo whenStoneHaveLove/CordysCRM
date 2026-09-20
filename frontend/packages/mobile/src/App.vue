@@ -16,7 +16,7 @@
   import useLicenseStore from '@/store/modules/setting/license';
   import useUserStore from '@/store/modules/user';
 
-  import { AppRouteEnum } from '@/enums/routeEnum';
+  import { getHomeRouteName } from '@/utils/permission';
 
   import useLogin from './hooks/useLogin';
 
@@ -46,7 +46,7 @@
       await oAuthLogin();
       return;
     }
-    router.replace({ name: AppRouteEnum.WORKBENCH });
+    router.replace({ name: getHomeRouteName() });
     licenseStore.getValidateLicense();
   });
 </script>

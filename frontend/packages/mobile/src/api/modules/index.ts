@@ -1,7 +1,22 @@
 import { showFailToast } from 'vant';
 
 import createAxios from '@lib/shared/api/http';
+import useAdBusinessEntityApi from '@lib/shared/api/modules/adBusinessEntity';
+import useAdContractApi from '@lib/shared/api/modules/adContract';
+import useAdContractAttachmentApi from '@lib/shared/api/modules/adContractAttachment';
+import useAdCustomerApi from '@lib/shared/api/modules/adCustomer';
+import useAdDashboardApi from '@lib/shared/api/modules/adDashboard';
+import useAdDictApi from '@lib/shared/api/modules/adDict';
+import useAdDownstreamMediaApi from '@lib/shared/api/modules/adDownstreamMedia';
+import useAdOrderApi from '@lib/shared/api/modules/adOrder';
+import useAdOrderAttachmentApi from '@lib/shared/api/modules/adOrderAttachment';
+import useAdOrderChangeApi from '@lib/shared/api/modules/adOrderChange';
+import useAdPayoutApi from '@lib/shared/api/modules/adPayout';
+import useAdReceiptApi from '@lib/shared/api/modules/adReceipt';
+import useAdSealApi from '@lib/shared/api/modules/adSeal';
+import useAdUpstreamAgentApi from '@lib/shared/api/modules/adUpstreamAgent';
 import useAgentApi from '@lib/shared/api/modules/agent';
+import useAdApprovalApi from '@lib/shared/api/modules/approval';
 import useClueApi from '@lib/shared/api/modules/clue';
 import useContractApi from '@lib/shared/api/modules/contract';
 import useCustomerApi from '@lib/shared/api/modules/customer';
@@ -38,6 +53,21 @@ const followApi = useFollowApi(CDR);
 const contractApi = useContractApi(CDR);
 const orderApi = useOrderApi(CDR);
 const agentApi = useAgentApi(CDR);
+const adApprovalApi = useAdApprovalApi(CDR);
+const adBusinessEntityApi = useAdBusinessEntityApi(CDR);
+const adContractApi = useAdContractApi(CDR);
+const adContractAttachmentApi = useAdContractAttachmentApi(CDR);
+const adCustomerApi = useAdCustomerApi(CDR);
+const adDashboardApi = useAdDashboardApi(CDR);
+const adDownstreamMediaApi = useAdDownstreamMediaApi(CDR);
+const adOrderApi = useAdOrderApi(CDR);
+const adPayoutApi = useAdPayoutApi(CDR);
+const adReceiptApi = useAdReceiptApi(CDR);
+const adUpstreamAgentApi = useAdUpstreamAgentApi(CDR);
+const adSealApi = useAdSealApi(CDR);
+const adOrderChangeApi = useAdOrderChangeApi(CDR);
+const adOrderAttachmentApi = useAdOrderAttachmentApi(CDR);
+const adDictApi = useAdDictApi(CDR);
 
 export const {
   getFollowPlanDetail,
@@ -421,6 +451,89 @@ export const { isLogin, signout, getKey, login, getThirdOauthCallback, getThirdC
 export const { getLicense, addLicense } = licenseApi;
 
 export const { getAgentOptions } = agentApi;
+export const { getAdWorkbenchTodo, getAdDashboardSummary } = adDashboardApi;
+export const {
+  getAdOrderPage,
+  getAdOrderDetail,
+  createAdOrder,
+  updateAdOrder,
+  copyAdOrder,
+  submitAdOrder,
+  approveAdOrder,
+  rejectAdOrder,
+  confirmExecuteAdOrder,
+  voidAdOrder,
+  forceArchiveAdOrder,
+  exportAdOrder,
+} = adOrderApi;
+export const { uploadAdOrderAttachment, deleteAdOrderAttachment, getAdOrderAttachments } = adOrderAttachmentApi;
+export const {
+  getAdApprovalPendingPage,
+  getAdApprovalProcessedPage,
+  getAdApprovalInitiatedPage,
+  getAdApprovalCcPage,
+  getAdApprovalPendingCount,
+} = adApprovalApi;
+export const {
+  getAdContractPage,
+  getAdContractDetail,
+  createAdContract,
+  updateAdContract,
+  submitArchive,
+  approveArchive,
+  rejectArchive,
+  submitVoid,
+  approveVoid,
+  rejectVoid,
+  // 已作废合同：列表 / 详情（对齐 web 的「已删除」口径，忽略 deleted 标记）
+  getAdContractDeletedPage,
+  getAdContractDeletedDetail,
+} = adContractApi;
+export const { uploadAdContractAttachment, getAdContractAttachments, deleteAdContractAttachment } =
+  adContractAttachmentApi;
+export const { getAdCustomerPage, getAdCustomerDetail, createAdCustomer, updateAdCustomer } = adCustomerApi;
+export const {
+  createAdDownstreamMedia,
+  getAdDownstreamMediaAccounts,
+  getAdDownstreamMediaDetail,
+  getAdDownstreamMediaPage,
+  updateAdDownstreamMedia,
+} = adDownstreamMediaApi;
+export const { getAdUpstreamAgentPage, getAdUpstreamAgentDetail, createAdUpstreamAgent, updateAdUpstreamAgent } =
+  adUpstreamAgentApi;
+export const { getAdBusinessEntityPage, getAdBusinessEntityDetail, createAdBusinessEntity, updateAdBusinessEntity } =
+  adBusinessEntityApi;
+export const { getAdDictPage } = adDictApi;
+export const {
+  getAdReceiptPage,
+  getAdReceiptDetail,
+  submitAdReceipt,
+  approveAdReceipt,
+  createAdReceipt,
+  updateAdReceipt,
+  getAdReceiptRemaining,
+} = adReceiptApi;
+export const {
+  getAdPayoutPage,
+  getAdPayoutDetail,
+  submitAdPayout,
+  approveAdPayout,
+  payAdPayout,
+  createAdPayout,
+  updateAdPayout,
+  getAdPayoutRemaining,
+  getAdPayoutMedia,
+} = adPayoutApi;
+export const { getAdSealPage, getAdSealDetail, approveAdSeal, rejectAdSeal, applyAdSeal } = adSealApi;
+export const {
+  getAdOrderChangePage,
+  getAdOrderChangeDetail,
+  submitAdOrderChange,
+  approveAdOrderChange,
+  rejectAdOrderChange,
+  executeAdOrderChange,
+  createAdOrderChange,
+} = adOrderChangeApi;
 
 export const {
   getCustomFormAdmins,

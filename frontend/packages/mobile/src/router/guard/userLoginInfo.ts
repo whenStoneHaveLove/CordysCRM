@@ -2,8 +2,7 @@ import { isDingTalkBrowser, isLarkBrowser, isWeComBrowser } from '@lib/shared/me
 import { clearToken, hasToken, isLoginExpires } from '@lib/shared/method/auth';
 
 import useUser from '@/hooks/useUser';
-
-import { AppRouteEnum } from '@/enums/routeEnum';
+import { getHomeRouteName } from '@/utils/permission';
 
 import { LOGIN_LOADING } from '../constants';
 import NProgress from 'nprogress';
@@ -45,7 +44,7 @@ export default function setupUserLoginInfoGuard(router: Router) {
     }
     // 已登录访问登录页面和loading页面则都去首页
     if ((to.name === 'login' || to.name === LOGIN_LOADING) && tokenExists) {
-      next({ name: AppRouteEnum.WORKBENCH });
+      next({ name: getHomeRouteName() });
       NProgress.done();
       return;
     }

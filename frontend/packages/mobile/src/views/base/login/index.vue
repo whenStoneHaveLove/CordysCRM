@@ -60,7 +60,7 @@
   import useAppStore from '@/store/modules/app';
   import useUserStore from '@/store/modules/user';
 
-  import { AppRouteEnum } from '@/enums/routeEnum';
+  import { getHomeRouteName } from '@/utils/permission';
 
   const router = useRouter();
 
@@ -111,7 +111,7 @@
       setLoginExpires();
       setLoginType(userInfo.value.authenticate);
       router.replace({
-        name: AppRouteEnum.WORKBENCH,
+        name: getHomeRouteName(),
       });
     } catch (error) {
       // eslint-disable-next-line no-console

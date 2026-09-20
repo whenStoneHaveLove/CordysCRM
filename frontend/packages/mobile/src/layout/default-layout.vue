@@ -10,19 +10,21 @@
         </transition>
       </div>
     </router-view>
+    <!-- 统一用 @click 触发跳转：Vant 的 tabbar-item 在「当前已是选中项」时不会触发 change（内部有 !active 判断），
+         只监听 change 会导致高亮的「首页」在二级页面点击无反应 -->
     <van-tabbar
       v-if="isModuleRouteIndex"
       v-model="active"
       :fixed="false"
       safe-area-inset-bottom
       class="page-bottom-tabbar !py-[8px]"
-      @change="handleTabbarChange"
     >
       <template v-for="menu of displayMenu" :key="menu.name">
         <van-tabbar-item
           :name="menu.name"
           class="rounded-full"
           :class="active === menu.name ? '!bg-[var(--primary-7)]' : ''"
+          @click="handleTabbarItemClick(menu.name)"
         >
           <template #icon>
             <CrmIcon
@@ -40,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-  import { useRouter } from 'vue-router';
+  import { RouteLocationNormalizedLoaded, useRouter } from 'vue-router';
 
   import { ModuleConfigEnum } from '@lib/shared/enums/moduleEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
@@ -49,9 +51,9 @@
   import CrmIcon from '@/components/pure/crm-icon-font/index.vue';
 
   import useAppStore from '@/store/modules/app';
-  import { hasAnyPermission } from '@/utils/permission';
+  import { getHomeRouteName, hasAnyPermission } from '@/utils/permission';
 
-  import { AppRouteEnum } from '@/enums/routeEnum';
+  import { AppRouteEnum, AdvertisingRouteEnum } from '@/enums/routeEnum';
 
   const { t } = useI18n();
   const router = useRouter();
@@ -88,8 +90,15 @@
   router.afterEach(() => {
     appStore.setManualBack(false);
   });
-  const active = ref<string>(AppRouteEnum.WORKBENCH_INDEX);
+  const active = ref<string>(getHomeRouteName());
   const menuList = [
+    {
+      // 广告工作台为本项目移动端首页，固定排在首位：房子图标 + 文案「首页」（复用 menu.workbench，zh/en 均已定义）
+      name: AdvertisingRouteEnum.AD_WORKBENCH,
+      icon: 'iconicon_home',
+      text: t('menu.workbench'),
+      permission: ['AD_WORKBENCH:READ'],
+    },
     {
       name: AppRouteEnum.WORKBENCH,
       icon: 'iconicon_home',
@@ -133,23 +142,40 @@
     })
   );
 
-  function handleTabbarChange(name: string) {
+  // 点击底栏项：无论是否已选中都跳转（点已选中的「首页」回到工作台根页面）
+  function handleTabbarItemClick(name: string) {
     router.replace({ name });
   }
 
-  const isModuleRouteIndex = computed(() => router.currentRoute.value.name?.toString().includes('Index'));
+  // 底部 tabbar 显示条件：模块首页（name 含 Index），或标记了 showTabbar 的 depth=1 页面（广告模块列表页）
+  const isModuleRouteIndex = computed(() => {
+    const { name, meta } = router.currentRoute.value;
+    return !!name?.toString().includes('Index') || (meta.showTabbar === true && meta.depth === 1);
+  });
+
+  /**
+   * 由当前路由解析底栏选中项
+   * 先用顶层路由名精确匹配（广告模块顶层 name 就是「首页」tab，所以进入其下级列表页仍保持高亮，
+   * 且不会像 `name.includes()` 那样让 adCustomerList 之类误命中其它 tab），匹配不到再回退包含匹配，最后清空选中
+   */
+  function resolveTabbarActive(route: RouteLocationNormalizedLoaded) {
+    const matchedNames = [route.matched[0]?.name, route.name].filter(Boolean).map((name) => String(name));
+    const exact = displayMenu.value.find((item) => matchedNames.includes(item.name));
+    if (exact) return exact.name;
+    return displayMenu.value.find((item) => matchedNames.some((name) => name.includes(item.name)))?.name ?? '';
+  }
 
   /**
    * 监听路由变化，切换菜单选中
    */
   listenerRouteChange((newRoute) => {
-    const { name } = newRoute;
-    menuList.forEach((item) => {
-      if (name?.toString().includes(item.name)) {
-        active.value = item.name;
-      }
-    });
+    active.value = resolveTabbarActive(newRoute);
   }, true);
+
+  // 模块配置（displayMenu）异步返回后重新校准一次，避免首屏解析时菜单还没渲染出来
+  watch(displayMenu, () => {
+    active.value = resolveTabbarActive(router.currentRoute.value);
+  });
 
   watch(
     () => appStore.orgId,

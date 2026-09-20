@@ -15,6 +15,7 @@ export interface RouteMeta {
   order?: number; // 排序权重
   depth?: number; // 路由深度
   isCache?: boolean; // 缓存设置，true缓存页面状态
+  showTabbar?: boolean; // 是否显示底部 tabbar（广告模块 depth=1 列表页使用）
 }
 export interface AppRouteRecordRaw {
   path: string;

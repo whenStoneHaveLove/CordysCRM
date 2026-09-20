@@ -1,0 +1,18 @@
+export default {
+  'advertising.approval.pending': '待我审批',
+  'advertising.approval.filterAll': '全部',
+  'advertising.approval.filterOrder': '订单',
+  'advertising.approval.filterChange': '改单',
+  'advertising.approval.filterSeal': '用印',
+  'advertising.approval.filterArchive': '归档',
+  'advertising.approval.filterReceipt': '收款',
+  'advertising.approval.filterPayout': '付款',
+  'advertising.approval.filterVoid': '作废',
+  'advertising.approval.devTip': '该类型审批详情移动端开发中',
+  'advertising.approval.searchPlaceholder': '搜索关联单号 / 摘要',
+  'advertising.approval.noMore': '没有更多了',
+  'advertising.approval.approve': '通过',
+  'advertising.approval.reject': '驳回',
+  'advertising.approval.confirmReject': '驳回审批',
+  'advertising.approval.rejectRemark': '请输入驳回原因',
+};
