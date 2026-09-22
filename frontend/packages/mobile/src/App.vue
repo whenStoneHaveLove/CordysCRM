@@ -1,5 +1,6 @@
 <template>
-  <Suspense>
+  <ComingSoon v-if="COMING_SOON" />
+  <Suspense v-else>
     <RouterView />
   </Suspense>
 </template>
@@ -19,6 +20,10 @@
   import { getHomeRouteName } from '@/utils/permission';
 
   import useLogin from './hooks/useLogin';
+  import ComingSoon from '@/views/base/coming-soon/index.vue';
+
+  // 上线开关：true=展示「敬请期待」占位页（暂不对外）；上线时改为 false 即可，无需改动其它代码
+  const COMING_SOON = true;
 
   const router = useRouter();
   const userStore = useUserStore();
@@ -27,6 +32,7 @@
   const { changeLocale } = useLocale(showLoadingToast);
 
   onBeforeMount(async () => {
+    if (COMING_SOON) return; // 占位页模式：跳过登录/重定向，仅展示「敬请期待」
     changeLocale(navigator.language as LocaleType);
     const loginStatus = await userStore.isLogin(true);
 

@@ -8,7 +8,10 @@
     "packages/web"
   ],
   "scripts": {
-    "build": "pnpm --filter @cordys/web run build",
+    "build": "pnpm --filter ./packages/web run build && pnpm --filter ./packages/mobile run build",
+    "build:web": "pnpm --filter ./packages/web run build",
+    "build:mobile": "pnpm --filter ./packages/mobile run build",
+    "build:all": "pnpm run build",
     "prepare": "cd .. && husky install frontend/.husky"
   },
   "keywords": [],
