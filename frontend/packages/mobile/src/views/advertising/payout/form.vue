@@ -97,28 +97,26 @@
         class="mb-[10px] rounded-lg bg-white p-[10px]"
       >
         <div class="mb-[6px] text-[13px] font-medium">{{ row.mediaName }}</div>
-        <van-field :label="t('advertising.order.payableAmount')" :model-value="fmtAmount(row.payableAmount)" readonly size="small" />
-        <van-field :label="t('advertising.payout.form.noRebateAmount')" :model-value="fmtAmount(row.noRebateAmount)" readonly size="small" />
+        <van-field :label="t('advertising.order.payableAmount')" :model-value="fmtAmount(row.payableAmount)" readonly />
+        <van-field :label="t('advertising.payout.form.noRebateAmount')" :model-value="fmtAmount(row.noRebateAmount)" readonly />
         <van-field
           :label="t('advertising.order.rebateMode')"
           :model-value="enumLabel(AdModeOptions, row.rebateMode)"
           readonly
           is-link
-          size="small"
           @click="openRowEnumPicker(idx, 'rebateMode', AdModeOptions)"
         />
-        <van-field :label="t('advertising.order.rebateValue')" v-model="row.rebateValue" type="number" size="small" />
-        <van-field :label="t('advertising.payout.form.rebateAmount')" :model-value="fmtAmount(row.rebateAmount)" readonly size="small" />
-        <van-field :label="t('advertising.payout.form.actualPayable')" v-model="row.actualPayable" type="number" size="small" />
-        <van-field :label="t('advertising.payout.form.paidAmount')" :model-value="fmtAmount(row.paidAmount)" readonly size="small" />
-        <van-field :label="t('advertising.payout.form.remaining')" :model-value="fmtAmount(remainingOf(row))" readonly size="small" />
-        <van-field :label="t('advertising.payout.form.thisPayable')" v-model="row.thisPayable" type="number" size="small" />
+        <van-field :label="t('advertising.order.rebateValue')" v-model="row.rebateValue" type="number" />
+        <van-field :label="t('advertising.payout.form.rebateAmount')" :model-value="fmtAmount(row.rebateAmount)" readonly />
+        <van-field :label="t('advertising.payout.form.actualPayable')" v-model="row.actualPayable" type="number" />
+        <van-field :label="t('advertising.payout.form.paidAmount')" :model-value="fmtAmount(row.paidAmount)" readonly />
+        <van-field :label="t('advertising.payout.form.remaining')" :model-value="fmtAmount(remainingOf(row))" readonly />
+        <van-field :label="t('advertising.payout.form.thisPayable')" v-model="row.thisPayable" type="number" />
         <van-field
           :label="t('advertising.payout.form.accountId')"
           :model-value="accountLabel(row)"
           readonly
           is-link
-          size="small"
           @click="openAccountPicker(idx)"
         />
       </div>

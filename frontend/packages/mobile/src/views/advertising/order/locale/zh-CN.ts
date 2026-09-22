@@ -59,7 +59,7 @@ export default {
   'advertising.order.rebateAmount': '返点金额',
   'advertising.order.mediaPayable': '应付总额',
   'advertising.order.actualMediaPayable': '实际应付',
-  'advertising.order.mediaRebate': '应付返点',
+  'advertising.order.mediaRebate': '应收返点',
   'advertising.order.orderIncome': '订单收入',
   'advertising.order.receiptPrepayRatio': '预收比例',
   'advertising.order.receiptPrepayAmount': '预收金额',

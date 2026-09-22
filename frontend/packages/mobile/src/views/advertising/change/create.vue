@@ -168,27 +168,23 @@
             :label="t('advertising.order.payableAmount')"
             v-model="row.payableAmount"
             type="number"
-            size="small"
           />
           <van-field
             :label="t('advertising.order.noRebateAmount')"
             v-model="row.noRebateAmount"
             type="number"
-            size="small"
           />
           <van-field
             :label="t('advertising.order.rebateMode')"
             :model-value="enumLabel('enum-rebateMode', row.rebateMode)"
             readonly
             is-link
-            size="small"
             @click="openRowEnumPicker(idx, 'rebateMode', AdModeOptions)"
           />
           <van-field
             :label="t('advertising.order.rebateValue')"
             v-model="row.rebateValue"
             type="number"
-            size="small"
           />
           <div class="flex justify-between px-[16px] py-[4px] text-[12px] text-[var(--text-n3)]">
             <span>{{ t('advertising.order.rebateAmount') }}：{{ fmtAmount(downstreamComputed(row).rebateAmount) }}</span>
@@ -199,7 +195,6 @@
             :model-value="enumLabel('enum-paymentMethod', row.paymentMethod)"
             readonly
             is-link
-            size="small"
             @click="openRowEnumPicker(idx, 'paymentMethod', AdPaymentMethodOptions)"
           />
           <template v-if="row.paymentMethod === 10">
@@ -208,21 +203,18 @@
               :model-value="enumLabel(AdModeOptions, row.paymentPrepayMode)"
               readonly
               is-link
-              size="small"
               @click="openRowEnumPicker(idx, 'paymentPrepayMode', AdModeOptions)"
             />
             <van-field
               :label="t('advertising.order.paymentPrepayRatio')"
               v-model="row.paymentPrepayRatio"
               type="number"
-              size="small"
             />
             <van-field
               :label="t('advertising.order.paymentPrepayDeadline')"
               :model-value="fmtDate(row.paymentPrepayDeadline)"
               readonly
               is-link
-              size="small"
               @click="openRowDatePicker(idx, 'paymentPrepayDeadline')"
             />
           </template>
@@ -232,7 +224,6 @@
               :model-value="enumLabel(AdPostpayTriggerOptions, row.paymentPostpayTrigger)"
               readonly
               is-link
-              size="small"
               @click="openRowEnumPicker(idx, 'paymentPostpayTrigger', AdPostpayTriggerOptions)"
             />
             <van-field
@@ -240,7 +231,6 @@
               :label="t('advertising.order.postpayDays')"
               v-model="row.paymentPostpayDays"
               type="number"
-              size="small"
             />
           </template>
         </div>

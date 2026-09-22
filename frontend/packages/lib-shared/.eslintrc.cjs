@@ -3,6 +3,14 @@ const path = require('path');
 
 module.exports = {
   root: true,
+  // 等价替代已废弃的 .eslintignore（ESLint 9 不再读取 .eslintignore），保持同样的忽略行为
+  ignorePatterns: [
+    '/*.json',
+    '/src/**/*.json',
+    'dist',
+    'postcss.config.js',
+    '*.md',
+  ],
   parser: 'vue-eslint-parser',
   parserOptions: {
     // Parser that checks the content of the <script> tag

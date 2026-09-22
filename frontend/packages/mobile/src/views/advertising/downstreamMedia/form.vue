@@ -72,19 +72,19 @@
           <van-field
             :label="t('advertising.downstreamMedia.form.payeeName')"
             v-model="acc.payeeName"
-            size="small"
+    
             :placeholder="t('advertising.downstreamMedia.form.payeeName')"
           />
           <van-field
             :label="t('advertising.downstreamMedia.form.bankName')"
             v-model="acc.bankName"
-            size="small"
+    
             :placeholder="t('advertising.downstreamMedia.form.bankName')"
           />
           <van-field
             :label="t('advertising.downstreamMedia.form.bankAccount')"
             v-model="acc.bankAccount"
-            size="small"
+    
             :placeholder="t('advertising.downstreamMedia.form.bankAccount')"
           />
         </div>
